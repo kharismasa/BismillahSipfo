@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home"
+        android:title="Home" />
+    <item
+        android:id="@+id/navigation_riwayat"
+        android:icon="@drawable/ic_riwayat"
+        android:title="Riwayat" />
+    <item
+        android:id="@+id/navigation_peminjaman"
+        android:icon="@drawable/ic_peminjaman"
+        android:title="Peminjaman" />
+    <item
+        android:id="@+id/navigation_gamifikasi"
+        android:icon="@drawable/ic_gamifikasi"
+        android:title="Gamifikasi" />
+    <item
+        android:id="@+id/navigation_profil"
+        android:icon="@drawable/ic_profile"
+        android:title="Profil" />
+</menu>

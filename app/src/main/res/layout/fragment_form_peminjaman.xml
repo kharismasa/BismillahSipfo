@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.fragment.peminjaman.FormPeminjamanFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/form_pengajuan"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/jargon_peminjaman"
+            android:gravity="center"
+            android:padding="8dp" />
+
+        <!-- Progress Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="8dp">
+
+            <!-- Step 1 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/step1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/circle_active"
+                    android:text="1"
+                    android:textColor="@android:color/white"
+                    android:padding="6dp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvStep1a"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mengisi Form"
+                    android:textSize="12sp"
+                    android:textColor="@color/blue"
+                    android:gravity="center" />
+                <TextView
+                    android:id="@+id/tvStep1b"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pengajuan"
+                    android:textSize="12sp"
+                    android:textColor="@color/blue"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <!-- Line between steps -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="1"
+                android:background="@color/gray" />
+
+            <!-- Step 2 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/step2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/circle_inactive"
+                    android:text="2"
+                    android:textColor="@color/gray"
+                    android:padding="6dp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvStep2a"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mengisi Form"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:textColor="@color/gray"/>
+
+                <TextView
+                    android:id="@+id/tvStep2b"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="tata tertib"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:textColor="@color/gray"/>
+            </LinearLayout>
+
+            <!-- Line between steps -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="1"
+                android:background="@color/gray" />
+
+            <!-- Step 3 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/step3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/circle_inactive"
+                    android:text="3"
+                    android:textColor="@color/gray"
+                    android:padding="6dp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvStep3a"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Melakukan"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:textColor="@color/gray"/>
+                <TextView
+                    android:id="@+id/tvStep3b"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pembayaran"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:textColor="@color/gray"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Form Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Form Pengajuan Pinjam Fasilitas"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp" />
+
+        <!-- Spinner for Fasilitas -->
+        <Spinner
+            android:id="@+id/spinner_fasilitas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Date and Time Pickers -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tanggal Mulai" />
+
+                <EditText
+                    android:id="@+id/edittext_tanggal_mulai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_date"
+                    android:drawablePadding="8dp"
+                    android:hint="DD/MM/YY"
+                    android:inputType="date" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tanggal Selesai" />
+
+                <EditText
+                    android:id="@+id/edittext_tanggal_selesai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_date"
+                    android:drawablePadding="8dp"
+                    android:hint="DD/MM/YY"
+                    android:inputType="date" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jam Mulai" />
+
+                <EditText
+                    android:id="@+id/edittext_jam_mulai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="07.00"
+                    android:drawableStart="@drawable/ic_time"
+                    android:drawablePadding="8dp"
+                    android:inputType="time" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jam Selesai" />
+
+                <EditText
+                    android:id="@+id/edittext_jam_selesai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="08.00"
+                    android:drawableStart="@drawable/ic_time"
+                    android:drawablePadding="8dp"
+                    android:inputType="time" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Nama Acara -->
+        <EditText
+            android:id="@+id/edittext_nama_acara"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama Acara"
+            android:layout_marginTop="16dp" />
+
+        <!-- Nama Organisasi/UKM -->
+        <EditText
+            android:id="@+id/edittext_nama_organisasi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama Organisasi/UKM"
+            android:layout_marginTop="16dp" />
+
+        <!-- Lapangan yang dipinjam -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lapangan yang dipinjam"
+            android:layout_marginTop="16dp" />
+
+        <LinearLayout
+            android:id="@+id/container_jenis_lapangan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/container_pengguna_khusus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
+        </LinearLayout>
+
+        <!-- Button Next -->
+        <Button
+            android:id="@+id/button_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next"
+            android:backgroundTint="@color/dark_blue"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</ScrollView>

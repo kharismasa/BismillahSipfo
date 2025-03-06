@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.fragment.profile.DetailProfileActivity">
+
+    <LinearLayout
+        android:id="@+id/layoutJudul"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="20dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/ivArrow"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_arrow" />
+
+        <TextView
+            android:id="@+id/tvProfileInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Profile Information"
+            android:fontFamily="@font/poppins_bold"
+            android:textSize="14dp"
+            android:textColor="@color/blue" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutJudul"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/layoutJudul"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="20dp"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/ivProfilePicture"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginVertical="30dp"
+            android:scaleType="centerCrop"
+            android:layout_gravity="center"
+            android:src="@drawable/placeholder"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nama"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:layout_marginRight="10dp"/>
+
+            <TextView
+                android:id="@+id/tvNama"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Anonim"
+                android:textStyle="bold"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:textAlignment="textEnd"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Email"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:layout_marginRight="10dp"/>
+
+            <TextView
+                android:id="@+id/tvEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="aaa@uii.ac.id"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:fontFamily="@font/montserrat_medium"
+                android:textAlignment="textEnd"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No. Kartu Identitas"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:layout_marginRight="10dp"/>
+
+            <TextView
+                android:id="@+id/tvNoKartu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="21520000"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:fontFamily="@font/montserrat_medium"
+                android:textAlignment="textEnd"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:layout_marginRight="10dp"/>
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mahasiswa"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:fontFamily="@font/montserrat_medium"
+                android:textAlignment="textEnd"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginTop="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No. Telp"
+                android:textSize="12dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:layout_marginRight="10dp"/>
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/tfNoTelp"
+                android:hint="Edit No. Telp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:fontFamily="@font/montserrat_medium"
+                android:textAlignment="textEnd"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:text="Kartu Identitas"
+            android:textAlignment="center"
+            android:textSize="12dp"
+            android:fontFamily="@font/montserrat_medium"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="240dp"
+            android:layout_height="180dp"
+            android:layout_marginVertical="20dp"
+            app:cardElevation="5dp"
+            app:cardCornerRadius="20dp"
+            android:layout_gravity="center">
+            <ImageView
+                android:id="@+id/ivKartuIdentitas"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/placeholder"/>
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btnSimpanPerubahan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginVertical="30dp"
+            android:textSize="12dp"
+            android:backgroundTint="@color/dark_blue"
+            android:fontFamily="@font/poppins"
+            android:text="Simpan Perubahan"/>
+
+    </LinearLayout>
+
+</ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
