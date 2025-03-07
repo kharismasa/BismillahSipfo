@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +18,7 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.ActivityDetailProfileBinding
+import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
 import io.github.jan.supabase.storage.UploadStatus
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.storage.uploadAsFlow
@@ -44,6 +47,15 @@ class DetailProfileActivity : AppCompatActivity() {
         binding = ActivityDetailProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Cek apakah pengguna sudah login
+        if (!isUserLoggedIn()) {
+            // Jika pengguna belum login, arahkan ke LoginActivity
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
         userRepository = UserRepository(this)
 
         setupViews()
@@ -57,34 +69,47 @@ class DetailProfileActivity : AppCompatActivity() {
         }
     }
 
+    private fun isUserLoggedIn(): Boolean {
+        val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+        return sharedPreferences.getBoolean("is_logged_in", false)
+    }
+
     private fun setupViews() {
         binding.ivArrow.setOnClickListener { finish() }
         binding.tvProfileInfo.setOnClickListener { finish() }
     }
 
     private fun loadUserData() {
-        lifecycleScope.launch {
-            val user = userRepository.getUser()
-            user?.let {
-                binding.tvNama.text = it.nama
-                binding.tvEmail.text = it.email
-                binding.tvNoKartu.text = it.nomorInduk
-                binding.tvStatus.text = it.status
-                binding.tfNoTelp.setText(it.noTelp)
+        val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+        val userName = sharedPreferences.getString("nama", "Nama Pengguna")
+        val userEmail = sharedPreferences.getString("email", "")
+        val userProfileImage = sharedPreferences.getString("foto_profil", null)
+        val userPhone = sharedPreferences.getString("no_telp", "")
 
-                Glide.with(this@DetailProfileActivity)
-                    .load(it.fotoProfil)
-                    .transform(CircleCrop())
-                    .placeholder(R.drawable.placeholder)
-                    .into(binding.ivProfilePicture)
+        binding.tvNama.text = userName
+        binding.tvEmail.text = userEmail
+        binding.tvNoKartu.text = sharedPreferences.getString("nomor_induk", "")
+        binding.tvStatus.text = sharedPreferences.getString("status", "")
+        binding.tfNoTelp.setText(userPhone)
 
-                Glide.with(this@DetailProfileActivity)
-                    .load(it.kartuIdentitas)
-                    .placeholder(R.drawable.placeholder)
-                    .into(binding.ivKartuIdentitas)
-            }
+        if (userProfileImage != null) {
+            Glide.with(this)
+                .load(userProfileImage)
+                .transform(CircleCrop())
+                .placeholder(R.drawable.placeholder)
+                .into(binding.ivProfilePicture)
+        }
+
+        // Jika data kartu identitas sudah ada di SharedPreferences
+        val userCardImage = sharedPreferences.getString("kartu_identitas", null)
+        if (userCardImage != null) {
+            Glide.with(this)
+                .load(userCardImage)
+                .placeholder(R.drawable.placeholder)
+                .into(binding.ivKartuIdentitas)
         }
     }
+
 
     private fun setupListeners() {
         binding.ivKartuIdentitas.setOnClickListener {
@@ -100,12 +125,32 @@ class DetailProfileActivity : AppCompatActivity() {
     private fun saveChanges() {
         lifecycleScope.launch {
             val newNoTelp = binding.tfNoTelp.text.toString()
-            userRepository.updateNoTelp(newNoTelp)
 
+            // Pastikan nomor telepon yang baru diambil dari input
+            if (newNoTelp.isNotEmpty()) {
+                // Mengupdate nomor telepon di Supabase
+                userRepository.updateNoTelp(newNoTelp)
+
+                // Setelah update berhasil, simpan perubahan nomor telepon di SharedPreferences
+                val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+                with(sharedPreferences.edit()) {
+                    putString("no_telp", newNoTelp) // Update nomor telepon di SharedPreferences
+                    apply()
+                }
+
+                // Setelah update berhasil, beri feedback ke pengguna dan tutup activity
+                Toast.makeText(this@DetailProfileActivity, "Nomor Telepon berhasil diperbarui", Toast.LENGTH_SHORT).show()
+                finish() // Menutup activity setelah berhasil mengupdate data
+            } else {
+                // Jika nomor telepon kosong, beri peringatan ke pengguna
+                Toast.makeText(this@DetailProfileActivity, "Nomor telepon tidak boleh kosong", Toast.LENGTH_SHORT).show()
+            }
+
+            // Cek jika ada perubahan gambar kartu identitas dan upload ke Supabase
             selectedImageUri?.let { uri ->
                 val file = File(getRealPathFromURI(uri))
                 val bucket = userRepository.getSupabaseClient().storage.from("kartu_identitas")
-                
+
                 bucket.uploadAsFlow(file.name, file).collect { status ->
                     when (status) {
                         is UploadStatus.Progress -> {
@@ -114,12 +159,14 @@ class DetailProfileActivity : AppCompatActivity() {
                         }
                         is UploadStatus.Success -> {
                             val publicUrl = bucket.publicUrl(file.name)
+                            // Update URL gambar kartu identitas di Supabase
                             userRepository.updateKartuIdentitas(publicUrl)
                         }
                     }
                 }
             }
 
+            // Menutup activity setelah semua perubahan berhasil disimpan
             finish()
         }
     }

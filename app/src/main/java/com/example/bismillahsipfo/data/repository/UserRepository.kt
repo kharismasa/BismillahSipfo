@@ -1,7 +1,9 @@
 package com.example.bismillahsipfo.data.repository
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import android.util.Log
 import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.User
 import io.github.jan.supabase.SupabaseClient
@@ -37,14 +39,14 @@ class UserRepository(private val context: Context) {
             val response = supabase.from("pengguna")
                 .select {
                     filter {
-                        "email" to email
-                        "password" to password
+                        eq("email", email)
+                        eq("password", password)
                     }
                     limit(1)
                 }
                 .decodeList<JsonObject>()
 
-            if (response.isNotEmpty()) {
+            if (response.isNotEmpty() ) {
                 val userData = response[0]
                 User(
                     idPengguna = userData["id_pengguna"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
@@ -66,50 +68,31 @@ class UserRepository(private val context: Context) {
         }
     }
 
-    suspend fun getUser(): User? {
-        return try {
-            val response = supabase.from("pengguna")
-                .select() {
-                    filter {
-                        eq("id_pengguna", getCurrentUserId())
-                    }
-                }
-                .decodeSingle<JsonObject>()
-
-            User(
-                idPengguna = response["id_pengguna"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                email = response["email"]?.jsonPrimitive?.content ?: "",
-                nama = response["nama"]?.jsonPrimitive?.content ?: "",
-                nomorInduk = response["nomor_induk"]?.jsonPrimitive?.content ?: "",
-                status = response["status"]?.jsonPrimitive?.content ?: "",
-                noTelp = response["no_telp"]?.jsonPrimitive?.content ?: "",
-                idGamifikasi = response["id_gamifikasi"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                kartuIdentitas = response["kartu_identitas"]?.jsonPrimitive?.content ?: "",
-                fotoProfil = response["foto_profil"]?.jsonPrimitive?.content ?: ""
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
 
     suspend fun updateNoTelp(newNoTelp: String) {
         try {
-            supabase.from("pengguna")
-                .update(
-                    {
-                        set("no_telp", newNoTelp)
-                    }
-                ) {
+            val response = supabase.from("pengguna")
+                .update(mapOf("no_telp" to newNoTelp)) {
                     filter {
-                        eq("id_pengguna", getCurrentUserId())
+                        eq("id_pengguna", getCurrentUserId()) // Menggunakan ID pengguna yang benar
                     }
                 }
+
+            Log.d("UserRepository", "Update response: $response") // Log untuk melihat hasil response
+
+            // Jika update berhasil, simpan perubahan di SharedPreferences
+            val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
+            with(sharedPreferences.edit()) {
+                putString("no_telp", newNoTelp) // Update nomor telepon di SharedPreferences
+                apply()
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
-            // Handle error, mungkin throw custom exception
+            Log.e("UserRepository", "Error updating phone number: ${e.message}")
         }
     }
+
 
     suspend fun updateKartuIdentitas(newUrl: String) {
         try {
@@ -133,28 +116,12 @@ class UserRepository(private val context: Context) {
         return supabase
     }
 
-//    private fun getCurrentUserId(): Int {
-//        // Implementasi untuk mendapatkan ID pengguna saat ini
-//        // Misalnya, dari SharedPreferences
-//        val sharedPref = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-//        return sharedPref.getInt("USER_ID", -1)
-//    }
-
     private fun getCurrentUserId(): Int {
-        return sharedPreferences.getInt("USER_ID", -1)
+        val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
+        val userId = sharedPreferences.getInt("id_pengguna", -1)
+        Log.d("UserRepository", "Current User ID: $userId") // Cek ID yang diambil dari SharedPreferences
+        return userId
     }
 
-    // Fungsi untuk menyimpan ID pengguna saat login
-    fun saveUserId(userId: Int) {
-        sharedPreferences.edit().putInt("USER_ID", userId).apply()
-    }
-
-    // Fungsi untuk menghapus ID pengguna saat logout
-    fun clearUserData() {
-        sharedPreferences.edit().apply {
-            clear() // Menghapus semua data
-            apply()
-        }
-    }
 
 }

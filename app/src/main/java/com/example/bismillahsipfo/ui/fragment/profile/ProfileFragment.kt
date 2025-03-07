@@ -34,7 +34,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val sharedPreferences = requireActivity().getSharedPreferences("user_prefs", AppCompatActivity.MODE_PRIVATE)
+        val sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", AppCompatActivity.MODE_PRIVATE)
         val userName = sharedPreferences.getString("nama", "Nama Pengguna")
         val userProfileImage = sharedPreferences.getString("foto_profil", null)
         val userEmail = sharedPreferences.getString("email", "")
@@ -66,12 +66,9 @@ class ProfileFragment : Fragment() {
                 apply()
             }
 
-            // Hapus semua data pengguna
-//            userRepository.clearUserData()
 
             // Arahkan pengguna ke LoginActivity
             val intent = Intent(requireContext(), LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             requireActivity().finish()
         }

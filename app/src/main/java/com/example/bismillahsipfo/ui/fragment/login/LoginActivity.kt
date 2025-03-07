@@ -46,12 +46,13 @@ class LoginActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val user = userRepository.loginUser(email, password)
+                    Log.d("LoginActivity", "User retrieved: $user")
+
                     withContext(Dispatchers.Main) {
                         if (user != null) {
                             // Simpan informasi pengguna menggunakan UserRepository
-//                            userRepository.saveUserId(user.idPengguna)
                             // Simpan informasi tambahan jika diperlukan
-                            val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                            val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
                             with(sharedPreferences.edit()) {
                                 putInt("id_pengguna", user.idPengguna)
                                 putString("email", user.email)
