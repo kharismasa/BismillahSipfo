@@ -15,14 +15,21 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
+import com.example.bismillahsipfo.data.model.User
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.ActivityDetailProfileBinding
 import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
-import io.github.jan.supabase.storage.UploadStatus
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.storage.uploadAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
 class DetailProfileActivity : AppCompatActivity() {
@@ -110,7 +117,6 @@ class DetailProfileActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupListeners() {
         binding.ivKartuIdentitas.setOnClickListener {
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
@@ -131,16 +137,16 @@ class DetailProfileActivity : AppCompatActivity() {
                 // Mengupdate nomor telepon di Supabase
                 userRepository.updateNoTelp(newNoTelp)
 
-                // Setelah update berhasil, simpan perubahan nomor telepon di SharedPreferences
+                // Setelah update berhasil, simpan di SharedPreferences
                 val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
                 with(sharedPreferences.edit()) {
                     putString("no_telp", newNoTelp) // Update nomor telepon di SharedPreferences
                     apply()
                 }
 
-                // Setelah update berhasil, beri feedback ke pengguna dan tutup activity
+                // Setelah update berhasil, beri feedback ke pengguna
                 Toast.makeText(this@DetailProfileActivity, "Nomor Telepon berhasil diperbarui", Toast.LENGTH_SHORT).show()
-                finish() // Menutup activity setelah berhasil mengupdate data
+                finish()
             } else {
                 // Jika nomor telepon kosong, beri peringatan ke pengguna
                 Toast.makeText(this@DetailProfileActivity, "Nomor telepon tidak boleh kosong", Toast.LENGTH_SHORT).show()
@@ -149,20 +155,43 @@ class DetailProfileActivity : AppCompatActivity() {
             // Cek jika ada perubahan gambar kartu identitas dan upload ke Supabase
             selectedImageUri?.let { uri ->
                 val file = File(getRealPathFromURI(uri))
-                val bucket = userRepository.getSupabaseClient().storage.from("kartu_identitas")
 
-                bucket.uploadAsFlow(file.name, file).collect { status ->
-                    when (status) {
-                        is UploadStatus.Progress -> {
-                            val progress = status.totalBytesSend.toFloat() / status.contentLength * 100
-                            // Update progress UI if needed
+                // Mengonversi file menjadi ByteArray
+                val byteArray = file.readBytes()
+                val fileName = "kartu_identitas_${System.currentTimeMillis()}.jpg" // Nama file unik berdasarkan waktu
+
+                // Upload ke bucket "Kartu Identitas"
+                val bucket = userRepository.getSupabaseClient().storage.from("Kartu Identitas")
+
+                try {
+                    // Ambil URL gambar lama dari SharedPreferences
+                    val oldImageUrl = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+                        .getString("kartu_identitas", null)
+
+                    oldImageUrl?.let {
+                        val oldFileName = it.substringAfterLast("/")
+
+                        // Menggantikan file lama dengan yang baru menggunakan update()
+                        bucket.update(oldFileName, byteArray) {
+                            // Gambar yang baru akan menggantikan gambar yang lama
                         }
-                        is UploadStatus.Success -> {
-                            val publicUrl = bucket.publicUrl(file.name)
-                            // Update URL gambar kartu identitas di Supabase
-                            userRepository.updateKartuIdentitas(publicUrl)
-                        }
+
+                        Log.d("DetailProfileActivity", "Gambar lama digantikan dengan: $oldFileName")
                     }
+
+                    // Setelah mengganti gambar, ambil URL publik file setelah di-upload
+                    val publicUrl = bucket.publicUrl(fileName)
+
+                    // Simpan URL gambar baru ke Supabase di kolom "kartu_identitas"
+                    userRepository.updateKartuIdentitas(publicUrl)
+
+                    Toast.makeText(this@DetailProfileActivity, "Kartu Identitas berhasil diupdate", Toast.LENGTH_SHORT).show()
+
+                }
+                catch (e: Exception) {
+                    // Tangani error
+                    Log.e("DetailProfileActivity", "Terjadi kesalahan saat mengupload: ${e.message}")
+                    Toast.makeText(this@DetailProfileActivity, "Terjadi kesalahan saat mengupload", Toast.LENGTH_SHORT).show()
                 }
             }
 

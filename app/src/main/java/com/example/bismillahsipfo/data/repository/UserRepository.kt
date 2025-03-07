@@ -96,32 +96,38 @@ class UserRepository(private val context: Context) {
 
     suspend fun updateKartuIdentitas(newUrl: String) {
         try {
-            supabase.from("pengguna")
-                .update(
-                    {
-                        set("kartu_identitas", newUrl)
-                    }
-                ) {
+            val response = supabase.from("pengguna")
+                .update(mapOf("kartu_identitas" to newUrl)) {
                     filter {
-                        eq("id_pengguna", getCurrentUserId())
+                        eq("id_pengguna", getCurrentUserId()) // Menggunakan ID pengguna yang benar
                     }
                 }
+
+            Log.d("UserRepository", "Kartu Identitas Update response: $response")
         } catch (e: Exception) {
             e.printStackTrace()
-            // Handle error, mungkin throw custom exception
+            Log.e("UserRepository", "Error updating kartu identitas: ${e.message}")
         }
     }
+
 
     fun getSupabaseClient(): SupabaseClient {
         return supabase
     }
 
-    private fun getCurrentUserId(): Int {
-        val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
-        val userId = sharedPreferences.getInt("id_pengguna", -1)
-        Log.d("UserRepository", "Current User ID: $userId") // Cek ID yang diambil dari SharedPreferences
-        return userId
+//    private fun getCurrentUserId(): Int {
+//        val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
+//        val userId = sharedPreferences.getInt("id_pengguna", -1)
+//        Log.d("UserRepository", "Current User ID: $userId") // Cek ID yang diambil dari SharedPreferences
+//        return userId
+//    }
+
+    // Ubah visibilitas getCurrentUserId menjadi public atau buat getter
+    fun getCurrentUserId(): Int {
+        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getInt("id_pengguna", -1)  // Ambil ID pengguna
     }
+
 
 
 }

@@ -81,11 +81,11 @@ dependencies {
 //    implementation("androidx.room:room-ktx:2.6.0")
 
     // supabase
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.1.1"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.github.jan-tennert.supabase:storage-kt:3.1.1")
-    implementation("io.github.jan-tennert.supabase:realtime-kt")
-    implementation("io.ktor:ktor-client-android:3.1.0")
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.1.2")
+    implementation("io.github.jan-tennert.supabase:storage-kt:3.1.2")
+//    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.ktor:ktor-client-android:3.1.1")
 
 
 }
