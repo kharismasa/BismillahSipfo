@@ -16,12 +16,15 @@ import com.example.bismillahsipfo.ui.fragment.notification.NotificationActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.os.Handler
+import android.os.Looper
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var fasilitasAdapter: FasilitasAdapter
     private lateinit var fasilitasRepository: FasilitasRepository
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -65,23 +68,24 @@ class HomeFragment : Fragment() {
         var currentImageIndex = 0
 
         fun loadNextImage() {
+            if (view == null || !isAdded) return  // Check if fragment is still attached
             Glide.with(this)
                 .load(imageUrls[currentImageIndex])
                 .into(binding.imageHome)
             currentImageIndex = (currentImageIndex + 1) % imageUrls.size
         }
 
-        loadNextImage()
-        binding.imageHome.postDelayed(object : Runnable {
+        val imageSliderRunnable = object : Runnable {
             override fun run() {
                 loadNextImage()
-                binding.imageHome.postDelayed(this, 3000)
+                handler.postDelayed(this, 3000)
             }
-        }, 3000)
+        }
+
+        handler.post(imageSliderRunnable)
     }
 
     private fun setupFasilitasRecyclerView() {
-        // Set up RecyclerView
         binding.rvFasilitas.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -97,6 +101,7 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
+        handler.removeCallbacksAndMessages(null) // Remove all callbacks to prevent memory leaks
+        _binding = null // Clear binding reference to avoid memory leaks
     }
 }

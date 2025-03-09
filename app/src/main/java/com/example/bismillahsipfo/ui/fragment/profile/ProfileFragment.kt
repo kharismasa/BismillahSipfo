@@ -11,15 +11,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
-import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
-import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment() {
 
