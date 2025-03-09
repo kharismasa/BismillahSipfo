@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlinx-serialization")
     id("kotlin-kapt")
 }
 
@@ -60,10 +61,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-//    implementation("androidx.recyclerview:recyclerview:1.4.0")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("com.google.android.material:material:1.4.0")
-//    implementation("androidx.viewpager2:viewpager2:1.1.0")
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.glide)
+    implementation(libs.material)
+    implementation(libs.androidx.viewpager2)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
     //room
     implementation("androidx.room:room-runtime:2.6.0")

@@ -15,21 +15,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
-import com.example.bismillahsipfo.data.model.User
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.ActivityDetailProfileBinding
 import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
 class DetailProfileActivity : AppCompatActivity() {

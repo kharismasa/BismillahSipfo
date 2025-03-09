@@ -115,19 +115,10 @@ class UserRepository(private val context: Context) {
         return supabase
     }
 
-//    private fun getCurrentUserId(): Int {
-//        val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
-//        val userId = sharedPreferences.getInt("id_pengguna", -1)
-//        Log.d("UserRepository", "Current User ID: $userId") // Cek ID yang diambil dari SharedPreferences
-//        return userId
-//    }
-
     // Ubah visibilitas getCurrentUserId menjadi public atau buat getter
     fun getCurrentUserId(): Int {
         val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
         return sharedPreferences.getInt("id_pengguna", -1)  // Ambil ID pengguna
     }
-
-
 
 }
