@@ -31,7 +31,7 @@ class JadwalDipinjamAdapter : ListAdapter<PeminjamanFasilitas, JadwalDipinjamAda
 
     class JadwalDipinjamDiffCallback : DiffUtil.ItemCallback<PeminjamanFasilitas>() {
         override fun areItemsTheSame(oldItem: PeminjamanFasilitas, newItem: PeminjamanFasilitas): Boolean {
-            return oldItem.id == newItem.id
+            return oldItem.idPeminjaman == newItem.idPeminjaman
         }
 
         override fun areContentsTheSame(oldItem: PeminjamanFasilitas, newItem: PeminjamanFasilitas): Boolean {
