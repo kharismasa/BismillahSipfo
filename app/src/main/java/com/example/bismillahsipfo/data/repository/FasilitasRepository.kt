@@ -6,6 +6,9 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.Storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
 
 class FasilitasRepository {
 
@@ -25,6 +28,25 @@ class FasilitasRepository {
             response ?: emptyList()
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    suspend fun getFasilitasById(id: Int): Fasilitas? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = supabaseClient.from("fasilitas")
+                    .select {
+                        filter {
+                            eq("id_fasilitas", id)
+                        }
+                        limit(1)
+                    }
+                    .decodeSingle<Fasilitas>()
+
+                response
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 }

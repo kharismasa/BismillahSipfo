@@ -14,5 +14,6 @@ data class Fasilitas(
     @SerialName("prosedur_peminjaman") val prosedurPeminjaman: String,
     @SerialName("tatatertib") val tatatertib: String,
     @SerialName("ketentuan_tarif") val ketentuanTarif: String,
-    @SerialName("kontak") val kontak: String
+    @SerialName("kontak") val kontak: String,
+    @SerialName("maps") val maps: String
 )

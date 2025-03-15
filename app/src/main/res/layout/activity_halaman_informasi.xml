@@ -90,7 +90,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvProsedur"
+                android:id="@+id/tvIsiProsedur"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Prosedur" />
@@ -155,6 +155,22 @@
                 android:layout_height="wrap_content"
                 android:text="08123456789" />
 
+            <!-- Jadwal Rutin -->
+            <TextView
+                android:id="@+id/tvJadwalRutin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jadwal Rutin"
+                android:textColor="@color/blue"
+                android:textStyle="bold" />
+
+            <!-- RecyclerView untuk Jadwal Rutin -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewJadwalRutin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@layout/tabel_jadwal_peminjaman" />
+
             <!-- Jadwal Peminjaman -->
             <TextView
                 android:id="@+id/tvJadwalPeminjaman"
@@ -164,9 +180,9 @@
                 android:textColor="@color/blue"
                 android:textStyle="bold" />
 
-            <!-- RecyclerView untuk Jadwal -->
+            <!-- RecyclerView untuk Jadwal Peminjaman-->
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewJadwal"
+                android:id="@+id/recyclerViewJadwalPeminjaman"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 tools:listitem="@layout/tabel_jadwal_peminjaman" />

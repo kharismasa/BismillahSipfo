@@ -7,7 +7,10 @@ import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.databinding.CardFasilitasBinding
 
-class FasilitasAdapter(private val fasilitasList: List<Fasilitas>) : RecyclerView.Adapter<FasilitasAdapter.FasilitasViewHolder>() {
+class FasilitasAdapter(
+    private val fasilitasList: List<Fasilitas>,
+    private val onItemClick: (Fasilitas) -> Unit )
+    : RecyclerView.Adapter<FasilitasAdapter.FasilitasViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FasilitasViewHolder {
         val binding = CardFasilitasBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -17,6 +20,7 @@ class FasilitasAdapter(private val fasilitasList: List<Fasilitas>) : RecyclerVie
     override fun onBindViewHolder(holder: FasilitasViewHolder, position: Int) {
         val fasilitas = fasilitasList[position]
         holder.bind(fasilitas)
+        holder.itemView.setOnClickListener { onItemClick(fasilitas) }
     }
 
     override fun getItemCount(): Int = fasilitasList.size

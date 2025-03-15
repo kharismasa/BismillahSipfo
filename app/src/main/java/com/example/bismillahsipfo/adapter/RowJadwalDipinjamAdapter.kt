@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.databinding.RowJadwalDipinjamBinding
 
-class JadwalDipinjamAdapter : ListAdapter<PeminjamanFasilitas, JadwalDipinjamAdapter.JadwalDipinjamViewHolder>(JadwalDipinjamDiffCallback()) {
+class RowJadwalDipinjamAdapter : ListAdapter<PeminjamanFasilitas, RowJadwalDipinjamAdapter.JadwalDipinjamViewHolder>(JadwalDipinjamDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JadwalDipinjamViewHolder {
         val binding = RowJadwalDipinjamBinding.inflate(LayoutInflater.from(parent.context), parent, false)

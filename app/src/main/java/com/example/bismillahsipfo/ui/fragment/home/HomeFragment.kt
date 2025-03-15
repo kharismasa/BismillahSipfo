@@ -18,6 +18,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.os.Handler
 import android.os.Looper
+import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -91,13 +93,25 @@ class HomeFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val fasilitasList = fasilitasRepository.getFasilitas()
-                fasilitasAdapter = FasilitasAdapter(fasilitasList)
+                fasilitasAdapter = FasilitasAdapter(fasilitasList) { fasilitas ->
+                    // Ini adalah handler untuk klik item
+                    openHalamanInformasi(fasilitas)
+                }
                 binding.rvFasilitas.adapter = fasilitasAdapter
             } catch (e: Exception) {
                 // Handle any errors that occur while loading data
             }
         }
     }
+
+    private fun openHalamanInformasi(fasilitas: Fasilitas) {
+        val intent = Intent(requireContext(), HalamanInformasiActivity::class.java).apply {
+            putExtra("FASILITAS_ID", fasilitas.idFasilitas)
+            // Tambahkan data lain yang mungkin diperlukan oleh HalamanInformasiActivity
+        }
+        startActivity(intent)
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
