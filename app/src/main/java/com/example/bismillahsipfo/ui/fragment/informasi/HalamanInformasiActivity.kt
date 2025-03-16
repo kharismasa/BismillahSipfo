@@ -1,13 +1,21 @@
 package com.example.bismillahsipfo.ui.fragment.informasi
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
+import com.example.bismillahsipfo.data.repository.JadwalRutinViewModel
 import com.example.bismillahsipfo.databinding.ActivityHalamanInformasiBinding
+import com.example.bismillahsipfo.ui.adapter.TabelJadwalPeminjamanAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,6 +24,9 @@ import kotlinx.coroutines.withContext
 class HalamanInformasiActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHalamanInformasiBinding
     private lateinit var fasilitasRepository: FasilitasRepository
+    private lateinit var jadwalRutinAdapter: TabelJadwalRutinAdapter
+    private val jadwalRutinViewModel: JadwalRutinViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,12 +39,16 @@ class HalamanInformasiActivity : AppCompatActivity() {
         if (fasilitasId != -1) {
             // Load dan tampilkan informasi fasilitas berdasarkan fasilitasId
             loadFasilitasInfo(fasilitasId)
+            loadJadwalPeminjaman(fasilitasId)
+            loadJadwalRutin(fasilitasId)
         } else {
             // Handle error: ID fasilitas tidak ditemukan
             finish()
         }
 
         setupClickListeners()
+        setupJadwalRutinRecyclerView()
+        observeJadwalRutin()
     }
 
     private fun loadFasilitasInfo(fasilitasId: Int) {
@@ -55,11 +70,6 @@ class HalamanInformasiActivity : AppCompatActivity() {
         }
     }
 
-    private fun showErrorMessage(message: String) {
-        // Implement this method to show error message to user
-        // For example, you could use a Toast or update a TextView
-    }
-
     private fun displayFasilitasInfo(fasilitas: Fasilitas) {
         with(binding) {
             tvNamaFasilitas.text = fasilitas.namaFasilitas
@@ -75,16 +85,81 @@ class HalamanInformasiActivity : AppCompatActivity() {
             tvIsiKontakInfo.text = fasilitas.kontak
 
             tvIsiAlamat.setOnClickListener {
-                val gmmIntentUri = Uri.parse(fasilitas.maps)
-                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                mapIntent.setPackage("com.google.android.apps.maps")
-                startActivity(mapIntent)
+                try {
+                    // Coba buka dengan URI Google Maps
+                    val gmmIntentUri = Uri.parse(fasilitas.maps)
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    startActivity(mapIntent)
+                } catch (e: ActivityNotFoundException) {
+                    // Jika Google Maps tidak tersedia, buka dengan browser
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(fasilitas.maps))
+                    startActivity(browserIntent)
+                } catch (e: Exception) {
+                    // Tangani kesalahan lainnya
+                    showErrorMessage("Tidak dapat membuka peta: ${e.message}")
+                }
             }
         }
+    }
+
+    private fun loadJadwalPeminjaman(fasilitasId: Int) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                // Mengambil data peminjaman, lapangan yang dipinjam, dan lapangan
+                val peminjamanList = withContext(Dispatchers.IO) {
+                    fasilitasRepository.getPeminjamanFasilitasByFasilitasId(fasilitasId)
+                }
+                val lapanganDipinjamList = withContext(Dispatchers.IO) {
+                    fasilitasRepository.getLapanganDipinjamByFasilitasId(fasilitasId)
+                }
+                val lapanganList = withContext(Dispatchers.IO) {
+                    fasilitasRepository.getLapanganByFasilitasId(fasilitasId)
+                }
+
+                // Mengatur adapter untuk RecyclerView
+                val adapter = TabelJadwalPeminjamanAdapter(peminjamanList, lapanganDipinjamList, lapanganList)
+                binding.recyclerViewJadwalPeminjaman.layoutManager = LinearLayoutManager(this@HalamanInformasiActivity)
+                binding.recyclerViewJadwalPeminjaman.adapter = adapter
+            } catch (e: Exception) {
+                showErrorMessage("Terjadi kesalahan saat memuat jadwal peminjaman")
+            }
+        }
+    }
+
+    private fun setupJadwalRutinRecyclerView() {
+        jadwalRutinAdapter = TabelJadwalRutinAdapter(emptyList())
+        binding.recyclerViewJadwalRutin.apply {
+            layoutManager = LinearLayoutManager(this@HalamanInformasiActivity)
+            adapter = jadwalRutinAdapter
+        }
+    }
+
+    private fun observeJadwalRutin() {
+        jadwalRutinViewModel.jadwalRutinList.observe(this) { jadwalRutinList ->
+            if (jadwalRutinList.isEmpty()) {
+                binding.tvTextKosong.visibility = View.VISIBLE
+                binding.recyclerViewJadwalRutin.visibility = View.GONE
+            } else {
+                binding.tvTextKosong.visibility = View.GONE
+                binding.recyclerViewJadwalRutin.visibility = View.VISIBLE
+                jadwalRutinAdapter.updateData(jadwalRutinList)
+            }
+        }
+    }
+
+    private fun loadJadwalRutin(fasilitasId: Int) {
+        jadwalRutinViewModel.loadJadwalRutin(fasilitasId)
+    }
+
+    private fun showErrorMessage(message: String) {
+        // Implement this method to show error message to user
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
         binding.tvNamaFasilitas.setOnClickListener { finish() }
     }
+
 }

@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+//tabel "lapangan"
 data class Lapangan (
     @SerialName("id_lapangan") val idLapangan: Int,
     @SerialName("id_fasilitas") val idFasilitas: Int,

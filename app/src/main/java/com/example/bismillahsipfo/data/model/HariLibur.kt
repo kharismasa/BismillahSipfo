@@ -1,6 +1,6 @@
 package com.example.bismillahsipfo.data.model
 
-import com.example.bismillahsipfo.data.serializer.LocalDateSerializer
+import LocalDateSerializer
 import com.example.bismillahsipfo.data.serializer.JenisHariLiburSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

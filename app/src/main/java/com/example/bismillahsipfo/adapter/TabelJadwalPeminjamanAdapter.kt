@@ -1,4 +1,157 @@
-package com.example.bismillahsipfo.adapter
+package com.example.bismillahsipfo.ui.adapter
 
-class TabelJadwalPeminjamanAdapter {
+import android.os.Build
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.RecyclerView
+import com.example.bismillahsipfo.data.model.Lapangan
+import com.example.bismillahsipfo.data.model.LapanganDipinjam
+import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+import com.example.bismillahsipfo.databinding.TabelJadwalPeminjamanBinding
+import java.time.format.DateTimeFormatter
+
+class TabelJadwalPeminjamanAdapter(
+    private val peminjamanList: List<PeminjamanFasilitas>,
+    private val lapanganDipinjamList: List<LapanganDipinjam>,
+    private val lapanganList: List<Lapangan>
+) : RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JadwalViewHolder {
+        val binding = TabelJadwalPeminjamanBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return JadwalViewHolder(binding)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
+        val peminjaman = peminjamanList[position]
+
+        // Mendapatkan lapangan yang dipinjam
+        val lapanganDipinjam = lapanganDipinjamList.filter { it.idPeminjaman == peminjaman.idPeminjaman }
+        val lapanganNames = lapanganDipinjam.map { dipinjam ->
+            lapanganList.find { lapangan -> lapangan.idLapangan == dipinjam.idLapangan }?.namaLapangan
+        }.joinToString(", ")
+
+        // Format tanggal
+        val tanggalFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val tanggal = peminjaman.tanggalMulai.format(tanggalFormat)
+        val hari = peminjaman.tanggalMulai.dayOfWeek.toString() // Hari dalam bahasa Indonesia
+        val waktu = "${peminjaman.jamMulai} - ${peminjaman.jamSelesai}"
+        val organisasi = peminjaman.namaOrganisasi
+
+        holder.bind(tanggal, hari, waktu, organisasi, lapanganNames)
+    }
+
+    override fun getItemCount(): Int {
+        return peminjamanList.size
+    }
+
+    inner class JadwalViewHolder(private val binding: TabelJadwalPeminjamanBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(tanggal: String, hari: String, waktu: String, organisasi: String, lapangan: String) {
+            binding.tvTanggal.text = tanggal
+            binding.tvHari.text = hari
+            binding.tvWaktu.text = waktu
+            binding.tvOrganisasi.text = organisasi
+            binding.tvLapangan.text = lapangan
+        }
+    }
 }
+
+
+//import android.os.Build
+//import android.view.LayoutInflater
+//import android.view.View
+//import android.view.ViewGroup
+//import android.widget.TextView
+//import androidx.annotation.RequiresApi
+//import androidx.recyclerview.widget.RecyclerView
+//import com.example.bismillahsipfo.R
+//import com.example.bismillahsipfo.data.model.Lapangan
+//import com.example.bismillahsipfo.data.model.LapanganDipinjam
+//import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+//import java.time.format.TextStyle
+//import java.util.Locale
+//
+//@RequiresApi(Build.VERSION_CODES.O)
+//class TabelJadwalPeminjamanAdapter(
+//    private val peminjamanList: List<PeminjamanFasilitas>,
+//    private val lapanganDipinjamList: List<LapanganDipinjam>,
+//    private val lapanganList: List<Lapangan>
+//) : RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.ViewHolder>() {
+//
+//    private val jadwalList = mutableListOf<JadwalPeminjaman>()
+//
+//    init {
+//        generateJadwalList()
+//    }
+//
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    private fun generateJadwalList() {
+//        for (peminjaman in peminjamanList) {
+//            var currentDate = peminjaman.tanggalMulai
+//            while (!currentDate.isAfter(peminjaman.tanggalSelesai)) {
+//                val hari = currentDate.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("id", "ID"))
+//                val waktu = "${peminjaman.jamMulai} - ${peminjaman.jamSelesai}"
+//                val organisasi = peminjaman.namaOrganisasi
+//
+//                // Cari lapangan yang dipinjam berdasarkan id_peminjaman
+//                val idLapanganList = lapanganDipinjamList
+//                    .filter { it.idPeminjaman == peminjaman.idPeminjaman }
+//                    .map { it.idLapangan }
+//
+//                // Cari nama lapangan dari daftar lapangan
+//                val namaLapanganList = lapanganList
+//                    .filter { idLapanganList.contains(it.idLapangan) }
+//                    .map { it.namaLapangan }
+//
+//                val namaLapangan = namaLapanganList.joinToString(", ")
+//
+//                jadwalList.add(
+//                    JadwalPeminjaman(
+//                        tanggal = currentDate.toString(),
+//                        hari = hari,
+//                        waktu = waktu,
+//                        organisasi = organisasi,
+//                        lapangan = namaLapangan
+//                    )
+//                )
+//
+//                currentDate = currentDate.plusDays(1) // Tambah 1 hari
+//            }
+//        }
+//    }
+//
+//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+//        val view = LayoutInflater.from(parent.context)
+//            .inflate(R.layout.tabel_jadwal_peminjaman, parent, false)
+//        return ViewHolder(view)
+//    }
+//
+//    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+//        val jadwal = jadwalList[position]
+//        holder.tvTanggal.text = jadwal.tanggal
+//        holder.tvHari.text = jadwal.hari
+//        holder.tvWaktu.text = jadwal.waktu
+//        holder.tvOrganisasi.text = jadwal.organisasi
+//        holder.tvLapangan.text = jadwal.lapangan
+//    }
+//
+//    override fun getItemCount(): Int = jadwalList.size
+//
+//    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+//        val tvTanggal: TextView = itemView.findViewById(R.id.tvTanggal)
+//        val tvHari: TextView = itemView.findViewById(R.id.tvHari)
+//        val tvWaktu: TextView = itemView.findViewById(R.id.tvWaktu)
+//        val tvOrganisasi: TextView = itemView.findViewById(R.id.tvOrganisasi)
+//        val tvLapangan: TextView = itemView.findViewById(R.id.tvLapangan)
+//    }
+//
+//    data class JadwalPeminjaman(
+//        val tanggal: String,
+//        val hari: String,
+//        val waktu: String,
+//        val organisasi: String,
+//        val lapangan: String
+//    )
+//}

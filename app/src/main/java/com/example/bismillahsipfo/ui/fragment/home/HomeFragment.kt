@@ -18,8 +18,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.os.Handler
 import android.os.Looper
+import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -27,6 +30,7 @@ class HomeFragment : Fragment() {
     private lateinit var fasilitasAdapter: FasilitasAdapter
     private lateinit var fasilitasRepository: FasilitasRepository
     private val handler = Handler(Looper.getMainLooper())
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

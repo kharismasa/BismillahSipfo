@@ -164,6 +164,15 @@
                 android:textColor="@color/blue"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tvTextKosong"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tidak ada jadwal rutin"
+                android:visibility="gone"
+                android:gravity="center"
+                android:padding="16dp"/>
+
             <!-- RecyclerView untuk Jadwal Rutin -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewJadwalRutin"
@@ -179,6 +188,15 @@
                 android:text="Jadwal Peminjaman"
                 android:textColor="@color/blue"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvTextKosongPeminjaman"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tidak ada jadwal peminjaman"
+                android:visibility="gone"
+                android:gravity="center"
+                android:padding="16dp"/>
 
             <!-- RecyclerView untuk Jadwal Peminjaman-->
             <androidx.recyclerview.widget.RecyclerView

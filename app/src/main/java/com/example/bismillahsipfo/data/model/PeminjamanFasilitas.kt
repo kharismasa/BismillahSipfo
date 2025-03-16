@@ -1,7 +1,7 @@
 package com.example.bismillahsipfo.data.model
 
+import LocalDateSerializer
 import com.example.bismillahsipfo.data.serializer.InstantSerializer
-import com.example.bismillahsipfo.data.serializer.LocalDateSerializer
 import com.example.bismillahsipfo.data.serializer.LocalTimeSerializer
 import com.example.bismillahsipfo.data.serializer.PenggunaKhususSerializer
 import kotlinx.serialization.SerialName
@@ -23,6 +23,7 @@ enum class PenggunaKhusus(val description: String) {
 }
 
 @Serializable
+//tabel "peminjaman_fasilitas"
 data class PeminjamanFasilitas(
     @SerialName("id_peminjaman") val idPeminjaman: Int,
     @SerialName("id_fasilitas") val idFasilitas: Int,
