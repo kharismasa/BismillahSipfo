@@ -23,7 +23,7 @@ enum class StatusPembayaran {
 @Serializable
 data class Pembayaran (
     @SerialName("id_pembayaran") val idPembayaran: String,
-    @SerialName("id_voucher") val idVoucher: Int,
+    @SerialName("id_voucher") val idVoucher: Int?, // Jadikan nullable
     @SerialName("metode_pembayaran") val metodePembayaran: String,
     @SerialName("status_pembayaran") @Serializable(with = StatusPembayaranSerializer::class) val statusPembayaran: StatusPembayaran,
     @SerialName("total_biaya") @Serializable(with = BigDecimalSerializer::class) val totalBiaya: BigDecimal,

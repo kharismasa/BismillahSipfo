@@ -16,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
+import com.example.bismillahsipfo.data.repository.JadwalPeminjamanViewModel
 import com.example.bismillahsipfo.data.repository.JadwalRutinViewModel
 import com.example.bismillahsipfo.databinding.ActivityHalamanInformasiBinding
 import com.example.bismillahsipfo.ui.adapter.TabelJadwalPeminjamanAdapter
@@ -30,6 +31,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
     private lateinit var jadwalRutinAdapter: TabelJadwalRutinAdapter
     private val jadwalRutinViewModel: JadwalRutinViewModel by viewModels()
     private lateinit var peminjamanAdapter: TabelJadwalPeminjamanAdapter
+    private val jadwalPeminjamanViewModel: JadwalPeminjamanViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,17 +46,20 @@ class HalamanInformasiActivity : AppCompatActivity() {
             // Load dan tampilkan informasi fasilitas berdasarkan fasilitasId
             loadFasilitasInfo(fasilitasId)
             loadJadwalRutin(fasilitasId)
+            loadJadwalPeminjaman(fasilitasId)
         } else {
             // Handle error: ID fasilitas tidak ditemukan
             finish()
         }
 
         setupClickListeners()
+
         setupJadwalRutinRecyclerView()
         observeJadwalRutin()
 
-        setupRecyclerView()
-        fetchJadwalPeminjaman()
+        setupJadwalPeminjamanRecyclerView()
+        observeJadwalPeminjaman()
+
     }
 
     private fun loadFasilitasInfo(fasilitasId: Int) {
@@ -134,18 +139,28 @@ class HalamanInformasiActivity : AppCompatActivity() {
         jadwalRutinViewModel.loadJadwalRutin(fasilitasId)
     }
 
-    private fun setupRecyclerView() {
+    private fun setupJadwalPeminjamanRecyclerView() {
         peminjamanAdapter = TabelJadwalPeminjamanAdapter(emptyList())
         binding.recyclerViewJadwalPeminjaman.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewJadwalPeminjaman.adapter = peminjamanAdapter
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun fetchJadwalPeminjaman() {
-        lifecycleScope.launch {
-            val data = fasilitasRepository.getJadwalPeminjaman()
-            peminjamanAdapter.updateData(data)
+    private fun observeJadwalPeminjaman() {
+        jadwalPeminjamanViewModel.jadwalPeminjamanList.observe(this) { jadwalPeminjamanList ->
+            if (jadwalPeminjamanList.isEmpty()) {
+                binding.tvTextKosongPeminjaman.visibility = View.VISIBLE
+                binding.recyclerViewJadwalPeminjaman.visibility = View.GONE
+            } else {
+                binding.tvTextKosongPeminjaman.visibility = View.GONE
+                binding.recyclerViewJadwalPeminjaman.visibility = View.VISIBLE
+                peminjamanAdapter.updateData(jadwalPeminjamanList)
+            }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun loadJadwalPeminjaman(fasilitasId: Int) {
+        jadwalPeminjamanViewModel.loadJadwalPeminjaman(fasilitasId)
     }
 
     private fun showErrorMessage(message: String) {

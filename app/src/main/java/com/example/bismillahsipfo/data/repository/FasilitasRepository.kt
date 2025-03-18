@@ -8,7 +8,9 @@ import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import com.example.bismillahsipfo.data.model.JadwalRutin
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
+import com.example.bismillahsipfo.data.model.Pembayaran
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+import com.example.bismillahsipfo.data.model.StatusPembayaran
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
@@ -72,59 +74,57 @@ class FasilitasRepository {
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    suspend fun getJadwalPeminjaman(): List<JadwalPeminjamanItem> {
-        // Cek apakah BASE_URL dan API_KEY benar
-        println("DEBUG: Supabase URL: ${BuildConfig.BASE_URL}")
-        println("DEBUG: Supabase API Key: ${BuildConfig.API_KEY}")
-        println("DEBUG: Memulai pengambilan data peminjaman...")
-
+    suspend fun getJadwalPeminjaman(fasilitasId: Int): List<JadwalPeminjamanItem> {
         try {
-            // Hapus filter id_fasilitas agar data terambil semua
-            val peminjamanList = supabaseClient.from("peminjaman_fasilitas").select().decodeList<PeminjamanFasilitas>()
-            println("DEBUG: Data peminjaman fasilitas: $peminjamanList")
-
+            val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
+                .select() {
+                    filter {
+                        eq("id_fasilitas", fasilitasId)
+                    }
+                }
+                .decodeList<PeminjamanFasilitas>()
+    
+            val pembayaranList = supabaseClient.from("pembayaran")
+                .select()
+                .decodeList<Pembayaran>()
+    
             val lapanganDipinjam = supabaseClient.from("lapangan_dipinjam").select().decodeList<LapanganDipinjam>()
-            println("DEBUG: Data lapangan dipinjam: $lapanganDipinjam")
-
             val lapanganList = supabaseClient.from("lapangan").select().decodeList<Lapangan>()
-            println("DEBUG: Data lapangan: $lapanganList")
-
+    
             val resultList = mutableListOf<JadwalPeminjamanItem>()
-
+    
             for (peminjaman in peminjamanList) {
-                val tanggalMulai = peminjaman.tanggalMulai
-                val tanggalSelesai = if (peminjaman.tanggalSelesai.isBefore(tanggalMulai)) tanggalMulai else peminjaman.tanggalSelesai
-
-                val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
-                println("DEBUG: Tanggal range untuk ${peminjaman.idPeminjaman}: $tanggalRange")
-
-                val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
-                println("DEBUG: Lapangan ID dipinjam untuk ${peminjaman.idPeminjaman}: $lapanganIds")
-
-                val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
-                println("DEBUG: Nama lapangan untuk ${peminjaman.idPeminjaman}: $namaLapangan")
-
-                tanggalRange.forEach { tanggal ->
-                    resultList.add(
-                        JadwalPeminjamanItem(
-                            tanggal = tanggal,
-                            jamMulai = peminjaman.jamMulai,
-                            jamSelesai = peminjaman.jamSelesai,
-                            namaOrganisasi = peminjaman.namaOrganisasi,
-                            namaLapangan = namaLapangan
+                val pembayaran = pembayaranList.find { it.idPembayaran == peminjaman.idPembayaran }
+                println("DEBUG: Pembayaran untuk peminjaman ${peminjaman.idPeminjaman}: ${pembayaran?.statusPembayaran}")
+                if (pembayaran?.statusPembayaran == StatusPembayaran.SUCCESS) {
+                    val tanggalMulai = peminjaman.tanggalMulai
+                    val tanggalSelesai = if (peminjaman.tanggalSelesai.isBefore(tanggalMulai)) tanggalMulai else peminjaman.tanggalSelesai
+    
+                    val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
+    
+                    val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
+                    val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
+    
+                    tanggalRange.forEach { tanggal ->
+                        resultList.add(
+                            JadwalPeminjamanItem(
+                                tanggal = tanggal,
+                                jamMulai = peminjaman.jamMulai,
+                                jamSelesai = peminjaman.jamSelesai,
+                                namaOrganisasi = peminjaman.namaOrganisasi,
+                                namaLapangan = namaLapangan
+                            )
                         )
-                    )
+                    }
                 }
             }
-
-            println("DEBUG: Data final yang akan ditampilkan: $resultList")
+    
+            println("DEBUG: Total jadwal peminjaman yang ditemukan: ${resultList.size}")
             return resultList.sortedBy { it.tanggal }
         } catch (e: Exception) {
             e.printStackTrace()
-            println("ERROR: Gagal mengambil data peminjaman: ${e.message}")
             return emptyList()
         }
     }
-
 
 }

@@ -16,8 +16,11 @@ object StatusPembayaranSerializer : KSerializer<StatusPembayaran> {
     }
 
     override fun deserialize(decoder: Decoder): StatusPembayaran {
-        val value = decoder.decodeString()
-        return StatusPembayaran.values().find { it.name.equals(value, ignoreCase = true) }
-            ?: throw IllegalArgumentException("Invalid StatusPembayaran: $value")
+        return when (val value = decoder.decodeString().lowercase()) {
+            "success" -> StatusPembayaran.SUCCESS
+            "pending" -> StatusPembayaran.PENDING
+            "failed" -> StatusPembayaran.FAILED
+            else -> throw IllegalArgumentException("Unknown status: $value")
+        }
     }
 }

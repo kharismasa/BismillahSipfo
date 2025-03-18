@@ -12,10 +12,14 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: BigDecimal) {
-        encoder.encodeString(value.toPlainString())
+        encoder.encodeString(value.toString())
     }
 
     override fun deserialize(decoder: Decoder): BigDecimal {
-        return BigDecimal(decoder.decodeString())
+        return try {
+            BigDecimal(decoder.decodeString())
+        } catch (e: Exception) {
+            BigDecimal(decoder.decodeDouble().toString())
+        }
     }
 }
