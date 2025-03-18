@@ -2,61 +2,49 @@ package com.example.bismillahsipfo.ui.adapter
 
 import android.os.Build
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
-import com.example.bismillahsipfo.data.model.Lapangan
-import com.example.bismillahsipfo.data.model.LapanganDipinjam
-import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
-import com.example.bismillahsipfo.databinding.TabelJadwalPeminjamanBinding
-import java.time.format.DateTimeFormatter
+import com.example.bismillahsipfo.R
+import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 
-class TabelJadwalPeminjamanAdapter(
-    private val peminjamanList: List<PeminjamanFasilitas>,
-    private val lapanganDipinjamList: List<LapanganDipinjam>,
-    private val lapanganList: List<Lapangan>
-) : RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
+class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjamanItem>) :
+    RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
+
+    inner class JadwalViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvTanggal: TextView = view.findViewById(R.id.tvTanggal)
+        val tvHari: TextView = view.findViewById(R.id.tvHari)
+        val tvWaktu: TextView = view.findViewById(R.id.tvWaktu)
+        val tvOrganisasi: TextView = view.findViewById(R.id.tvOrganisasi)
+        val tvLapangan: TextView = view.findViewById(R.id.tvLapangan)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JadwalViewHolder {
-        val binding = TabelJadwalPeminjamanBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return JadwalViewHolder(binding)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.tabel_jadwal_peminjaman, parent, false)
+        return JadwalViewHolder(view)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
-        val peminjaman = peminjamanList[position]
-
-        // Mendapatkan lapangan yang dipinjam
-        val lapanganDipinjam = lapanganDipinjamList.filter { it.idPeminjaman == peminjaman.idPeminjaman }
-        val lapanganNames = lapanganDipinjam.map { dipinjam ->
-            lapanganList.find { lapangan -> lapangan.idLapangan == dipinjam.idLapangan }?.namaLapangan
-        }.joinToString(", ")
-
-        // Format tanggal
-        val tanggalFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        val tanggal = peminjaman.tanggalMulai.format(tanggalFormat)
-        val hari = peminjaman.tanggalMulai.dayOfWeek.toString() // Hari dalam bahasa Indonesia
-        val waktu = "${peminjaman.jamMulai} - ${peminjaman.jamSelesai}"
-        val organisasi = peminjaman.namaOrganisasi
-
-        holder.bind(tanggal, hari, waktu, organisasi, lapanganNames)
+        val item = jadwalList[position]
+        holder.tvTanggal.text = item.tanggal.toString()
+        holder.tvHari.text = item.tanggal.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("id"))
+        holder.tvWaktu.text = "${item.jamMulai} - ${item.jamSelesai}"
+        holder.tvOrganisasi.text = item.namaOrganisasi
+        holder.tvLapangan.text = item.namaLapangan.joinToString(", ")
     }
 
-    override fun getItemCount(): Int {
-        return peminjamanList.size
-    }
+    override fun getItemCount(): Int = jadwalList.size
 
-    inner class JadwalViewHolder(private val binding: TabelJadwalPeminjamanBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-        fun bind(tanggal: String, hari: String, waktu: String, organisasi: String, lapangan: String) {
-            binding.tvTanggal.text = tanggal
-            binding.tvHari.text = hari
-            binding.tvWaktu.text = waktu
-            binding.tvOrganisasi.text = organisasi
-            binding.tvLapangan.text = lapangan
-        }
+    fun updateData(newData: List<JadwalPeminjamanItem>) {
+        jadwalList = newData
+        notifyDataSetChanged()
     }
 }
+
 
 
 //import android.os.Build

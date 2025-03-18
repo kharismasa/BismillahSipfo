@@ -1,7 +1,10 @@
 package com.example.bismillahsipfo.data.repository
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import com.example.bismillahsipfo.data.model.JadwalRutin
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
@@ -53,51 +56,6 @@ class FasilitasRepository {
         }
     }
 
-    suspend fun getPeminjamanFasilitasByFasilitasId(fasilitasId: Int): List<PeminjamanFasilitas> {
-        return try {
-            val response = supabaseClient.from("peminjaman_fasilitas")
-                .select() {
-                    filter {
-                        eq("id_fasilitas", fasilitasId)
-                    }
-                }
-                .decodeList<PeminjamanFasilitas>()
-            response ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    suspend fun getLapanganDipinjamByFasilitasId(fasilitasId: Int): List<LapanganDipinjam> {
-        return try {
-            val response = supabaseClient.from("lapangan_dipinjam")
-                .select() {
-                    filter {
-                         eq("id_fasilitas", fasilitasId)
-                    }
-                }
-                .decodeList<LapanganDipinjam>()
-            response ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    suspend fun getLapanganByFasilitasId(fasilitasId: Int): List<Lapangan> {
-        return try {
-            val response = supabaseClient.from("lapangan")
-                .select() {
-                    filter {
-                         eq("id_fasilitas", fasilitasId)
-                    }
-                }
-                .decodeList<Lapangan>()
-            response ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
     suspend fun getJadwalRutinByFasilitasId(fasilitasId: Int): List<JadwalRutin> {
         return try {
             val response = supabaseClient.from("jadwal_rutin")
@@ -112,5 +70,61 @@ class FasilitasRepository {
             emptyList()
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    suspend fun getJadwalPeminjaman(): List<JadwalPeminjamanItem> {
+        // Cek apakah BASE_URL dan API_KEY benar
+        println("DEBUG: Supabase URL: ${BuildConfig.BASE_URL}")
+        println("DEBUG: Supabase API Key: ${BuildConfig.API_KEY}")
+        println("DEBUG: Memulai pengambilan data peminjaman...")
+
+        try {
+            // Hapus filter id_fasilitas agar data terambil semua
+            val peminjamanList = supabaseClient.from("peminjaman_fasilitas").select().decodeList<PeminjamanFasilitas>()
+            println("DEBUG: Data peminjaman fasilitas: $peminjamanList")
+
+            val lapanganDipinjam = supabaseClient.from("lapangan_dipinjam").select().decodeList<LapanganDipinjam>()
+            println("DEBUG: Data lapangan dipinjam: $lapanganDipinjam")
+
+            val lapanganList = supabaseClient.from("lapangan").select().decodeList<Lapangan>()
+            println("DEBUG: Data lapangan: $lapanganList")
+
+            val resultList = mutableListOf<JadwalPeminjamanItem>()
+
+            for (peminjaman in peminjamanList) {
+                val tanggalMulai = peminjaman.tanggalMulai
+                val tanggalSelesai = if (peminjaman.tanggalSelesai.isBefore(tanggalMulai)) tanggalMulai else peminjaman.tanggalSelesai
+
+                val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
+                println("DEBUG: Tanggal range untuk ${peminjaman.idPeminjaman}: $tanggalRange")
+
+                val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
+                println("DEBUG: Lapangan ID dipinjam untuk ${peminjaman.idPeminjaman}: $lapanganIds")
+
+                val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
+                println("DEBUG: Nama lapangan untuk ${peminjaman.idPeminjaman}: $namaLapangan")
+
+                tanggalRange.forEach { tanggal ->
+                    resultList.add(
+                        JadwalPeminjamanItem(
+                            tanggal = tanggal,
+                            jamMulai = peminjaman.jamMulai,
+                            jamSelesai = peminjaman.jamSelesai,
+                            namaOrganisasi = peminjaman.namaOrganisasi,
+                            namaLapangan = namaLapangan
+                        )
+                    )
+                }
+            }
+
+            println("DEBUG: Data final yang akan ditampilkan: $resultList")
+            return resultList.sortedBy { it.tanggal }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("ERROR: Gagal mengambil data peminjaman: ${e.message}")
+            return emptyList()
+        }
+    }
+
 
 }

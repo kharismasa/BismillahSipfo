@@ -25,10 +25,6 @@ class UserRepository(private val context: Context) {
         install(Storage)
     }
 
-    private val sharedPreferences: SharedPreferences by lazy {
-        context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    }
-
     suspend fun loginUser(email: String, password: String): User? {
         // Validasi email sebelum melakukan query
         if (!email.endsWith("@uii.ac.id") && !email.endsWith("@students.uii.ac.id") && !email.endsWith("@alumni.uii.ac.id")) {
@@ -68,7 +64,6 @@ class UserRepository(private val context: Context) {
         }
     }
 
-
     suspend fun updateNoTelp(newNoTelp: String) {
         try {
             val response = supabase.from("pengguna")
@@ -93,7 +88,6 @@ class UserRepository(private val context: Context) {
         }
     }
 
-
     suspend fun updateKartuIdentitas(newUrl: String) {
         try {
             val response = supabase.from("pengguna")
@@ -109,7 +103,6 @@ class UserRepository(private val context: Context) {
             Log.e("UserRepository", "Error updating kartu identitas: ${e.message}")
         }
     }
-
 
     fun getSupabaseClient(): SupabaseClient {
         return supabase

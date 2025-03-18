@@ -3,11 +3,14 @@ package com.example.bismillahsipfo.ui.fragment.informasi
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
@@ -26,8 +29,9 @@ class HalamanInformasiActivity : AppCompatActivity() {
     private lateinit var fasilitasRepository: FasilitasRepository
     private lateinit var jadwalRutinAdapter: TabelJadwalRutinAdapter
     private val jadwalRutinViewModel: JadwalRutinViewModel by viewModels()
+    private lateinit var peminjamanAdapter: TabelJadwalPeminjamanAdapter
 
-
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHalamanInformasiBinding.inflate(layoutInflater)
@@ -39,7 +43,6 @@ class HalamanInformasiActivity : AppCompatActivity() {
         if (fasilitasId != -1) {
             // Load dan tampilkan informasi fasilitas berdasarkan fasilitasId
             loadFasilitasInfo(fasilitasId)
-            loadJadwalPeminjaman(fasilitasId)
             loadJadwalRutin(fasilitasId)
         } else {
             // Handle error: ID fasilitas tidak ditemukan
@@ -49,6 +52,9 @@ class HalamanInformasiActivity : AppCompatActivity() {
         setupClickListeners()
         setupJadwalRutinRecyclerView()
         observeJadwalRutin()
+
+        setupRecyclerView()
+        fetchJadwalPeminjaman()
     }
 
     private fun loadFasilitasInfo(fasilitasId: Int) {
@@ -103,30 +109,6 @@ class HalamanInformasiActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadJadwalPeminjaman(fasilitasId: Int) {
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                // Mengambil data peminjaman, lapangan yang dipinjam, dan lapangan
-                val peminjamanList = withContext(Dispatchers.IO) {
-                    fasilitasRepository.getPeminjamanFasilitasByFasilitasId(fasilitasId)
-                }
-                val lapanganDipinjamList = withContext(Dispatchers.IO) {
-                    fasilitasRepository.getLapanganDipinjamByFasilitasId(fasilitasId)
-                }
-                val lapanganList = withContext(Dispatchers.IO) {
-                    fasilitasRepository.getLapanganByFasilitasId(fasilitasId)
-                }
-
-                // Mengatur adapter untuk RecyclerView
-                val adapter = TabelJadwalPeminjamanAdapter(peminjamanList, lapanganDipinjamList, lapanganList)
-                binding.recyclerViewJadwalPeminjaman.layoutManager = LinearLayoutManager(this@HalamanInformasiActivity)
-                binding.recyclerViewJadwalPeminjaman.adapter = adapter
-            } catch (e: Exception) {
-                showErrorMessage("Terjadi kesalahan saat memuat jadwal peminjaman")
-            }
-        }
-    }
-
     private fun setupJadwalRutinRecyclerView() {
         jadwalRutinAdapter = TabelJadwalRutinAdapter(emptyList())
         binding.recyclerViewJadwalRutin.apply {
@@ -150,6 +132,20 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     private fun loadJadwalRutin(fasilitasId: Int) {
         jadwalRutinViewModel.loadJadwalRutin(fasilitasId)
+    }
+
+    private fun setupRecyclerView() {
+        peminjamanAdapter = TabelJadwalPeminjamanAdapter(emptyList())
+        binding.recyclerViewJadwalPeminjaman.layoutManager = LinearLayoutManager(this)
+        binding.recyclerViewJadwalPeminjaman.adapter = peminjamanAdapter
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun fetchJadwalPeminjaman() {
+        lifecycleScope.launch {
+            val data = fasilitasRepository.getJadwalPeminjaman()
+            peminjamanAdapter.updateData(data)
+        }
     }
 
     private fun showErrorMessage(message: String) {

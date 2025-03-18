@@ -3,7 +3,6 @@ package com.example.bismillahsipfo.data.model
 import LocalDateSerializer
 import com.example.bismillahsipfo.data.serializer.InstantSerializer
 import com.example.bismillahsipfo.data.serializer.LocalTimeSerializer
-import com.example.bismillahsipfo.data.serializer.PenggunaKhususSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -23,7 +22,7 @@ enum class PenggunaKhusus(val description: String) {
 }
 
 @Serializable
-//tabel "peminjaman_fasilitas"
+// tabel "peminjaman_fasilitas"
 data class PeminjamanFasilitas(
     @SerialName("id_peminjaman") val idPeminjaman: Int,
     @SerialName("id_fasilitas") val idFasilitas: Int,
@@ -34,7 +33,7 @@ data class PeminjamanFasilitas(
     @SerialName("nama_organisasi") val namaOrganisasi: String,
     @SerialName("nama_acara") val namaAcara: String,
     @SerialName("id_pembayaran") val idPembayaran: String,
-    @SerialName("pengguna_khusus") @Serializable(with = PenggunaKhususSerializer::class) val penggunaKhusus: PenggunaKhusus,
+    @SerialName("pengguna_khusus") val penggunaKhusus: PenggunaKhusus?, // Jadikan nullable
     @SerialName("id_pengguna") val idPengguna: Int,
     @SerialName("created_at") @Serializable(with = InstantSerializer::class) val createdAtPeminjaman: Instant
 )

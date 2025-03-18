@@ -17,12 +17,6 @@ class JadwalRutinViewModel : ViewModel() {
     private val _jadwalRutinList = MutableLiveData<List<JadwalRutin>>()
     val jadwalRutinList: LiveData<List<JadwalRutin>> get() = _jadwalRutinList
 
-    private val supabaseClient = createSupabaseClient(
-        supabaseUrl = BuildConfig.BASE_URL,
-        supabaseKey = BuildConfig.API_KEY
-    ) {
-        install(Postgrest)
-    }
 
     fun loadJadwalRutin(fasilitasId: Int) {
         viewModelScope.launch {

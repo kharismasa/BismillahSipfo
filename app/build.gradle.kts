@@ -72,16 +72,6 @@ dependencies {
     annotationProcessor ("androidx.room:room-compiler:2.3.0")
     kapt("androidx.room:room-compiler:2.6.0")
 
-    //retrofit
-//    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-//    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-//    implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
-
-    //coroutine support
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.0") //viewModelScope
-//    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.5.0") //liveData
-//    implementation("androidx.room:room-ktx:2.6.0")
-
     // supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.1.2")
