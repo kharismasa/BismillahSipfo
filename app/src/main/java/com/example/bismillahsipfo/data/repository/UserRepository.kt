@@ -11,6 +11,8 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.Storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -112,6 +114,32 @@ class UserRepository(private val context: Context) {
     fun getCurrentUserId(): Int {
         val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
         return sharedPreferences.getInt("id_pengguna", -1)  // Ambil ID pengguna
+    }
+
+    // Fungsi untuk mendapatkan objek User berdasarkan ID pengguna yang sedang login
+    suspend fun getCurrentUser(): User? {
+        val userId = getCurrentUserId()
+        if (userId == -1) {
+            return null
+        }
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = supabase.from("pengguna")
+                    .select{
+                        filter {
+                            eq("id_pengguna", userId)
+                        }
+                        limit(1)
+                    }
+                    .decodeList<User>()
+
+                response.firstOrNull() // Mengambil user pertama atau null jika tidak ditemukan
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
     }
 
 }

@@ -9,7 +9,8 @@ import kotlinx.serialization.encoding.Encoder
 import com.example.bismillahsipfo.data.model.StatusPembayaran
 
 object StatusPembayaranSerializer : KSerializer<StatusPembayaran> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("StatusPembayaran", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("StatusPembayaran", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: StatusPembayaran) {
         encoder.encodeString(value.name.lowercase())

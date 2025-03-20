@@ -1,6 +1,7 @@
 package com.example.bismillahsipfo.data.repository
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.Fasilitas
@@ -10,6 +11,8 @@ import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
 import com.example.bismillahsipfo.data.model.Pembayaran
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+import com.example.bismillahsipfo.data.model.RiwayatPending
+import com.example.bismillahsipfo.data.model.RiwayatSelesai
 import com.example.bismillahsipfo.data.model.StatusPembayaran
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -124,6 +127,122 @@ class FasilitasRepository {
         } catch (e: Exception) {
             e.printStackTrace()
             return emptyList()
+        }
+    }
+
+    // Get Peminjaman data filtered by status 'SUCCESS' or 'FAILED'
+    suspend fun getRiwayatPeminjamanSelesai(): List<RiwayatSelesai> {
+        return try {
+            val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
+                .select()
+                .decodeList<PeminjamanFasilitas>()
+
+            val pembayaranList = supabaseClient.from("pembayaran")
+                .select()
+                .decodeList<Pembayaran>()
+
+            val fasilitasList = supabaseClient.from("fasilitas")
+                .select()
+                .decodeList<Fasilitas>()
+
+            val resultList = mutableListOf<RiwayatSelesai>()
+
+            for (peminjaman in peminjamanList) {
+                val pembayaran = pembayaranList.find { it.idPembayaran == peminjaman.idPembayaran }
+                val fasilitas = fasilitasList.find { it.idFasilitas == peminjaman.idFasilitas }
+
+                if (fasilitas != null && pembayaran != null && pembayaran.statusPembayaran == StatusPembayaran.SUCCESS) {
+                    resultList.add(
+                        RiwayatSelesai(
+                            tanggalMulai = peminjaman.tanggalMulai,
+                            tanggalSelesai = peminjaman.tanggalSelesai,
+                            namaFasilitas = fasilitas.namaFasilitas,
+                            namaAcara = peminjaman.namaAcara,
+                            jamMulai = peminjaman.jamMulai,
+                            jamSelesai = peminjaman.jamSelesai
+                        )
+                    )
+                }
+            }
+
+            Log.d("FasilitasRepository", "Riwayat Selesai: ${resultList.size} item")
+            resultList
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error in getRiwayatPeminjamanSelesai: ${e.message}")
+            emptyList()
+        }
+    }
+
+    // Get Fasilitas data filtered by 'SUCCESS' or 'FAILED' status
+    suspend fun getFasilitasListForSelesai(): List<Fasilitas> {
+        return try {
+            val fasilitasList = supabaseClient.from("fasilitas")
+                .select()
+                .decodeList<Fasilitas>()
+            fasilitasList
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // Get Pembayaran data for 'PENDING' status
+    suspend fun getPembayaranListForPending(): List<Pembayaran> {
+        return try {
+            val pembayaranList = supabaseClient.from("pembayaran")
+                .select()
+                .decodeList<Pembayaran>()
+            val pendingPembayaran = pembayaranList.filter { it.statusPembayaran == StatusPembayaran.PENDING }
+            Log.d("FasilitasRepository", "Pembayaran Pending: ${pendingPembayaran.size} item")
+            pendingPembayaran
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error in getPembayaranListForPending: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getPendingPembayaran(): List<Pembayaran> {
+        Log.d("FasilitasRepository", "Memulai getPendingPembayaran")
+        return try {
+            val result = supabaseClient.from("pembayaran")
+                .select{
+                    filter {
+                        eq("status_pembayaran", "pending")
+                    }
+                }
+                .decodeList<Pembayaran>()
+
+            Log.d("FasilitasRepository", "getPendingPembayaran berhasil. Jumlah data: ${result.size}")
+            Log.d("FasilitasRepository", "Data pembayaran pending: $result")
+
+            // Log individual items
+            result.forEachIndexed { index, pembayaran ->
+                Log.d("FasilitasRepository", "Pembayaran $index: id=${pembayaran.idPembayaran}, status=${pembayaran.statusPembayaran}, totalBiaya=${pembayaran.totalBiaya}")
+            }
+
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error in getPendingPembayaran: ${e.message}")
+            Log.e("FasilitasRepository", "Stack trace: ${e.stackTraceToString()}")
+            emptyList()
+        }
+    }
+
+    suspend fun getPeminjamanByIdPembayaran(idPembayaran: String): PeminjamanFasilitas? {
+        Log.d("FasilitasRepository", "Memulai getPeminjamanByIdPembayaran untuk id: $idPembayaran")
+        return try {
+            val result = supabaseClient.from("peminjaman_fasilitas")
+                .select(){
+                    filter {
+                        eq("id_pembayaran", idPembayaran)
+                    }
+                    limit(1)
+                }
+                .decodeSingle<PeminjamanFasilitas>()
+            Log.d("FasilitasRepository", "getPeminjamanByIdPembayaran berhasil untuk id: $idPembayaran")
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error in getPeminjamanByIdPembayaran: ${e.message}")
+            null
         }
     }
 

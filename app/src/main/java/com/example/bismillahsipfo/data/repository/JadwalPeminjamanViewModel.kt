@@ -22,4 +22,5 @@ class JadwalPeminjamanViewModel : ViewModel() {
             _jadwalPeminjamanList.postValue(result)
         }
     }
+
 }

@@ -26,7 +26,7 @@ data class Pembayaran (
     @SerialName("id_voucher") val idVoucher: Int?, // Jadikan nullable
     @SerialName("metode_pembayaran") val metodePembayaran: String,
     @SerialName("status_pembayaran") @Serializable(with = StatusPembayaranSerializer::class) val statusPembayaran: StatusPembayaran,
-    @SerialName("total_biaya") @Serializable(with = BigDecimalSerializer::class) val totalBiaya: BigDecimal,
+    @SerialName("total_biaya") val totalBiaya: Double,
     @SerialName("created_at") @Serializable(with = InstantSerializer::class) val createdAtPembayaran: Instant,
     @SerialName("waktu_kadaluwarsa") @Serializable(with = InstantSerializer::class) val waktuKadaluwarsa: Instant
 )
