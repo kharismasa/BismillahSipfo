@@ -20,6 +20,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.lang.System.`in`
 
 class FasilitasRepository {
 
@@ -131,10 +132,14 @@ class FasilitasRepository {
     }
 
     // Get Peminjaman data filtered by status 'SUCCESS' or 'FAILED'
-    suspend fun getRiwayatPeminjamanSelesai(): List<RiwayatSelesai> {
+    suspend fun getRiwayatPeminjamanSelesai(idPengguna: Int): List<RiwayatSelesai> {
         return try {
             val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
-                .select()
+                .select(){
+                    filter {
+                        eq("id_pengguna", idPengguna)
+                    }
+                }
                 .decodeList<PeminjamanFasilitas>()
 
             val pembayaranList = supabaseClient.from("pembayaran")
@@ -200,25 +205,34 @@ class FasilitasRepository {
         }
     }
 
-    suspend fun getPendingPembayaran(): List<Pembayaran> {
-        Log.d("FasilitasRepository", "Memulai getPendingPembayaran")
+    suspend fun getPendingPembayaran(idPengguna: Int): List<Pembayaran> {
+        Log.d("FasilitasRepository", "Memulai getPendingPembayaran untuk idPengguna: $idPengguna")
         return try {
-            val result = supabaseClient.from("pembayaran")
-                .select{
+            val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
+                .select(){
                     filter {
+                        eq("id_pengguna", idPengguna)
+                    }
+                }
+                .decodeList<PeminjamanFasilitas>()
+
+            val idPembayaranList = peminjamanList.map { it.idPembayaran }
+
+            val allPendingPembayaran = supabaseClient.from("pembayaran")
+                .select(){
+                    filter {
+//                        `in` ("id_pembayaran", idPembayaranList)
                         eq("status_pembayaran", "pending")
                     }
                 }
                 .decodeList<Pembayaran>()
 
-            Log.d("FasilitasRepository", "getPendingPembayaran berhasil. Jumlah data: ${result.size}")
-            Log.d("FasilitasRepository", "Data pembayaran pending: $result")
-
-            // Log individual items
-            result.forEachIndexed { index, pembayaran ->
-                Log.d("FasilitasRepository", "Pembayaran $index: id=${pembayaran.idPembayaran}, status=${pembayaran.statusPembayaran}, totalBiaya=${pembayaran.totalBiaya}")
+            // Filter pembayaran berdasarkan idPembayaran yang ada dalam idPembayaranList
+            val result = allPendingPembayaran.filter { pembayaran ->
+                idPembayaranList.contains(pembayaran.idPembayaran)
             }
 
+            Log.d("FasilitasRepository", "getPendingPembayaran berhasil. Jumlah data: ${result.size}")
             result
         } catch (e: Exception) {
             Log.e("FasilitasRepository", "Error in getPendingPembayaran: ${e.message}")

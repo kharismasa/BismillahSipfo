@@ -1,5 +1,6 @@
 package com.example.bismillahsipfo.ui.fragment.riwayat
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -15,6 +16,7 @@ import com.example.bismillahsipfo.adapter.RowRiwayatSelesaiAdapter
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
 import com.example.bismillahsipfo.data.model.RiwayatPending
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentRiwayatBinding
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -25,6 +27,7 @@ class RiwayatFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val fasilitasRepository = FasilitasRepository()
+    private lateinit var userRepository: UserRepository
 
     private lateinit var pendingAdapter: RowRiwayatPendingAdapter
     private lateinit var selesaiAdapter: RowRiwayatSelesaiAdapter
@@ -35,6 +38,11 @@ class RiwayatFragment : Fragment() {
     ): View {
         _binding = FragmentRiwayatBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        userRepository = UserRepository(context)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -66,8 +74,9 @@ class RiwayatFragment : Fragment() {
     
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                val currentUserId = userRepository.getCurrentUserId()
                 // Mengambil data dari repository
-                val peminjamanList = fasilitasRepository.getRiwayatPeminjamanSelesai()
+                val peminjamanList = fasilitasRepository.getRiwayatPeminjamanSelesai(currentUserId)
                 val pembayaranList = fasilitasRepository.getPembayaranListForPending()
                 val fasilitasList = fasilitasRepository.getFasilitasListForSelesai()
     
@@ -144,7 +153,8 @@ class RiwayatFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val pendingPembayaranList = fasilitasRepository.getPendingPembayaran()
+                val currentUserId = userRepository.getCurrentUserId()
+                val pendingPembayaranList = fasilitasRepository.getPendingPembayaran(currentUserId)
                 Log.d("RiwayatFragment", "Jumlah pembayaran pending: ${pendingPembayaranList.size}")
     
                 val riwayatPendingList = mutableListOf<RiwayatPending>()

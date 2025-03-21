@@ -8,21 +8,6 @@
     android:background="@color/blue"
     tools:context=".ui.fragment.gamifikasi.GamifikasiFragment">
 
-    <!-- Header -->
-    <TextView
-        android:id="@+id/header_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Gamifikasi"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:gravity="center"
-        android:padding="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <!-- Level Info -->
     <LinearLayout
         android:layout_width="0dp"
@@ -31,15 +16,15 @@
         android:gravity="center_vertical"
         android:paddingVertical="20dp"
         android:paddingHorizontal="30dp"
-        app:layout_constraintTop_toBottomOf="@id/header_title"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:id="@+id/level_info">
 
         <ImageView
             android:id="@+id/thropy"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:src="@drawable/placeholder"
             android:scaleType="centerCrop"
             android:layout_marginEnd="8dp" />
@@ -62,8 +47,28 @@
                 android:id="@+id/tvJumlahPeminjaman"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Jumlah peminjaman"
+                android:text="Rp 0 transaksi lagi"
                 android:textSize="14sp"
+                android:textColor="@color/white"/>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:trackThickness="10dp"
+                app:trackCornerRadius="5dp"
+                app:trackStopIndicatorSize="0dp"
+                app:indicatorTrackGapSize="0dp"
+                app:trackColor="@color/white"
+                app:indicatorColor="@color/dark_blue"
+                android:progress="30" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="lakukan transaksi &amp; nikmati keuntungannya"
+                android:textSize="11sp"
                 android:textColor="@color/white"/>
         </LinearLayout>
     </LinearLayout>
