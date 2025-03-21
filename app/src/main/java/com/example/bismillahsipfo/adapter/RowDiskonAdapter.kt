@@ -1,5 +1,6 @@
 package com.example.bismillahsipfo.adapter
 
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.model.Voucher
 import com.example.bismillahsipfo.databinding.RowDiskonBinding
 
@@ -19,19 +23,21 @@ class RowDiskonAdapter : ListAdapter<Pair<Voucher, Boolean>, RowDiskonAdapter.Vo
     }
 
     override fun onBindViewHolder(holder: VoucherViewHolder, position: Int) {
-        val (voucher, isActive) = getItem(position)
+        val (voucher, isActive) = getItem(position) // Periksa status aktif atau tidak
         holder.bind(voucher, isActive)
     }
 
     class VoucherViewHolder(private val binding: RowDiskonBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(voucher: Voucher, isActive: Boolean) {
+            // Memuat gambar voucher menggunakan Glide
             Glide.with(binding.root)
                 .load(voucher.gambarVoucher)
-                .into(binding.imageVoucher)
+                .placeholder(R.drawable.placeholder) // Placeholder jika gambar belum dimuat
+                .error(R.drawable.empty) // Gambar fallback jika gagal
+                .into(binding.imageVoucher) // Memasukkan gambar ke ImageView
 
+            // Sesuaikan visibilitas nonActive berdasarkan status voucher
             binding.nonActive.visibility = if (isActive) View.GONE else View.VISIBLE
-
-            Log.d("RowDiskonAdapter", "Binding voucher: ${voucher.idVoucher}, isActive: $isActive, imageUrl: ${voucher.gambarVoucher}")
         }
     }
 
@@ -45,3 +51,4 @@ class RowDiskonAdapter : ListAdapter<Pair<Voucher, Boolean>, RowDiskonAdapter.Vo
         }
     }
 }
+

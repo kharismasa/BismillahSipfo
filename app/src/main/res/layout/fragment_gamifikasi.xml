@@ -112,22 +112,24 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvDiskon"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    tools:listitem="@layout/row_diskon" />
 
                 <!-- Keterangan Level -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:text="Keterangan Level"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:paddingTop="16dp"-->
+<!--                    android:text="Keterangan Level"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold" />-->
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="8dp"
-                    android:text="• Level 1 = 0-3 jumlah peminjaman, tidak ada bonus voucher untuk level ini.\n\n• Level 2 = 4-9 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 5%.\n\n• Level 2 = 10-19 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 10%.\n\n• Level 2 = 20-29 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 20%.\n\n• Level 2 = 30 ke atas jumlah peminjaman, peminjam akan mendapatkan diskon voucher 50%." />
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:paddingTop="8dp"-->
+<!--                    android:text="• Level 1 = 0-3 jumlah peminjaman, tidak ada bonus voucher untuk level ini.\n\n• Level 2 = 4-9 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 5%.\n\n• Level 2 = 10-19 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 10%.\n\n• Level 2 = 20-29 jumlah peminjaman, peminjam akan mendapatkan diskon voucher 20%.\n\n• Level 2 = 30 ke atas jumlah peminjaman, peminjam akan mendapatkan diskon voucher 50%." />-->
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

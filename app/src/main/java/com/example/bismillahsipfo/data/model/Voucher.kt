@@ -10,7 +10,7 @@ data class Voucher(
     @SerialName("id_voucher") val idVoucher: Int,
     @SerialName("kode_voucher") val kodeVoucher: String,
     @SerialName("diskon") val diskon: Double,
-    @SerialName("gambar_voucher") val gambarVoucher: String
+    @SerialName("gambar_voucher") val gambarVoucher: String?
 ) {
 //    init {
 //        require(diskon >= BigDecimal.ZERO && diskon <= BigDecimal("100")) {

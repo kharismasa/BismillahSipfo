@@ -13,6 +13,7 @@ import com.example.bismillahsipfo.data.repository.GamifikasiViewModel
 import com.example.bismillahsipfo.data.repository.GamifikasiViewModelFactory
 import com.example.bismillahsipfo.databinding.FragmentGamifikasiBinding
 import com.example.bismillahsipfo.adapter.RowDiskonAdapter
+import com.example.bismillahsipfo.data.model.Voucher
 import java.text.NumberFormat
 import java.util.*
 
@@ -37,7 +38,7 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
         rowDiskonAdapter = RowDiskonAdapter()
         binding.rvDiskon.apply {
             adapter = rowDiskonAdapter
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
         }
     }
 
@@ -76,6 +77,7 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
     
             // Update voucher list
             val activeVoucherId = gamifikasi.idVoucher
+//            rowDiskonAdapter.submitList(vouchers.map { it to true }) // Setiap voucher aktif, tampilkan semuanya
             rowDiskonAdapter.submitList(vouchers.map { it to (it.idVoucher == activeVoucherId) })
             Log.d("GamifikasiFragment", "Active voucher ID: $activeVoucherId")
             Log.d("GamifikasiFragment", "Vouchers: ${vouchers.map { "${it.idVoucher}: ${it.kodeVoucher}" }}")
