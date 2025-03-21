@@ -1,53 +1,102 @@
 package com.example.bismillahsipfo.ui.fragment.gamifikasi
 
 import android.os.Bundle
-import android.view.LayoutInflater
+import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.R
+import com.example.bismillahsipfo.data.repository.GamifikasiUiState
+import com.example.bismillahsipfo.data.repository.GamifikasiViewModel
+import com.example.bismillahsipfo.data.repository.GamifikasiViewModelFactory
+import com.example.bismillahsipfo.databinding.FragmentGamifikasiBinding
+import com.example.bismillahsipfo.adapter.RowDiskonAdapter
+import java.text.NumberFormat
+import java.util.*
 
-/**
- * A simple [Fragment] subclass.
- * Use the [GamifikasiFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class GamifikasiFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
+    private lateinit var binding: FragmentGamifikasiBinding
+    private lateinit var rowDiskonAdapter: RowDiskonAdapter
+    private val viewModel: GamifikasiViewModel by viewModels {
+        GamifikasiViewModelFactory(requireContext())
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding = FragmentGamifikasiBinding.bind(view)
+
+        setupRecyclerView()
+        observeViewModel()
+        viewModel.loadGamifikasiData()
+    }
+
+    private fun setupRecyclerView() {
+        rowDiskonAdapter = RowDiskonAdapter()
+        binding.rvDiskon.apply {
+            adapter = rowDiskonAdapter
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_gamifikasi, container, false)
+    private fun observeViewModel() {
+        viewModel.gamifikasiData.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is GamifikasiUiState.Success -> updateUI(state)
+                is GamifikasiUiState.Error -> showError(state.message)
+                is GamifikasiUiState.Loading -> showLoading()
+            }
+        }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment GamifikasiFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            GamifikasiFragment().apply {
-                arguments = Bundle().apply {
+    private fun updateUI(state: GamifikasiUiState.Success) {
+        hideLoading()
+        with(state) {
+            // Update trophy
+            Glide.with(this@GamifikasiFragment)
+                .load(gamifikasi.tropi)
+                .into(binding.trophy)
+            Log.d("GamifikasiFragment", "Trophy URL: ${gamifikasi.tropi}")
+    
+            // Update level
+            binding.tvLevel.text = "Level ${gamifikasi.level}"
+    
+            // Update jumlah peminjaman
+            val remainingAmount = nextLevelGamifikasi.jumlahPeminjamanMinimal - totalPembayaran
+            val formattedAmount = NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(remainingAmount)
+            binding.tvJumlahPeminjaman.text = "$formattedAmount transaksi lagi"
+            Log.d("GamifikasiFragment", "Remaining amount: $remainingAmount")
+    
+            // Update progress indicator
+            val progress = ((totalPembayaran / nextLevelGamifikasi.jumlahPeminjamanMinimal) * 100).toInt()
+            binding.progressIndicator.progress = progress
+            Log.d("GamifikasiFragment", "Progress: $progress, Total Pembayaran: $totalPembayaran, Jumlah Minimal: ${nextLevelGamifikasi.jumlahPeminjamanMinimal}")
+    
+            // Update voucher list
+            val activeVoucherId = gamifikasi.idVoucher
+            rowDiskonAdapter.submitList(vouchers.map { it to (it.idVoucher == activeVoucherId) })
+            Log.d("GamifikasiFragment", "Active voucher ID: $activeVoucherId")
+            Log.d("GamifikasiFragment", "Vouchers: ${vouchers.map { "${it.idVoucher}: ${it.kodeVoucher}" }}")
+        }
+    }
 
-                }
-            }
+    private fun showError(message: String) {
+        hideLoading()
+        // Implementasi untuk menampilkan pesan error, misalnya dengan Snackbar atau Toast
+    }
+
+    private fun showLoading() {
+        // Implementasi untuk menampilkan loading indicator
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    private fun hideLoading() {
+        binding.progressBar.visibility = View.GONE
+    }
+
+    private fun getDrawableResourceByName(name: String): Int {
+        return resources.getIdentifier(name, "drawable", requireContext().packageName)
     }
 }

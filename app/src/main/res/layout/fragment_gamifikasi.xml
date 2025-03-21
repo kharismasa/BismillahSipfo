@@ -8,6 +8,12 @@
     android:background="@color/blue"
     tools:context=".ui.fragment.gamifikasi.GamifikasiFragment">
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
     <!-- Level Info -->
     <LinearLayout
         android:layout_width="0dp"
@@ -22,7 +28,7 @@
         android:id="@+id/level_info">
 
         <ImageView
-            android:id="@+id/thropy"
+            android:id="@+id/trophy"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:src="@drawable/placeholder"
@@ -104,7 +110,7 @@
                     android:textStyle="bold" />
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_diskon"
+                    android:id="@+id/rvDiskon"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 

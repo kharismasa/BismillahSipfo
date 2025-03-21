@@ -9,5 +9,5 @@ data class Gamifikasi (
     @SerialName("level") val level: Int,
     @SerialName("jumlah_peminjaman_minimal") val jumlahPeminjamanMinimal: Double,
     @SerialName("tropi") val tropi: String,
-    @SerialName("id_voucher") val idVoucher: Int
+    @SerialName("id_voucher") val idVoucher: Int?
 )
