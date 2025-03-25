@@ -19,29 +19,27 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_bold"
-            android:text="07:00"
+            android:text="07:00 - 20:00"
             android:textColor="@android:color/black"
-            android:textSize="20sp"
+            android:textSize="18sp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/tvDate"
-            app:layout_constraintHorizontal_bias="0.1"
-            app:layout_constraintStart_toStartOf="@id/tvDate"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toTopOf="@id/verticalLine"
             app:layout_constraintVertical_bias="0.0" />
 
         <TextView
             android:id="@+id/tvDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
             android:fontFamily="@font/poppins"
             android:text="DD/MM/YY"
             android:textColor="@android:color/black"
             android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/verticalLine"
             app:layout_constraintTop_toBottomOf="@id/tvTime"
-            app:layout_constraintVertical_bias="0.0" />
+            app:layout_constraintStart_toStartOf="@id/tvTime"
+            app:layout_constraintEnd_toEndOf="@id/tvTime" />
 
         <View
             android:id="@+id/verticalLine"
@@ -52,7 +50,7 @@
             android:background="@android:color/darker_gray"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/tvEvent"
-            app:layout_constraintStart_toEndOf="@id/tvDate"
+            app:layout_constraintStart_toEndOf="@id/tvTime"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
             app:layout_constraintWidth_default="wrap" />

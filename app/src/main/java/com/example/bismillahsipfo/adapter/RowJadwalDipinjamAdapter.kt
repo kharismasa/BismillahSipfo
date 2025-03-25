@@ -11,6 +11,7 @@ import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.databinding.RowJadwalDipinjamBinding
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class RowJadwalDipinjamAdapter : ListAdapter<Pair<PeminjamanFasilitas, Fasilitas>, RowJadwalDipinjamAdapter.JadwalDipinjamViewHolder>(JadwalDipinjamDiffCallback()) {
 
@@ -29,10 +30,11 @@ class RowJadwalDipinjamAdapter : ListAdapter<Pair<PeminjamanFasilitas, Fasilitas
         fun bind(pair: Pair<PeminjamanFasilitas, Fasilitas>) {
             val (peminjaman, fasilitas) = pair
             val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-            val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
+//            val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy")
+            val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("id", "ID"))  // Menggunakan Locale Indonesia
 
-//            binding.tvTime.text = "${peminjaman.jamMulai.format(timeFormatter)} - ${peminjaman.jamSelesai.format(timeFormatter)}"
-            binding.tvTime.text = "${peminjaman.jamMulai.format(timeFormatter)}"
+            binding.tvTime.text = "${peminjaman.jamMulai.format(timeFormatter)} - ${peminjaman.jamSelesai.format(timeFormatter)}"
+//            binding.tvTime.text = "${peminjaman.jamMulai.format(timeFormatter)}"
             binding.tvDate.text = peminjaman.tanggalMulai.format(dateFormatter)
             binding.tvEvent.text = peminjaman.namaAcara
             binding.tvFasilitas.text = fasilitas.namaFasilitas

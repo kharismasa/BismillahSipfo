@@ -55,11 +55,10 @@ class DipinjamFasilitasRepository {
 
         // Filter peminjaman berdasarkan pembayaran yang sukses
         val successfulPeminjamanIds = result.map { it.idPembayaran }
-        
+
         return peminjamanList.filter { peminjaman ->
-            successfulPeminjamanIds.contains(peminjaman.idPembayaran) &&
-            (now.isBefore(LocalDateTime.of(peminjaman.tanggalSelesai, peminjaman.jamSelesai)) ||
-             now.isEqual(LocalDateTime.of(peminjaman.tanggalSelesai, peminjaman.jamSelesai)))
+            successfulPeminjamanIds.contains(peminjaman.idPembayaran)
         }
+
     }
 }
