@@ -1,28 +1,33 @@
 package com.example.bismillahsipfo.ui.fragment.home
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.adapter.FasilitasAdapter
+import com.example.bismillahsipfo.adapter.RowJadwalDipinjamAdapter
+import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
+import com.example.bismillahsipfo.data.repository.DipinjamFasilitasRepository
+import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentHomeBinding
+import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
 import com.example.bismillahsipfo.ui.fragment.notification.NotificationActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.os.Handler
-import android.os.Looper
-import com.example.bismillahsipfo.BuildConfig
-import com.example.bismillahsipfo.data.model.Fasilitas
-import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
+import java.time.LocalDate
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -31,6 +36,9 @@ class HomeFragment : Fragment() {
     private lateinit var fasilitasRepository: FasilitasRepository
     private val handler = Handler(Looper.getMainLooper())
 
+    private lateinit var jadwalDipinjamAdapter: RowJadwalDipinjamAdapter
+    private lateinit var peminjamanFasilitasRepository: DipinjamFasilitasRepository
+    private lateinit var userRepository: UserRepository
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,15 +48,20 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         fasilitasRepository = FasilitasRepository()
+        peminjamanFasilitasRepository = DipinjamFasilitasRepository()
+        userRepository = UserRepository(requireContext())
+
 
         setupUI()
         loadUserData()
         setupImageSlider()
         setupFasilitasRecyclerView()
+        setupJadwalDipinjamRecyclerView()
     }
 
     private fun setupUI() {
@@ -116,6 +129,51 @@ class HomeFragment : Fragment() {
         startActivity(intent)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun setupJadwalDipinjamRecyclerView() {
+        binding.rvJadwalFasilitas.layoutManager = LinearLayoutManager(requireContext())
+        jadwalDipinjamAdapter = RowJadwalDipinjamAdapter()
+        binding.rvJadwalFasilitas.adapter = jadwalDipinjamAdapter
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val userId = userRepository.getCurrentUserId()
+                val peminjamanList = peminjamanFasilitasRepository.getPeminjamanByUserAndDate(userId)
+                val jadwalList = mutableListOf<Pair<PeminjamanFasilitas, Fasilitas>>()
+
+                for (peminjaman in peminjamanList) {
+                    val fasilitas = fasilitasRepository.getFasilitasById(peminjaman.idFasilitas)
+                    if (fasilitas != null) {
+                        val startDate = peminjaman.tanggalMulai
+                        val endDate = peminjaman.tanggalSelesai
+                        var currentDate = startDate
+                        while (!currentDate.isAfter(endDate)) {
+                            jadwalList.add(Pair(peminjaman.copy(tanggalMulai = currentDate, tanggalSelesai = currentDate), fasilitas))
+                            currentDate = currentDate.plusDays(1)
+                        }
+                    }
+                }
+
+                jadwalDipinjamAdapter.submitList(jadwalList.sortedBy { it.first.tanggalMulai })
+
+                // Mengatur visibilitas imgEmpty berdasarkan ada tidaknya data
+                if (jadwalList.isEmpty()) {
+                    binding.imgEmpty.visibility = View.VISIBLE
+                    binding.rvJadwalFasilitas.visibility = View.GONE
+                } else {
+                    binding.imgEmpty.visibility = View.GONE
+                    binding.rvJadwalFasilitas.visibility = View.VISIBLE
+                }
+
+            } catch (e: Exception) {
+                // Handle any errors that occur while loading data
+                Log.e("HomeFragment", "Error loading jadwal: ${e.message}")
+                // Jika terjadi error, tampilkan imgEmpty
+                binding.imgEmpty.visibility = View.VISIBLE
+                binding.rvJadwalFasilitas.visibility = View.GONE
+            }
+        }
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

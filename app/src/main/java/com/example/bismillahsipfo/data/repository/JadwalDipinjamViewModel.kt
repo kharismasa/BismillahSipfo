@@ -9,17 +9,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import kotlinx.coroutines.launch
 
-class JadwalPeminjamanViewModel : ViewModel() {
+class JadwalDipinjamViewModel : ViewModel() {
 
     private val repository = FasilitasRepository()
-    private val _jadwalPeminjamanList = MutableLiveData<List<JadwalPeminjamanItem>>()
-    val jadwalPeminjamanList: LiveData<List<JadwalPeminjamanItem>> get() = _jadwalPeminjamanList
+    private val _jadwalDipinjamList = MutableLiveData<List<JadwalPeminjamanItem>>()
+    val jadwalDipinjamList: LiveData<List<JadwalPeminjamanItem>> get() = _jadwalDipinjamList
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun loadJadwalPeminjaman(fasilitasId: Int) {
+    fun loadJadwalDipinjam (fasilitasId: Int) {
         viewModelScope.launch {
             val result = repository.getJadwalPeminjaman(fasilitasId)
-            _jadwalPeminjamanList.postValue(result)
+            _jadwalDipinjamList.postValue(result)
         }
     }
 

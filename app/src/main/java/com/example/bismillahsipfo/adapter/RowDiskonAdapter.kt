@@ -1,7 +1,5 @@
 package com.example.bismillahsipfo.adapter
 
-import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,8 +7,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.model.Voucher
 import com.example.bismillahsipfo.databinding.RowDiskonBinding

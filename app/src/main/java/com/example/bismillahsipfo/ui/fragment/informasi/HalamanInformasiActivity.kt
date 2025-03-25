@@ -10,13 +10,12 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
-import com.example.bismillahsipfo.data.repository.JadwalPeminjamanViewModel
+import com.example.bismillahsipfo.data.repository.JadwalDipinjamViewModel
 import com.example.bismillahsipfo.data.repository.JadwalRutinViewModel
 import com.example.bismillahsipfo.databinding.ActivityHalamanInformasiBinding
 import com.example.bismillahsipfo.ui.adapter.TabelJadwalPeminjamanAdapter
@@ -31,7 +30,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
     private lateinit var jadwalRutinAdapter: TabelJadwalRutinAdapter
     private val jadwalRutinViewModel: JadwalRutinViewModel by viewModels()
     private lateinit var peminjamanAdapter: TabelJadwalPeminjamanAdapter
-    private val jadwalPeminjamanViewModel: JadwalPeminjamanViewModel by viewModels()
+    private val jadwalDipinjamViewModel: JadwalDipinjamViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,7 +145,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
     }
 
     private fun observeJadwalPeminjaman() {
-        jadwalPeminjamanViewModel.jadwalPeminjamanList.observe(this) { jadwalPeminjamanList ->
+        jadwalDipinjamViewModel.jadwalDipinjamList.observe(this) { jadwalPeminjamanList ->
             if (jadwalPeminjamanList.isEmpty()) {
                 binding.tvTextKosongPeminjaman.visibility = View.VISIBLE
                 binding.recyclerViewJadwalPeminjaman.visibility = View.GONE
@@ -160,7 +159,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun loadJadwalPeminjaman(fasilitasId: Int) {
-        jadwalPeminjamanViewModel.loadJadwalPeminjaman(fasilitasId)
+        jadwalDipinjamViewModel.loadJadwalDipinjam(fasilitasId)
     }
 
     private fun showErrorMessage(message: String) {
