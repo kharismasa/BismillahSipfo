@@ -6,16 +6,21 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.bismillahsipfo.ui.fragment.peminjaman.FormPeminjamanFragment
 
 import android.util.Log
+import com.example.bismillahsipfo.ui.fragment.peminjaman.FormTataTertibFragment
+import com.example.bismillahsipfo.ui.fragment.peminjaman.PembayaranFragment
 
 class PeminjamanPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {
 
-    override fun getItemCount(): Int = 1
+    override fun getItemCount(): Int {
+        return 3  // Jumlah fragment yang akan ditampilkan di ViewPager
+    }
 
     override fun createFragment(position: Int): Fragment {
-        Log.d("PeminjamanPagerAdapter", "Creating fragment for position: $position")
         return when (position) {
-            0 -> FormPeminjamanFragment()
-            else -> throw IllegalArgumentException("Invalid position")
+            0 -> FormPeminjamanFragment()  // Ganti dengan fragment pertama
+            1 -> FormTataTertibFragment()  // Ganti dengan fragment kedua
+            2 -> PembayaranFragment()  // Ganti dengan fragment ketiga
+            else -> FormPeminjamanFragment()
         }
     }
 }

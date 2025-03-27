@@ -65,7 +65,7 @@ dependencies {
     implementation(libs.glide)
     kapt ("com.github.bumptech.glide:compiler:4.16.0")
     implementation(libs.material)
-//    implementation(libs.androidx.viewpager2)
+    implementation(libs.androidx.viewpager2)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
     //room

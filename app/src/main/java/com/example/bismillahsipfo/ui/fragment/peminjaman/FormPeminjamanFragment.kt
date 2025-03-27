@@ -86,6 +86,13 @@ class FormPeminjamanFragment : Fragment() {
         editTextJamMulai.setOnClickListener { showTimePicker(true) }
         editTextJamSelesai.setOnClickListener { showTimePicker(false) }
 
+        // Listener untuk tombol Next
+        buttonNext.setOnClickListener {
+            val activity = requireActivity() as PeminjamanActivity
+            val nextItem = (activity.viewPager.currentItem + 1) % activity.viewPager.adapter?.itemCount!!
+            activity.viewPager.setCurrentItem(nextItem, true)  // Navigasi ke fragment berikutnya
+        }
+
         // Listener untuk edittext yang akan menghilangkan hint saat diketik
         editTextNamaAcara.setOnFocusChangeListener { v, hasFocus ->
             if (hasFocus) {
