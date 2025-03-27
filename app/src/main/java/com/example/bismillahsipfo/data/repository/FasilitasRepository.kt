@@ -260,4 +260,43 @@ class FasilitasRepository {
         }
     }
 
+    suspend fun getLapanganByFasilitasId(idFasilitas: Int): List<Lapangan> {
+        return try {
+            supabaseClient.from("lapangan")
+                .select() {
+                    filter {
+                        eq("id_fasilitas", idFasilitas)
+                    }
+                }
+                .decodeList<Lapangan>()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun insertPeminjamanFasilitas(peminjamanFasilitas: PeminjamanFasilitas): Int {
+        return try {
+            val result = supabaseClient.from("peminjaman_fasilitas")
+                .insert(peminjamanFasilitas) {
+                    select()
+                }
+                .decodeSingle<PeminjamanFasilitas>()
+    
+            result.idPeminjaman
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error inserting PeminjamanFasilitas: ${e.message}")
+            -1
+        }
+    }
+
+    suspend fun insertLapanganDipinjam(idPeminjaman: Int, idLapangan: Int) {
+        try {
+            supabaseClient.from("lapangan_dipinjam")
+                .insert(LapanganDipinjam(0, idPeminjaman, idLapangan))
+                
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+    
 }

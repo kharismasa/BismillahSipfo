@@ -1,0 +1,135 @@
+package com.example.bismillahsipfo.data.repository
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.data.model.Lapangan
+import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
+import com.example.bismillahsipfo.data.model.PenggunaKhusus
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+
+class FormPeminjamanViewModel(
+    private val fasilitasRepository: FasilitasRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
+
+    private val _fasilitasList = MutableLiveData<List<Fasilitas>>()
+    val fasilitasList: LiveData<List<Fasilitas>> = _fasilitasList
+
+    private val _lapanganList = MutableLiveData<List<Lapangan>>()
+    val lapanganList: LiveData<List<Lapangan>> = _lapanganList
+
+    private val _showPenggunaKhusus = MutableLiveData<Boolean>()
+    val showPenggunaKhusus: LiveData<Boolean> = _showPenggunaKhusus
+
+    private var selectedFasilitas: Fasilitas? = null
+    private var tanggalMulai: LocalDate? = null
+    private var tanggalSelesai: LocalDate? = null
+    private var jamMulai: LocalTime? = null
+    private var jamSelesai: LocalTime? = null
+    private val selectedLapangan = mutableSetOf<Lapangan>()
+
+    init {
+        loadFasilitas()
+    }
+
+    private fun loadFasilitas() {
+        viewModelScope.launch {
+            _fasilitasList.value = fasilitasRepository.getFasilitas()
+        }
+    }
+
+    fun onFasilitasSelected(fasilitas: Fasilitas) {
+        if (fasilitas.idFasilitas == -1) {
+            // Pilihan default, kosongkan lapangan
+            _lapanganList.value = emptyList()
+            _showPenggunaKhusus.value = false
+            selectedFasilitas = null
+        } else {
+            selectedFasilitas = fasilitas
+            viewModelScope.launch {
+                _lapanganList.value = fasilitasRepository.getLapanganByFasilitasId(fasilitas.idFasilitas)
+            }
+            _showPenggunaKhusus.value = fasilitas.idFasilitas == 30 // UTG
+        }
+    }
+
+    fun setTanggalMulai(date: LocalDate) {
+        tanggalMulai = date
+    }
+
+    fun setTanggalSelesai(date: LocalDate) {
+        tanggalSelesai = date
+    }
+
+    fun setJamMulai(time: LocalTime) {
+        jamMulai = time
+    }
+
+    fun setJamSelesai(time: LocalTime) {
+        jamSelesai = time
+    }
+
+    fun onLapanganChecked(lapangan: Lapangan, isChecked: Boolean) {
+        if (isChecked) {
+            selectedLapangan.add(lapangan)
+        } else {
+            selectedLapangan.remove(lapangan)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun submitForm(namaAcara: String, namaOrganisasi: String, penggunaKhusus: PenggunaKhusus?) {
+        viewModelScope.launch {
+            if (validateForm(namaAcara, namaOrganisasi)) {
+                val idPengguna = userRepository.getCurrentUserId()
+                val peminjamanFasilitas = PeminjamanFasilitas(
+                    idPeminjaman = 0, // ID akan di-generate oleh database
+                    idFasilitas = selectedFasilitas?.idFasilitas ?: 0,
+                    tanggalMulai = tanggalMulai!!,
+                    tanggalSelesai = tanggalSelesai!!,
+                    jamMulai = jamMulai!!,
+                    jamSelesai = jamSelesai!!,
+                    namaOrganisasi = namaOrganisasi,
+                    namaAcara = namaAcara,
+                    idPembayaran = "", // ID pembayaran akan di-generate nanti
+                    penggunaKhusus = penggunaKhusus,
+                    idPengguna = idPengguna,
+                    createdAtPeminjaman = java.time.Instant.now()
+                )
+
+                val idPeminjaman = fasilitasRepository.insertPeminjamanFasilitas(peminjamanFasilitas)
+
+                // Insert lapangan yang dipinjam
+                selectedLapangan.forEach { lapangan ->
+                    fasilitasRepository.insertLapanganDipinjam(idPeminjaman, lapangan.idLapangan)
+                }
+
+                // Navigasi ke halaman berikutnya atau tampilkan pesan sukses
+                // Anda bisa menggunakan LiveData untuk ini
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun validateForm(namaAcara: String, namaOrganisasi: String): Boolean {
+        if (selectedFasilitas == null) return false
+        if (tanggalMulai == null || tanggalSelesai == null) return false
+        if (jamMulai == null || jamSelesai == null) return false
+        if (namaAcara.length > 50) return false
+        if (namaOrganisasi.length > 30) return false
+        if (tanggalMulai!! > tanggalSelesai!!) return false // Tanggal mulai harus lebih kecil atau sama dengan tanggal selesai
+        if (tanggalMulai == tanggalSelesai && jamMulai!! >= jamSelesai!!) return false // Jika tanggal sama, jam mulai harus lebih kecil dari jam selesai
+        if (selectedLapangan.isEmpty()) return false
+        return true
+    }
+
+
+
+}

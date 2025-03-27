@@ -16,4 +16,6 @@ data class Fasilitas(
     @SerialName("ketentuan_tarif") val ketentuanTarif: String,
     @SerialName("kontak") val kontak: String,
     @SerialName("maps") val maps: String
-)
+){
+    override fun toString(): String = namaFasilitas
+}
