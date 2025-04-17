@@ -9,6 +9,7 @@ import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import com.example.bismillahsipfo.data.model.JadwalRutin
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
+import com.example.bismillahsipfo.data.model.Organisasi
 import com.example.bismillahsipfo.data.model.Pembayaran
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.RiwayatPending
@@ -21,6 +22,7 @@ import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.lang.System.`in`
+import java.time.LocalDate
 
 class FasilitasRepository {
 
@@ -62,17 +64,33 @@ class FasilitasRepository {
         }
     }
 
-    suspend fun getJadwalRutinByFasilitasId(fasilitasId: Int): List<JadwalRutin> {
+    suspend fun getJadwalRutinByFasilitasId(fasilitasId: Int): List<JadwalRutinWithOrganisasi> {
         return try {
-            val response = supabaseClient.from("jadwal_rutin")
+            val jadwalRutinList = supabaseClient.from("jadwal_rutin")
                 .select() {
                     filter {
-                         eq("id_fasilitas", fasilitasId)
+                        eq("id_fasilitas", fasilitasId)
                     }
                 }
                 .decodeList<JadwalRutin>()
-            response ?: emptyList()
+
+            Log.d("FasilitasRepository", "Jadwal Rutin fetched: ${jadwalRutinList.size}")
+
+            val organisasiList = supabaseClient.from("organisasi")
+                .select()
+                .decodeList<Organisasi>()
+
+            Log.d("FasilitasRepository", "Organisasi fetched: ${organisasiList.size}")
+
+            val result = jadwalRutinList.map { jadwalRutin ->
+                val organisasi = organisasiList.find { it.idOrganisasi == jadwalRutin.idOrganisasi }
+                JadwalRutinWithOrganisasi(jadwalRutin, organisasi?.namaOrganisasi ?: "")
+            }
+
+            Log.d("FasilitasRepository", "JadwalRutinWithOrganisasi created: ${result.size}")
+            result
         } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error fetching jadwal rutin: ${e.message}")
             emptyList()
         }
     }
@@ -94,35 +112,38 @@ class FasilitasRepository {
     
             val lapanganDipinjam = supabaseClient.from("lapangan_dipinjam").select().decodeList<LapanganDipinjam>()
             val lapanganList = supabaseClient.from("lapangan").select().decodeList<Lapangan>()
-    
+
+            val today = LocalDate.now()
             val resultList = mutableListOf<JadwalPeminjamanItem>()
-    
+
+
             for (peminjaman in peminjamanList) {
                 val pembayaran = pembayaranList.find { it.idPembayaran == peminjaman.idPembayaran }
-                println("DEBUG: Pembayaran untuk peminjaman ${peminjaman.idPeminjaman}: ${pembayaran?.statusPembayaran}")
                 if (pembayaran?.statusPembayaran == StatusPembayaran.SUCCESS) {
-                    val tanggalMulai = peminjaman.tanggalMulai
-                    val tanggalSelesai = if (peminjaman.tanggalSelesai.isBefore(tanggalMulai)) tanggalMulai else peminjaman.tanggalSelesai
-    
-                    val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
-    
-                    val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
-                    val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
-    
-                    tanggalRange.forEach { tanggal ->
-                        resultList.add(
-                            JadwalPeminjamanItem(
-                                tanggal = tanggal,
-                                jamMulai = peminjaman.jamMulai,
-                                jamSelesai = peminjaman.jamSelesai,
-                                namaOrganisasi = peminjaman.namaOrganisasi,
-                                namaLapangan = namaLapangan
+                    val tanggalMulai = maxOf(peminjaman.tanggalMulai, today)
+                    val tanggalSelesai = peminjaman.tanggalSelesai
+
+                    if (tanggalSelesai >= today) {
+                        val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
+
+                        val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
+                        val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
+
+                        tanggalRange.forEach { tanggal ->
+                            resultList.add(
+                                JadwalPeminjamanItem(
+                                    tanggal = tanggal,
+                                    jamMulai = peminjaman.jamMulai,
+                                    jamSelesai = peminjaman.jamSelesai,
+                                    namaOrganisasi = peminjaman.namaOrganisasi,
+                                    namaLapangan = namaLapangan
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
-    
+
             println("DEBUG: Total jadwal peminjaman yang ditemukan: ${resultList.size}")
             return resultList.sortedBy { it.tanggal }
         } catch (e: Exception) {
@@ -298,5 +319,22 @@ class FasilitasRepository {
             // Handle error
         }
     }
+
+    suspend fun getOrganisasiList(): List<String> {
+        return try {
+            val response = supabaseClient.from("organisasi")
+                .select()
+                .decodeList<Organisasi>()
+            response.map { it.namaOrganisasi }
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error fetching organisasi list: ${e.message}")
+            emptyList()
+        }
+    }
     
 }
+
+data class JadwalRutinWithOrganisasi(
+    val jadwalRutin: JadwalRutin,
+    val namaOrganisasi: String
+)

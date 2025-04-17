@@ -53,4 +53,9 @@
     <string name="jargon_peminjaman">Pinjam fasilitas olahraga UII mudah dan cepat, langsung dari genggaman Anda!</string>
     <string name="form_pengajuan">Pengajuan Pinjam Fasilitas Olahraga</string>
 
+    <string-array name="opsi_pinjam_array">
+        <item>Sesuai Jadwal Rutin</item>
+        <item>Diluar Jadwal Rutin</item>
+    </string-array>
+
 </resources>

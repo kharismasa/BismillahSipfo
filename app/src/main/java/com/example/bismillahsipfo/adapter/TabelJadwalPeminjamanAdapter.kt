@@ -9,6 +9,8 @@ import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjamanItem>) :
     RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
@@ -30,8 +32,9 @@ class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjaman
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
         val item = jadwalList[position]
-        holder.tvTanggal.text = item.tanggal.toString()
-        holder.tvHari.text = item.tanggal.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("id"))
+        val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("id"))
+        holder.tvTanggal.text = item.tanggal.format(dateFormatter)
+        holder.tvHari.text = item.tanggal.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale("id"))
         holder.tvWaktu.text = "${item.jamMulai} - ${item.jamSelesai}"
         holder.tvOrganisasi.text = item.namaOrganisasi
         holder.tvLapangan.text = item.namaLapangan.joinToString(", ")

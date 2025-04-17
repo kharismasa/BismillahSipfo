@@ -3,17 +3,18 @@ package com.example.bismillahsipfo.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.bismillahsipfo.data.model.JadwalRutin
+import com.example.bismillahsipfo.data.repository.JadwalRutinWithOrganisasi
 import com.example.bismillahsipfo.databinding.TabelJadwalRutinBinding
 
-class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutin>) :
+class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutinWithOrganisasi>) :
     RecyclerView.Adapter<TabelJadwalRutinAdapter.ViewHolder>() {
 
     class ViewHolder(private val binding: TabelJadwalRutinBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(jadwalRutin: JadwalRutin) {
+        fun bind(jadwalRutinWithOrganisasi: JadwalRutinWithOrganisasi) {
+            val jadwalRutin = jadwalRutinWithOrganisasi.jadwalRutin
             binding.tvHari.text = jadwalRutin.hari
             binding.tvWaktu.text = "${jadwalRutin.waktuMulai} - ${jadwalRutin.waktuSelesai}"
-            binding.tvOrganisasi.text = jadwalRutin.namaOrganisasi
+            binding.tvOrganisasi.text = jadwalRutinWithOrganisasi.namaOrganisasi
         }
     }
 
@@ -28,7 +29,7 @@ class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutin>) :
 
     override fun getItemCount() = jadwalRutinList.size
 
-    fun updateData(newList: List<JadwalRutin>) {
+    fun updateData(newList: List<JadwalRutinWithOrganisasi>) {
         jadwalRutinList = newList
         notifyDataSetChanged()
     }

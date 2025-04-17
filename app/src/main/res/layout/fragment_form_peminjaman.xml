@@ -21,14 +21,66 @@
             android:paddingTop="16dp" />
 
         <!-- Spinner for Fasilitas -->
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fasilitas"/>
         <Spinner
             android:id="@+id/spinner_fasilitas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"/>
 
-        <!-- Date and Time Pickers -->
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Opsi Peminjaman"/>
+        <Spinner
+            android:id="@+id/spinner_opsi_pinjam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Spinner for Fasilitas -->
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kalender"/>
+        <Spinner
+            android:id="@+id/spinner_kalender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <EditText
+            android:id="@+id/edittext_nama_acara"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Nama Acara" />
+
+        <Spinner
+            android:id="@+id/spinner_nama_organisasi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <!-- OPSI DILUAR JADWAL RUTIN -->
+        <EditText
+            android:id="@+id/edittext_nama_organisasi"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama Organisasi/UKM" />
+
         <LinearLayout
+            android:id="@+id/tvTanggal"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -81,6 +133,8 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/tvJam"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -131,24 +185,10 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Nama Acara -->
-        <EditText
-            android:id="@+id/edittext_nama_acara"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Nama Acara"
-            android:layout_marginTop="16dp" />
-
-        <!-- Nama Organisasi/UKM -->
-        <EditText
-            android:id="@+id/edittext_nama_organisasi"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Nama Organisasi/UKM"
-            android:layout_marginTop="16dp" />
-
         <!-- Lapangan yang dipinjam -->
         <TextView
+            android:id="@+id/tvLapangan"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Lapangan yang dipinjam"
@@ -156,6 +196,7 @@
 
         <LinearLayout
             android:id="@+id/container_jenis_lapangan"
+            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -163,15 +204,24 @@
             <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
         </LinearLayout>
 
-<!--        <LinearLayout-->
-<!--            android:id="@+id/container_pengguna_khusus"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="vertical"-->
-<!--            android:padding="16dp">-->
-<!--            &lt;!&ndash; CheckBox akan ditambahkan secara dinamis dari kode Kotlin &ndash;&gt;-->
-<!--        </LinearLayout>-->
+        <!-- Jadwal Tersedia -->
+        <TextView
+            android:id="@+id/tvJadwalTersedia"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jadwal Tersedia"
+            android:layout_marginTop="16dp" />
 
+        <LinearLayout
+            android:id="@+id/container_jadwal_tersedia"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
+        </LinearLayout>
 
         <RadioGroup
             android:id="@+id/container_pengguna_khusus"
@@ -190,23 +240,22 @@
                 android:id="@+id/radio_internal_uii"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Internal UII (1jt)" />
+                android:text="Internal UII" />
 
             <RadioButton
                 android:id="@+id/radio_internal_vs_eksternal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Internal UII vs team eksternal (1.5jt)" />
+                android:text="Internal UII vs team eksternal" />
 
             <RadioButton
                 android:id="@+id/radio_eksternal_uii"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Eksternal UII (2.5jt)" />
+                android:text="Eksternal UII" />
 
         </RadioGroup>
-
-
+        
         <!-- Button Next -->
         <Button
             android:id="@+id/button_next"

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -123,6 +124,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     private fun observeJadwalRutin() {
         jadwalRutinViewModel.jadwalRutinList.observe(this) { jadwalRutinList ->
+            Log.d("HalamanInformasiActivity", "Jadwal rutin observed: ${jadwalRutinList.size}")
             if (jadwalRutinList.isEmpty()) {
                 binding.tvTextKosong.visibility = View.VISIBLE
                 binding.recyclerViewJadwalRutin.visibility = View.GONE
@@ -135,6 +137,7 @@ class HalamanInformasiActivity : AppCompatActivity() {
     }
 
     private fun loadJadwalRutin(fasilitasId: Int) {
+        Log.d("HalamanInformasiActivity", "Loading jadwal rutin for fasilitasId: $fasilitasId")
         jadwalRutinViewModel.loadJadwalRutin(fasilitasId)
     }
 

@@ -12,5 +12,5 @@ data class JadwalRutin(
     @SerialName("waktu_mulai") @Serializable(with = LocalTimeSerializer::class) val waktuMulai: LocalTime,
     @SerialName("waktu_selesai") @Serializable(with = LocalTimeSerializer::class) val waktuSelesai: LocalTime,
     @SerialName("hari") val hari: String,
-    @SerialName("nama_organisasi") val namaOrganisasi: String
+    @SerialName("id_organisasi") val idOrganisasi: Int
 )

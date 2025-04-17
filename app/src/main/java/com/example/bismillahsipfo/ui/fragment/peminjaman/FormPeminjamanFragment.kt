@@ -36,6 +36,13 @@ class FormPeminjamanFragment : Fragment() {
     private lateinit var containerJenisLapangan: LinearLayout
     private lateinit var containerPenggunaKhusus: RadioGroup
     private lateinit var buttonNext: Button
+    private lateinit var spinnerOpsiPinjam: Spinner
+    private lateinit var spinnerNamaOrganisasi: Spinner
+    private lateinit var tvTanggal: LinearLayout
+    private lateinit var tvJam: LinearLayout
+    private lateinit var tvLapangan: TextView
+    private lateinit var tvJadwalTersedia: TextView
+    private lateinit var containerJadwalTersedia: LinearLayout
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_form_peminjaman, container, false)
@@ -66,6 +73,13 @@ class FormPeminjamanFragment : Fragment() {
         containerJenisLapangan = view.findViewById(R.id.container_jenis_lapangan)
         containerPenggunaKhusus = view.findViewById(R.id.container_pengguna_khusus)
         buttonNext = view.findViewById(R.id.button_next)
+        spinnerOpsiPinjam = view.findViewById(R.id.spinner_opsi_pinjam)
+        spinnerNamaOrganisasi = view.findViewById(R.id.spinner_nama_organisasi)
+        tvTanggal = view.findViewById(R.id.tvTanggal)
+        tvJam = view.findViewById(R.id.tvJam)
+        tvLapangan = view.findViewById(R.id.tvLapangan)
+        tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
+        containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -106,7 +120,87 @@ class FormPeminjamanFragment : Fragment() {
             }
         }
 
+        // Inisialisasi spinner opsi pinjam
+        val opsiPinjamAdapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.opsi_pinjam_array,
+            android.R.layout.simple_spinner_item
+        )
+        opsiPinjamAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerOpsiPinjam.adapter = opsiPinjamAdapter
+
+        spinnerOpsiPinjam.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                val selectedOption = parent.getItemAtPosition(position).toString()
+                when (selectedOption) {
+                    "Sesuai Jadwal Rutin" -> {
+                        setSesuaiJadwalRutinVisibility()
+                        loadOrganisasiList()
+                    }
+                    "Diluar Jadwal Rutin" -> {
+                        setDiluarJadwalRutinVisibility()
+                    }
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
         buttonNext.setOnClickListener { submitForm() }
+    }
+
+    private fun setSesuaiJadwalRutinVisibility() {
+        editTextNamaOrganisasi.visibility = View.GONE
+        spinnerNamaOrganisasi.visibility = View.VISIBLE
+        tvTanggal.visibility = View.GONE
+        tvJam.visibility = View.GONE
+        tvLapangan.visibility = View.GONE
+        containerJenisLapangan.visibility = View.GONE
+        tvJadwalTersedia.visibility = View.VISIBLE
+        containerJadwalTersedia.visibility = View.VISIBLE
+
+        // Menampilkan containerPenggunaKhusus
+        containerPenggunaKhusus.visibility = View.VISIBLE
+
+        // Mengatur radio button "Internal UII" menjadi terpilih
+        val radioInternalUii = containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_uii)
+        radioInternalUii.isChecked = true
+
+        // Menonaktifkan interaksi dengan radio button
+        for (i in 0 until containerPenggunaKhusus.childCount) {
+            val child = containerPenggunaKhusus.getChildAt(i)
+            if (child is RadioButton) {
+                child.isEnabled = false
+            }
+        }
+    }
+
+    private fun setDiluarJadwalRutinVisibility() {
+        editTextNamaOrganisasi.visibility = View.VISIBLE
+        spinnerNamaOrganisasi.visibility = View.GONE
+        tvTanggal.visibility = View.VISIBLE
+        tvJam.visibility = View.VISIBLE
+        tvLapangan.visibility = View.VISIBLE
+        containerJenisLapangan.visibility = View.VISIBLE
+        tvJadwalTersedia.visibility = View.GONE
+        containerJadwalTersedia.visibility = View.GONE
+
+        // Menampilkan containerPenggunaKhusus
+        containerPenggunaKhusus.visibility = View.VISIBLE
+
+        // Mengaktifkan kembali interaksi dengan radio button
+        for (i in 0 until containerPenggunaKhusus.childCount) {
+            val child = containerPenggunaKhusus.getChildAt(i)
+            if (child is RadioButton) {
+                child.isEnabled = true
+            }
+        }
+    }
+
+    private fun loadOrganisasiList() {
+        // Implementasi untuk memuat daftar organisasi dari Supabase
+        // dan mengatur adapter untuk spinnerNamaOrganisasi
+        viewModel.loadOrganisasiList()
     }
 
     private fun observeViewModel() {
@@ -137,6 +231,12 @@ class FormPeminjamanFragment : Fragment() {
 
         viewModel.showPenggunaKhusus.observe(viewLifecycleOwner) { show ->
             containerPenggunaKhusus.visibility = if (show) View.VISIBLE else View.GONE
+        }
+
+        viewModel.organisasiList.observe(viewLifecycleOwner) { organisasiList ->
+            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, organisasiList)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerNamaOrganisasi.adapter = adapter
         }
     }
 

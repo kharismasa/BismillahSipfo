@@ -130,6 +130,18 @@ class FormPeminjamanViewModel(
         return true
     }
 
+    private val _organisasiList = MutableLiveData<List<String>>()
+    val organisasiList: LiveData<List<String>> = _organisasiList
 
+    fun loadOrganisasiList() {
+        viewModelScope.launch {
+            try {
+                val organisasi = fasilitasRepository.getOrganisasiList()
+                _organisasiList.value = organisasi
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 
 }
