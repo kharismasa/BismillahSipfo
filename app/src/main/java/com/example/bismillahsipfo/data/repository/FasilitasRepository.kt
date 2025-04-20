@@ -82,15 +82,36 @@ class FasilitasRepository {
 
             Log.d("FasilitasRepository", "Organisasi fetched: ${organisasiList.size}")
 
+            val allLapanganIds = jadwalRutinList.flatMap { it.listLapangan }.distinct()
+            Log.d("FasilitasRepository", "All Lapangan IDs: $allLapanganIds")
+            val lapanganMap = getLapanganByIds(allLapanganIds).associateBy { it.idLapangan }
+            Log.d("FasilitasRepository", "Lapangan Map: ${lapanganMap.keys}")
+
             val result = jadwalRutinList.map { jadwalRutin ->
                 val organisasi = organisasiList.find { it.idOrganisasi == jadwalRutin.idOrganisasi }
-                JadwalRutinWithOrganisasi(jadwalRutin, organisasi?.namaOrganisasi ?: "")
+                val lapanganNames = jadwalRutin.listLapangan.mapNotNull { lapanganMap[it]?.namaLapangan }
+                Log.d("FasilitasRepository", "Jadwal Rutin ${jadwalRutin.idJadwalRutin}: Lapangan IDs = ${jadwalRutin.listLapangan}, Names = $lapanganNames")
+                JadwalRutinWithOrganisasi(jadwalRutin, organisasi?.namaOrganisasi ?: "", lapanganNames)
             }
 
             Log.d("FasilitasRepository", "JadwalRutinWithOrganisasi created: ${result.size}")
             result
         } catch (e: Exception) {
             Log.e("FasilitasRepository", "Error fetching jadwal rutin: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private suspend fun getLapanganByIds(ids: List<Int>): List<Lapangan> {
+        Log.d("FasilitasRepository", "Fetching lapangan for ids: $ids")
+        return try {
+            val lapangan = supabaseClient.from("lapangan")
+                .select()
+                .decodeList<Lapangan>()
+            Log.d("FasilitasRepository", "Fetched ${lapangan.size} lapangan")
+            lapangan
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error fetching lapangan: ${e.message}")
             emptyList()
         }
     }
@@ -336,5 +357,6 @@ class FasilitasRepository {
 
 data class JadwalRutinWithOrganisasi(
     val jadwalRutin: JadwalRutin,
-    val namaOrganisasi: String
+    val namaOrganisasi: String,
+    val namaLapangan: List<String>
 )

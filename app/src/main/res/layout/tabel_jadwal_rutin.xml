@@ -46,5 +46,16 @@
             android:padding="6dp"
             android:textSize="11sp"/>
 
+        <TextView
+            android:id="@+id/tvLapangan"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Outdoor"
+            android:gravity="center_horizontal"
+            android:fontFamily="@font/montserrat_medium"
+            android:padding="6dp"
+            android:textSize="11sp"/>
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

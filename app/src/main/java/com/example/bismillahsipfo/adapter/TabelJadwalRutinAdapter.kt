@@ -15,6 +15,7 @@ class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutinWithO
             binding.tvHari.text = jadwalRutin.hari
             binding.tvWaktu.text = "${jadwalRutin.waktuMulai} - ${jadwalRutin.waktuSelesai}"
             binding.tvOrganisasi.text = jadwalRutinWithOrganisasi.namaOrganisasi
+            binding.tvLapangan.text = jadwalRutinWithOrganisasi.namaLapangan.joinToString(", ")
         }
     }
 
