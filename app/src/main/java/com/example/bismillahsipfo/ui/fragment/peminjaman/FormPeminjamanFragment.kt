@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -87,11 +88,11 @@ class FormPeminjamanFragment : Fragment() {
         spinnerFasilitas.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val selectedFasilitas = parent.getItemAtPosition(position) as Fasilitas
+                Log.d("FormPeminjamanFragment", "Fasilitas selected: ${selectedFasilitas.namaFasilitas}")
                 containerJenisLapangan.removeAllViews()  // Hapus tampilan lapangan lama
                 containerPenggunaKhusus.visibility = View.GONE  // Sembunyikan pengguna khusus
                 viewModel.onFasilitasSelected(selectedFasilitas)
             }
-
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -135,7 +136,7 @@ class FormPeminjamanFragment : Fragment() {
                 when (selectedOption) {
                     "Sesuai Jadwal Rutin" -> {
                         setSesuaiJadwalRutinVisibility()
-                        loadOrganisasiList()
+//                        loadOrganisasiList()
                     }
                     "Diluar Jadwal Rutin" -> {
                         setDiluarJadwalRutinVisibility()
@@ -234,6 +235,7 @@ class FormPeminjamanFragment : Fragment() {
         }
 
         viewModel.organisasiList.observe(viewLifecycleOwner) { organisasiList ->
+            Log.d("FormPeminjamanFragment", "Organisasi list updated: $organisasiList")
             val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, organisasiList)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerNamaOrganisasi.adapter = adapter

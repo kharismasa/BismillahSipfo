@@ -352,7 +352,48 @@ class FasilitasRepository {
             emptyList()
         }
     }
-    
+
+    //Untuk Form Peminjaman
+    suspend fun getOrganisasiListByFasilitasId(idFasilitas: Int): List<String> {
+        return try {
+            Log.d("FasilitasRepository", "Fetching organisasi list for fasilitas ID: $idFasilitas")
+            val jadwalRutinList = supabaseClient.from("jadwal_rutin")
+                .select() {
+                    filter {
+                        eq("id_fasilitas", idFasilitas)
+                    }
+                }
+                .decodeList<JadwalRutin>()
+            Log.d("FasilitasRepository", "Jadwal rutin fetched: ${jadwalRutinList.size}")
+
+            val organisasiIds = jadwalRutinList.map { it.idOrganisasi }.distinct()
+            Log.d("FasilitasRepository", "Unique organisasi IDs: $organisasiIds")
+
+            if (organisasiIds.isEmpty()) {
+                return emptyList()
+            }
+
+            val organisasiList = supabaseClient.from("organisasi")
+                .select() {
+                    filter {
+                        or {
+                            organisasiIds.forEach { id ->
+                                eq("id_organisasi", id)
+                            }
+                        }
+                    }
+                }
+                .decodeList<Organisasi>()
+            Log.d("FasilitasRepository", "Organisasi fetched: ${organisasiList.size}")
+
+            val result = organisasiList.map { it.namaOrganisasi }
+            Log.d("FasilitasRepository", "Final organisasi list: $result")
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error fetching organisasi list by fasilitas: ${e.message}")
+            emptyList()
+        }
+    }
 }
 
 data class JadwalRutinWithOrganisasi(

@@ -1,6 +1,7 @@
 package com.example.bismillahsipfo.data.repository
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -18,6 +19,9 @@ class FormPeminjamanViewModel(
     private val fasilitasRepository: FasilitasRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
+
+    private val _organisasiList = MutableLiveData<List<String>>()
+    val organisasiList: LiveData<List<String>> = _organisasiList
 
     private val _fasilitasList = MutableLiveData<List<Fasilitas>>()
     val fasilitasList: LiveData<List<Fasilitas>> = _fasilitasList
@@ -46,15 +50,20 @@ class FormPeminjamanViewModel(
     }
 
     fun onFasilitasSelected(fasilitas: Fasilitas) {
+        Log.d("FormPeminjamanViewModel", "Fasilitas selected: ${fasilitas.namaFasilitas}")
         if (fasilitas.idFasilitas == -1) {
             // Pilihan default, kosongkan lapangan
             _lapanganList.value = emptyList()
             _showPenggunaKhusus.value = false
             selectedFasilitas = null
+            _organisasiList.value = emptyList()
         } else {
             selectedFasilitas = fasilitas
             viewModelScope.launch {
                 _lapanganList.value = fasilitasRepository.getLapanganByFasilitasId(fasilitas.idFasilitas)
+                val organisasiList = fasilitasRepository.getOrganisasiListByFasilitasId(fasilitas.idFasilitas)
+                Log.d("FormPeminjamanViewModel", "Organisasi list fetched: $organisasiList")
+                _organisasiList.value = organisasiList
             }
             _showPenggunaKhusus.value = fasilitas.idFasilitas == 30 // UTG
         }
@@ -129,9 +138,6 @@ class FormPeminjamanViewModel(
         if (selectedLapangan.isEmpty()) return false
         return true
     }
-
-    private val _organisasiList = MutableLiveData<List<String>>()
-    val organisasiList: LiveData<List<String>> = _organisasiList
 
     fun loadOrganisasiList() {
         viewModelScope.launch {
