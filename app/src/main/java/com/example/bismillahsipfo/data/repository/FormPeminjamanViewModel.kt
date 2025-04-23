@@ -22,9 +22,6 @@ class FormPeminjamanViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-//    private val _organisasiList = MutableLiveData<List<String>>()
-//    val organisasiList: LiveData<List<String>> = _organisasiList
-
     private val _fasilitasList = MutableLiveData<List<Fasilitas>>()
     val fasilitasList: LiveData<List<Fasilitas>> = _fasilitasList
 
@@ -37,7 +34,6 @@ class FormPeminjamanViewModel(
     private val _jadwalTersedia = MutableLiveData<List<JadwalTersedia>>()
     val jadwalTersedia: LiveData<List<JadwalTersedia>> = _jadwalTersedia
 
-//    private var selectedOrganisasi: String? = null
     private val _organisasiList = MutableLiveData<List<Organisasi>>()
     val organisasiList: LiveData<List<Organisasi>> = _organisasiList
 

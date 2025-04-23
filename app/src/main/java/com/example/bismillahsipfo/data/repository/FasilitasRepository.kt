@@ -421,7 +421,7 @@ class FasilitasRepository {
 
         val today = LocalDate.now()
         val startDate = today.plusDays(7)
-        val endDate = startDate.plusWeeks(4) // 4 minggu dari tanggal mulai
+        var endDate = startDate.plusWeeks(4) // 4 minggu dari tanggal mulai
 
         val result = mutableListOf<JadwalTersedia>()
 
@@ -459,10 +459,14 @@ class FasilitasRepository {
                 }
             }
             currentDate = currentDate.plusDays(1)
+            // Jika sudah melewati endDate tapi belum dapat 9 jadwal, reset ke startDate
+            if (currentDate > endDate) {
+                currentDate = startDate
+                endDate = endDate.plusWeeks(4) // Tambah 4 minggu lagi
+            }
         }
-
-        Log.d("FasilitasRepository", "Jadwal tersedia generated. Size: ${result.size}")
-        return result
+        Log.d("FasilitasRepository", "Final jadwal tersedia list: $result")
+        return result.take(9) // Pastikan hanya mengembalikan maksimal 9 jadwal
     }
 }
 
