@@ -7,6 +7,7 @@ import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import com.example.bismillahsipfo.data.model.JadwalRutin
+import com.example.bismillahsipfo.data.model.JadwalTersedia
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
 import com.example.bismillahsipfo.data.model.Organisasi
@@ -22,6 +23,7 @@ import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.lang.System.`in`
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 class FasilitasRepository {
@@ -263,7 +265,6 @@ class FasilitasRepository {
             val allPendingPembayaran = supabaseClient.from("pembayaran")
                 .select(){
                     filter {
-//                        `in` ("id_pembayaran", idPembayaranList)
                         eq("status_pembayaran", "pending")
                     }
                 }
@@ -354,7 +355,7 @@ class FasilitasRepository {
     }
 
     //Untuk Form Peminjaman
-    suspend fun getOrganisasiListByFasilitasId(idFasilitas: Int): List<String> {
+    suspend fun getOrganisasiListByFasilitasId(idFasilitas: Int): List<Organisasi> {
         return try {
             Log.d("FasilitasRepository", "Fetching organisasi list for fasilitas ID: $idFasilitas")
             val jadwalRutinList = supabaseClient.from("jadwal_rutin")
@@ -386,13 +387,82 @@ class FasilitasRepository {
                 .decodeList<Organisasi>()
             Log.d("FasilitasRepository", "Organisasi fetched: ${organisasiList.size}")
 
-            val result = organisasiList.map { it.namaOrganisasi }
-            Log.d("FasilitasRepository", "Final organisasi list: $result")
-            result
+            Log.d("FasilitasRepository", "Final organisasi list: $organisasiList")
+            organisasiList
         } catch (e: Exception) {
             Log.e("FasilitasRepository", "Error fetching organisasi list by fasilitas: ${e.message}")
             emptyList()
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getJadwalTersedia(idFasilitas: Int, idOrganisasi: Int): List<JadwalTersedia> {
+        Log.d("FasilitasRepository", "Getting jadwal tersedia for idFasilitas: $idFasilitas, idOrganisasi: $idOrganisasi")
+
+        val jadwalRutin = supabaseClient.from("jadwal_rutin")
+            .select(){
+                filter {
+                    eq("id_fasilitas", idFasilitas)
+                    eq("id_organisasi", idOrganisasi)
+                }
+            }
+            .decodeList<JadwalRutin>()
+        Log.d("FasilitasRepository", "Jadwal rutin fetched. Size: ${jadwalRutin.size}")
+
+        val peminjaman = supabaseClient.from("peminjaman_fasilitas")
+            .select(){
+                filter {
+                    eq("id_fasilitas", idFasilitas)
+                }
+            }
+            .decodeList<PeminjamanFasilitas>()
+        Log.d("FasilitasRepository", "Peminjaman fetched. Size: ${peminjaman.size}")
+        peminjaman.forEach { Log.d("FasilitasRepository", "Peminjaman: $it") }
+
+        val today = LocalDate.now()
+        val startDate = today.plusDays(7)
+        val endDate = startDate.plusWeeks(4) // 4 minggu dari tanggal mulai
+
+        val result = mutableListOf<JadwalTersedia>()
+
+        var currentDate = startDate
+        while (currentDate <= endDate && result.size < 9) {
+            for (jadwal in jadwalRutin) {
+                if (result.size >= 9) break
+                val dayOfWeekIndonesia = when (currentDate.dayOfWeek) {
+                    DayOfWeek.MONDAY -> "Senin"
+                    DayOfWeek.TUESDAY -> "Selasa"
+                    DayOfWeek.WEDNESDAY -> "Rabu"
+                    DayOfWeek.THURSDAY -> "Kamis"
+                    DayOfWeek.FRIDAY -> "Jumat"
+                    DayOfWeek.SATURDAY -> "Sabtu"
+                    DayOfWeek.SUNDAY -> "Minggu"
+                }
+                if (dayOfWeekIndonesia == jadwal.hari) {
+                    val conflictingPeminjaman = peminjaman.any { p ->
+                        p.tanggalMulai <= currentDate && currentDate <= p.tanggalSelesai &&
+                                ((p.jamMulai <= jadwal.waktuMulai && jadwal.waktuMulai < p.jamSelesai) ||
+                                        (p.jamMulai < jadwal.waktuSelesai && jadwal.waktuSelesai <= p.jamSelesai))
+                    }
+                    if (!conflictingPeminjaman) {
+                        Log.d("FasilitasRepository", "Adding jadwal tersedia: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}")
+                        result.add(JadwalTersedia(
+                            hari = jadwal.hari,
+                            tanggal = currentDate,
+                            waktuMulai = jadwal.waktuMulai,
+                            waktuSelesai = jadwal.waktuSelesai,
+                            listLapangan = jadwal.listLapangan
+                        ))
+                    } else {
+                        Log.d("FasilitasRepository", "Conflicting peminjaman found for: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}")
+                    }
+                }
+            }
+            currentDate = currentDate.plusDays(1)
+        }
+
+        Log.d("FasilitasRepository", "Jadwal tersedia generated. Size: ${result.size}")
+        return result
     }
 }
 

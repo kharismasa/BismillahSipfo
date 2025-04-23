@@ -11,14 +11,14 @@ import java.time.LocalTime
 
 @Serializable
 enum class PenggunaKhusus(val description: String) {
-    @SerialName("Internal UII (1jt)")
-    INTERNAL_UII("Internal UII (1jt)"),
+    @SerialName("Internal UII")
+    INTERNAL_UII("Internal UII"),
 
-    @SerialName("Internal UII vs team eksternal (1.5jt)")
-    INTERNAL_VS_EKSTERNAL("Internal UII vs team eksternal (1.5jt)"),
+    @SerialName("Internal UII vs team eksternal")
+    INTERNAL_VS_EKSTERNAL("Internal UII vs team eksternal"),
 
-    @SerialName("Eksternal UII (2.5jt)")
-    EKSTERNAL_UII("Eksternal UII (2.5jt)")
+    @SerialName("Eksternal UII")
+    EKSTERNAL_UII("Eksternal UII")
 }
 
 @Serializable

@@ -194,17 +194,17 @@
             android:text="Lapangan yang dipinjam"
             android:layout_marginTop="16dp" />
 
+        <!-- Jadwal Tersedia -->
         <LinearLayout
             android:id="@+id/container_jenis_lapangan"
-            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:visibility="visible">
             <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
         </LinearLayout>
 
-        <!-- Jadwal Tersedia -->
         <TextView
             android:id="@+id/tvJadwalTersedia"
             android:visibility="gone"
@@ -213,15 +213,14 @@
             android:text="Jadwal Tersedia"
             android:layout_marginTop="16dp" />
 
-        <LinearLayout
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/container_jadwal_tersedia"
             android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-            <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
-        </LinearLayout>
+        </androidx.recyclerview.widget.RecyclerView>
 
         <RadioGroup
             android:id="@+id/container_pengguna_khusus"

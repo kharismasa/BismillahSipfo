@@ -8,7 +8,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.data.model.JadwalTersedia
 import com.example.bismillahsipfo.data.model.Lapangan
+import com.example.bismillahsipfo.data.model.Organisasi
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.PenggunaKhusus
 import kotlinx.coroutines.launch
@@ -20,8 +22,8 @@ class FormPeminjamanViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _organisasiList = MutableLiveData<List<String>>()
-    val organisasiList: LiveData<List<String>> = _organisasiList
+//    private val _organisasiList = MutableLiveData<List<String>>()
+//    val organisasiList: LiveData<List<String>> = _organisasiList
 
     private val _fasilitasList = MutableLiveData<List<Fasilitas>>()
     val fasilitasList: LiveData<List<Fasilitas>> = _fasilitasList
@@ -31,6 +33,15 @@ class FormPeminjamanViewModel(
 
     private val _showPenggunaKhusus = MutableLiveData<Boolean>()
     val showPenggunaKhusus: LiveData<Boolean> = _showPenggunaKhusus
+
+    private val _jadwalTersedia = MutableLiveData<List<JadwalTersedia>>()
+    val jadwalTersedia: LiveData<List<JadwalTersedia>> = _jadwalTersedia
+
+//    private var selectedOrganisasi: String? = null
+    private val _organisasiList = MutableLiveData<List<Organisasi>>()
+    val organisasiList: LiveData<List<Organisasi>> = _organisasiList
+
+    private var selectedOrganisasiId: Int? = null
 
     private var selectedFasilitas: Fasilitas? = null
     private var tanggalMulai: LocalDate? = null
@@ -66,6 +77,41 @@ class FormPeminjamanViewModel(
                 _organisasiList.value = organisasiList
             }
             _showPenggunaKhusus.value = fasilitas.idFasilitas == 30 // UTG
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun onOrganisasiSelected(organisasi: Organisasi) {
+        Log.d("FormPeminjamanViewModel", "Organisasi selected: ${organisasi.namaOrganisasi}, ID: ${organisasi.idOrganisasi}")
+        selectedOrganisasiId = organisasi.idOrganisasi
+        viewModelScope.launch {
+            loadJadwalTersedia()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun loadJadwalTersedia() {
+        viewModelScope.launch {
+            val idFasilitas = selectedFasilitas?.idFasilitas
+            Log.d("FormPeminjamanViewModel", "Loading jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+
+            if (idFasilitas != null && selectedOrganisasiId != null) {
+                val jadwalList = fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
+                Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
+                _jadwalTersedia.value = jadwalList
+            } else {
+                Log.e("FormPeminjamanViewModel", "Failed to load jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+            }
+        }
+    }
+
+    fun onJadwalTersediaSelected(jadwal: JadwalTersedia) {
+        tanggalMulai = jadwal.tanggal
+        tanggalSelesai = jadwal.tanggal
+        jamMulai = jadwal.waktuMulai
+        jamSelesai = jadwal.waktuSelesai
+        _lapanganList.value = jadwal.listLapangan.mapNotNull { id ->
+            _lapanganList.value?.find { it.idLapangan == id }
         }
     }
 
@@ -137,17 +183,6 @@ class FormPeminjamanViewModel(
         if (tanggalMulai == tanggalSelesai && jamMulai!! >= jamSelesai!!) return false // Jika tanggal sama, jam mulai harus lebih kecil dari jam selesai
         if (selectedLapangan.isEmpty()) return false
         return true
-    }
-
-    fun loadOrganisasiList() {
-        viewModelScope.launch {
-            try {
-                val organisasi = fasilitasRepository.getOrganisasiList()
-                _organisasiList.value = organisasi
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
     }
 
 }

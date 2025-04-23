@@ -2,6 +2,7 @@ package com.example.bismillahsipfo.ui.fragment.peminjaman
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,8 +13,13 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.R
+import com.example.bismillahsipfo.adapter.JadwalTersediaAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
+import com.example.bismillahsipfo.data.model.JadwalTersedia
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.PenggunaKhusus
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
@@ -43,7 +49,8 @@ class FormPeminjamanFragment : Fragment() {
     private lateinit var tvJam: LinearLayout
     private lateinit var tvLapangan: TextView
     private lateinit var tvJadwalTersedia: TextView
-    private lateinit var containerJadwalTersedia: LinearLayout
+    private lateinit var containerJadwalTersedia: RecyclerView
+    private lateinit var jadwalTersediaAdapter: JadwalTersediaAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_form_peminjaman, container, false)
@@ -60,7 +67,46 @@ class FormPeminjamanFragment : Fragment() {
 
         initViews(view)
         setupListeners()
+        setupJadwalTersediaRecyclerView()
         observeViewModel()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun setupJadwalTersediaRecyclerView() {
+        Log.d("FormPeminjamanFragment", "Setting up JadwalTersediaRecyclerView")
+        jadwalTersediaAdapter = JadwalTersediaAdapter(emptyList()) { jadwal ->
+            Log.d("FormPeminjamanFragment", "Jadwal selected: $jadwal")
+            viewModel.onJadwalTersediaSelected(jadwal)
+            updateSelectedJadwal(jadwal)
+        }
+
+        // Menggunakan GridLayoutManager dengan 1 kolom untuk tampilan vertikal penuh
+        val layoutManager = GridLayoutManager(requireContext(), 1, GridLayoutManager.VERTICAL, false)
+        containerJadwalTersedia.layoutManager = layoutManager
+        containerJadwalTersedia.adapter = jadwalTersediaAdapter
+
+        // Menambahkan ItemDecoration untuk memberikan jarak antar item
+        val itemDecoration = object : RecyclerView.ItemDecoration() {
+            override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+                val position = parent.getChildAdapterPosition(view)
+                outRect.bottom = resources.getDimensionPixelSize(R.dimen.item_jadwal_margin)
+                if (position == 0) {
+                    outRect.top = resources.getDimensionPixelSize(R.dimen.item_jadwal_margin)
+                }
+            }
+        }
+        containerJadwalTersedia.addItemDecoration(itemDecoration)
+
+        Log.d("FormPeminjamanFragment", "JadwalTersediaRecyclerView setup complete")
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateSelectedJadwal(jadwal: JadwalTersedia) {
+        editTextTanggalMulai.setText(jadwal.tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextTanggalSelesai.setText(jadwal.tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextJamMulai.setText(jadwal.waktuMulai.format(DateTimeFormatter.ofPattern("HH:mm")))
+        editTextJamSelesai.setText(jadwal.waktuSelesai.format(DateTimeFormatter.ofPattern("HH:mm")))
+        updateLapanganCheckboxes(viewModel.lapanganList.value ?: emptyList())
     }
 
     private fun initViews(view: View) {
@@ -92,6 +138,16 @@ class FormPeminjamanFragment : Fragment() {
                 containerJenisLapangan.removeAllViews()  // Hapus tampilan lapangan lama
                 containerPenggunaKhusus.visibility = View.GONE  // Sembunyikan pengguna khusus
                 viewModel.onFasilitasSelected(selectedFasilitas)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        spinnerNamaOrganisasi.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                val selectedOrganisasi = viewModel.organisasiList.value?.get(position)
+                if (selectedOrganisasi != null) {
+                    viewModel.onOrganisasiSelected(selectedOrganisasi)
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -198,12 +254,6 @@ class FormPeminjamanFragment : Fragment() {
         }
     }
 
-    private fun loadOrganisasiList() {
-        // Implementasi untuk memuat daftar organisasi dari Supabase
-        // dan mengatur adapter untuk spinnerNamaOrganisasi
-        viewModel.loadOrganisasiList()
-    }
-
     private fun observeViewModel() {
         viewModel.fasilitasList.observe(viewLifecycleOwner) { fasilitas ->
             val fasilitasList = listOf(
@@ -236,9 +286,14 @@ class FormPeminjamanFragment : Fragment() {
 
         viewModel.organisasiList.observe(viewLifecycleOwner) { organisasiList ->
             Log.d("FormPeminjamanFragment", "Organisasi list updated: $organisasiList")
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, organisasiList)
+            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, organisasiList.map { it.namaOrganisasi })
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerNamaOrganisasi.adapter = adapter
+        }
+
+        viewModel.jadwalTersedia.observe(viewLifecycleOwner) { jadwalList ->
+            Log.d("FormPeminjamanFragment", "Jadwal tersedia updated. Size: ${jadwalList.size}")
+            jadwalTersediaAdapter.updateJadwalList(jadwalList)
         }
     }
 
@@ -287,6 +342,7 @@ class FormPeminjamanFragment : Fragment() {
             lapanganList.forEach { lapangan ->
                 val checkbox = CheckBox(context)
                 checkbox.text = lapangan.namaLapangan
+                checkbox.isChecked = true // Set default to checked
                 checkbox.setOnCheckedChangeListener { _, isChecked ->
                     viewModel.onLapanganChecked(lapangan, isChecked)
                 }
