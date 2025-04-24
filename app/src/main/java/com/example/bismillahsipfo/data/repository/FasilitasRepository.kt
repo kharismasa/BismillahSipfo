@@ -13,7 +13,6 @@ import com.example.bismillahsipfo.data.model.LapanganDipinjam
 import com.example.bismillahsipfo.data.model.Organisasi
 import com.example.bismillahsipfo.data.model.Pembayaran
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
-import com.example.bismillahsipfo.data.model.RiwayatPending
 import com.example.bismillahsipfo.data.model.RiwayatSelesai
 import com.example.bismillahsipfo.data.model.StatusPembayaran
 import io.github.jan.supabase.createSupabaseClient
@@ -22,7 +21,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.lang.System.`in`
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -92,7 +90,7 @@ class FasilitasRepository {
             val result = jadwalRutinList.map { jadwalRutin ->
                 val organisasi = organisasiList.find { it.idOrganisasi == jadwalRutin.idOrganisasi }
                 val lapanganNames = jadwalRutin.listLapangan.mapNotNull { lapanganMap[it]?.namaLapangan }
-                Log.d("FasilitasRepository", "Jadwal Rutin ${jadwalRutin.idJadwalRutin}: Lapangan IDs = ${jadwalRutin.listLapangan}, Names = $lapanganNames")
+                Log.d("FasilitasRepository", "Jadwal Rutin ${jadwalRutin.idJadwalRutin}: Lapangan IDs = ${jadwalRutin.listLapangan}, Names = $lapanganNames, Tipe Jadwal = ${jadwalRutin.tipeJadwal}, Urutan Slot = ${jadwalRutin.urutanSlot}")
                 JadwalRutinWithOrganisasi(jadwalRutin, organisasi?.namaOrganisasi ?: "", lapanganNames)
             }
 
@@ -342,18 +340,6 @@ class FasilitasRepository {
         }
     }
 
-    suspend fun getOrganisasiList(): List<String> {
-        return try {
-            val response = supabaseClient.from("organisasi")
-                .select()
-                .decodeList<Organisasi>()
-            response.map { it.namaOrganisasi }
-        } catch (e: Exception) {
-            Log.e("FasilitasRepository", "Error fetching organisasi list: ${e.message}")
-            emptyList()
-        }
-    }
-
     //Untuk Form Peminjaman
     suspend fun getOrganisasiListByFasilitasId(idFasilitas: Int): List<Organisasi> {
         return try {
@@ -445,16 +431,18 @@ class FasilitasRepository {
                                         (p.jamMulai < jadwal.waktuSelesai && jadwal.waktuSelesai <= p.jamSelesai))
                     }
                     if (!conflictingPeminjaman) {
-                        Log.d("FasilitasRepository", "Adding jadwal tersedia: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}")
+                        Log.d("FasilitasRepository", "Adding jadwal tersedia: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
                         result.add(JadwalTersedia(
                             hari = jadwal.hari,
                             tanggal = currentDate,
                             waktuMulai = jadwal.waktuMulai,
                             waktuSelesai = jadwal.waktuSelesai,
-                            listLapangan = jadwal.listLapangan
+                            listLapangan = jadwal.listLapangan,
+                            tipeJadwal = jadwal.tipeJadwal,
+                            urutanSlot = jadwal.urutanSlot
                         ))
                     } else {
-                        Log.d("FasilitasRepository", "Conflicting peminjaman found for: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}")
+                        Log.d("FasilitasRepository", "Conflicting peminjaman found for: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
                     }
                 }
             }

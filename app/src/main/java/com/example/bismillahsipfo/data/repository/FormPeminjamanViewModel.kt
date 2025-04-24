@@ -109,6 +109,8 @@ class FormPeminjamanViewModel(
         _lapanganList.value = jadwal.listLapangan.mapNotNull { id ->
             _lapanganList.value?.find { it.idLapangan == id }
         }
+        // Tambahkan logging untuk tipe_jadwal dan urutan_slot
+        Log.d("FormPeminjamanViewModel", "Jadwal tersedia selected: Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
     }
 
     fun setTanggalMulai(date: LocalDate) {
