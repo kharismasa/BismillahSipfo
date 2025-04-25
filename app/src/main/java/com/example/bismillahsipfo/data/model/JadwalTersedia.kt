@@ -10,5 +10,6 @@ data class JadwalTersedia(
     val waktuSelesai: LocalTime,
     val listLapangan: List<Int>,
     val tipeJadwal: String,
-    val urutanSlot: Int?
+    val urutanSlot: Int?,
+    val isHoliday: Boolean
 )

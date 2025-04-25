@@ -410,18 +410,12 @@ class FasilitasRepository {
 
         val today = LocalDate.now()
         val startDate = today.plusDays(7)
-        var endDate = startDate.plusWeeks(4) // 4 minggu dari tanggal mulai
+        var endDate = startDate.plusWeeks(12) // Perluas rentang pencarian menjadi 12 minggu
 
         val result = mutableListOf<JadwalTersedia>()
 
         var currentDate = startDate
         while (currentDate <= endDate && result.size < 9) {
-            if (hariLibur.any { it.dateHariLibur == currentDate }) {
-                Log.d("FasilitasRepository", "Skipping holiday: $currentDate")
-                currentDate = currentDate.plusDays(1)
-                continue
-            }
-
             for (jadwal in jadwalRutin) {
                 if (result.size >= 9) break
                 val dayOfWeekIndonesia = when (currentDate.dayOfWeek) {
@@ -434,34 +428,37 @@ class FasilitasRepository {
                     DayOfWeek.SUNDAY -> "Minggu"
                 }
                 if (dayOfWeekIndonesia == jadwal.hari) {
-                    val conflictingPeminjaman = peminjaman.any { p ->
-                        p.tanggalMulai <= currentDate && currentDate <= p.tanggalSelesai &&
-                                ((p.jamMulai <= jadwal.waktuMulai && jadwal.waktuMulai < p.jamSelesai) ||
-                                        (p.jamMulai < jadwal.waktuSelesai && jadwal.waktuSelesai <= p.jamSelesai))
-                    }
-                    if (!conflictingPeminjaman) {
-                        Log.d("FasilitasRepository", "Adding jadwal tersedia: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
-                        result.add(JadwalTersedia(
-                            hari = jadwal.hari,
-                            tanggal = currentDate,
-                            waktuMulai = jadwal.waktuMulai,
-                            waktuSelesai = jadwal.waktuSelesai,
-                            listLapangan = jadwal.listLapangan,
-                            tipeJadwal = jadwal.tipeJadwal,
-                            urutanSlot = jadwal.urutanSlot
-                        ))
+                    val isHoliday = hariLibur.any { it.dateHariLibur == currentDate }
+                    if (!isHoliday) {
+                        val conflictingPeminjaman = peminjaman.any { p ->
+                            p.tanggalMulai <= currentDate && currentDate <= p.tanggalSelesai &&
+                                    ((p.jamMulai <= jadwal.waktuMulai && jadwal.waktuMulai < p.jamSelesai) ||
+                                            (p.jamMulai < jadwal.waktuSelesai && jadwal.waktuSelesai <= p.jamSelesai))
+                        }
+                        if (!conflictingPeminjaman) {
+                            val newJadwal = JadwalTersedia(
+                                hari = jadwal.hari,
+                                tanggal = currentDate,
+                                waktuMulai = jadwal.waktuMulai,
+                                waktuSelesai = jadwal.waktuSelesai,
+                                listLapangan = jadwal.listLapangan,
+                                tipeJadwal = jadwal.tipeJadwal,
+                                urutanSlot = jadwal.urutanSlot,
+                                isHoliday = false
+                            )
+                            result.add(newJadwal)
+                            Log.d("FasilitasRepository", "Adding jadwal tersedia: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}, Holiday: false")
+                        } else {
+                            Log.d("FasilitasRepository", "Conflicting peminjaman found for: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
+                        }
                     } else {
-                        Log.d("FasilitasRepository", "Conflicting peminjaman found for: ${jadwal.hari}, $currentDate, ${jadwal.waktuMulai}-${jadwal.waktuSelesai}, Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
+                        Log.d("FasilitasRepository", "Skipping holiday: $currentDate")
                     }
                 }
             }
             currentDate = currentDate.plusDays(1)
-            // Jika sudah melewati endDate tapi belum dapat 9 jadwal, reset ke startDate
-            if (currentDate > endDate) {
-                currentDate = startDate
-                endDate = endDate.plusWeeks(4) // Tambah 4 minggu lagi
-            }
         }
+
         Log.d("FasilitasRepository", "Final jadwal tersedia list: $result")
         return result.take(9) // Pastikan hanya mengembalikan maksimal 9 jadwal
     }
