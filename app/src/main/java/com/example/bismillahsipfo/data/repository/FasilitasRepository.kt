@@ -397,14 +397,29 @@ class FasilitasRepository {
             .decodeList<JadwalRutin>()
         Log.d("FasilitasRepository", "Jadwal rutin fetched. Size: ${jadwalRutin.size}")
 
-        val peminjaman = supabaseClient.from("peminjaman_fasilitas")
+        // Ambil semua pembayaran dengan status "success"
+        val successfulPembayaran = supabaseClient.from("pembayaran")
+            .select(){
+                filter {
+                    eq("status_pembayaran", "success")
+                }
+            }
+            .decodeList<Pembayaran>()
+        Log.d("FasilitasRepository", "Successful pembayaran fetched. Size: ${successfulPembayaran.size}")
+
+        // Ambil peminjaman fasilitas dan filter berdasarkan pembayaran yang sukses
+        val allPeminjaman = supabaseClient.from("peminjaman_fasilitas")
             .select(){
                 filter {
                     eq("id_fasilitas", idFasilitas)
                 }
             }
             .decodeList<PeminjamanFasilitas>()
-        Log.d("FasilitasRepository", "Peminjaman fetched. Size: ${peminjaman.size}")
+
+        val peminjaman = allPeminjaman.filter { peminjaman ->
+            successfulPembayaran.any { it.idPembayaran == peminjaman.idPembayaran }
+        }
+        Log.d("FasilitasRepository", "Filtered peminjaman fetched. Size: ${peminjaman.size}")
 
         val hariLibur = getHariLibur()
         Log.d("FasilitasRepository", "Hari libur fetched. Size: ${hariLibur.size}")
