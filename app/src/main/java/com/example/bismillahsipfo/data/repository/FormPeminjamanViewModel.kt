@@ -13,7 +13,9 @@ import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.Organisasi
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.PenggunaKhusus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -85,6 +87,22 @@ class FormPeminjamanViewModel(
         }
     }
 
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    private fun loadJadwalTersedia() {
+//        viewModelScope.launch {
+//            val idFasilitas = selectedFasilitas?.idFasilitas
+//            Log.d("FormPeminjamanViewModel", "Loading jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+//
+//            if (idFasilitas != null && selectedOrganisasiId != null) {
+//                val jadwalList = fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
+//                Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
+//                _jadwalTersedia.value = jadwalList
+//            } else {
+//                Log.e("FormPeminjamanViewModel", "Failed to load jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+//            }
+//        }
+//    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJadwalTersedia() {
         viewModelScope.launch {
@@ -92,9 +110,16 @@ class FormPeminjamanViewModel(
             Log.d("FormPeminjamanViewModel", "Loading jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
 
             if (idFasilitas != null && selectedOrganisasiId != null) {
-                val jadwalList = fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
-                Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
-                _jadwalTersedia.value = jadwalList
+                try {
+                    val jadwalList = withContext(Dispatchers.IO) {
+                        fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
+                    }
+                    Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
+                    _jadwalTersedia.value = jadwalList
+                } catch (e: Exception) {
+                    Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia", e)
+                    // Handle error, misalnya dengan menampilkan pesan error ke user
+                }
             } else {
                 Log.e("FormPeminjamanViewModel", "Failed to load jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
             }
