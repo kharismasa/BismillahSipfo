@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="15dp"
+    app:cardElevation="5dp"
+    android:layout_marginHorizontal="5dp"
+    android:layout_marginBottom="8dp"
+    android:backgroundTint="@color/cardview_light_background">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="18dp">
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_bold"
+            android:text="07:00 - 20:00"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="@id/verticalLine"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins"
+            android:text="DD/MM/YY"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/verticalLine"
+            app:layout_constraintTop_toBottomOf="@id/tvTime"
+            app:layout_constraintStart_toStartOf="@id/tvTime"
+            app:layout_constraintEnd_toEndOf="@id/tvTime" />
+
+        <View
+            android:id="@+id/verticalLine"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="@android:color/darker_gray"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvEvent"
+            app:layout_constraintStart_toEndOf="@id/tvTime"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintWidth_default="wrap" />
+
+        <TextView
+            android:id="@+id/tvEvent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Acara"
+            android:textColor="@android:color/black"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins"
+            android:maxLines="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/verticalLine"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvFasilitas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Nama Fasilitas"
+            android:maxLines="1"
+            android:textColor="@android:color/black"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/tvEvent"
+            app:layout_constraintTop_toBottomOf="@id/tvEvent" />
+
+        <TextView
+            android:id="@+id/tvAlamat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Alamat Fasilitas"
+            android:textColor="@android:color/black"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins"
+            android:maxLines="2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@id/tvFasilitas"
+            app:layout_constraintTop_toBottomOf="@id/tvFasilitas" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

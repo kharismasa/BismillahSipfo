@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.fragment.peminjaman.FormPeminjamanFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Form Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Form Pengajuan Pinjam Fasilitas"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp" />
+
+        <!-- Spinner for Fasilitas -->
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fasilitas"/>
+        <Spinner
+            android:id="@+id/spinner_fasilitas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Opsi Peminjaman"/>
+        <Spinner
+            android:id="@+id/spinner_opsi_pinjam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Spinner for Fasilitas -->
+        <TextView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kalender"/>
+        <Spinner
+            android:id="@+id/spinner_kalender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+        <EditText
+            android:id="@+id/edittext_nama_acara"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Nama Acara" />
+
+        <Spinner
+            android:id="@+id/spinner_nama_organisasi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <!-- OPSI DILUAR JADWAL RUTIN -->
+        <EditText
+            android:id="@+id/edittext_nama_organisasi"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama Organisasi/UKM" />
+
+        <LinearLayout
+            android:id="@+id/tvTanggal"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tanggal Mulai" />
+
+                <EditText
+                    android:id="@+id/edittext_tanggal_mulai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_date"
+                    android:drawablePadding="8dp"
+                    android:hint="DD/MM/YY"
+                    android:inputType="date" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tanggal Selesai" />
+
+                <EditText
+                    android:id="@+id/edittext_tanggal_selesai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_date"
+                    android:drawablePadding="8dp"
+                    android:hint="DD/MM/YY"
+                    android:inputType="date" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tvJam"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jam Mulai" />
+
+                <EditText
+                    android:id="@+id/edittext_jam_mulai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="07.00"
+                    android:drawableStart="@drawable/ic_time"
+                    android:drawablePadding="8dp"
+                    android:inputType="time" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jam Selesai" />
+
+                <EditText
+                    android:id="@+id/edittext_jam_selesai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="08.00"
+                    android:drawableStart="@drawable/ic_time"
+                    android:drawablePadding="8dp"
+                    android:inputType="time" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Lapangan yang dipinjam -->
+        <TextView
+            android:id="@+id/tvLapangan"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lapangan yang dipinjam"
+            android:layout_marginTop="16dp" />
+
+        <!-- Jadwal Tersedia -->
+        <LinearLayout
+            android:id="@+id/container_jenis_lapangan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:visibility="visible">
+            <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvJadwalTersedia"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jadwal Tersedia"
+            android:layout_marginTop="16dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/container_jadwal_tersedia"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+        </androidx.recyclerview.widget.RecyclerView>
+
+        <RadioGroup
+            android:id="@+id/container_pengguna_khusus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pengguna Khusus UII Training Ground"/>
+
+            <RadioButton
+                android:id="@+id/radio_internal_uii"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Internal UII" />
+
+            <RadioButton
+                android:id="@+id/radio_internal_vs_eksternal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Internal UII vs team eksternal" />
+
+            <RadioButton
+                android:id="@+id/radio_eksternal_uii"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Eksternal UII" />
+
+        </RadioGroup>
+        
+        <!-- Button Next -->
+        <Button
+            android:id="@+id/button_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next"
+            android:backgroundTint="@color/dark_blue"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</ScrollView>
