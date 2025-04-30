@@ -426,48 +426,64 @@ class FasilitasRepository {
 
         val today = LocalDate.now()
         val startDate = today.plusDays(7)
-        val endDate = startDate.plusWeeks(36)
+        var endDate = startDate.plusWeeks(36)
+        val minDate = today.plusDays(7)
 
         val result = mutableListOf<JadwalTersedia>()
 
         if (idFasilitas == 30) {
-            // Logika khusus untuk fasilitas 30
+            val allJadwalRutin = supabaseClient.from("jadwal_rutin")
+                .select(){
+                    filter {
+                        eq("id_fasilitas", idFasilitas)
+                    }
+                }
+                .decodeList<JadwalRutin>()
+            Log.d("FasilitasRepository", "All Jadwal rutin fetched for fasilitas 30. Size: ${allJadwalRutin.size}")
+
             val cycleStartDate = LocalDate.of(2025, 4, 1)
-            var currentDate = LocalDate.now().plusDays(7)
-            val minAllowedDate = LocalDate.now().plusDays(7)
+            var currentDate = cycleStartDate
+            var currentSlot = 1
 
-            // Menghitung slot awal berdasarkan cycleStartDate
-            val daysSinceCycleStart = ChronoUnit.DAYS.between(cycleStartDate, currentDate)
-            var currentSlot = ((daysSinceCycleStart / 7 * 4) % 16 + 1).toInt()
-
-            while (currentDate <= endDate && result.size < 9) {
+            while (result.size < 9) {
                 val dayOfWeek = currentDate.dayOfWeek
                 if (dayOfWeek in DayOfWeek.TUESDAY..DayOfWeek.FRIDAY) {
-                    val matchingJadwal = jadwalRutin.find { it.urutanSlot == currentSlot }
-                    if (matchingJadwal != null && matchingJadwal.hari == dayOfWeek.getIndonesianName()) {
-                        // Mengurangi 7 hari dari tanggal saat ini
-                        val adjustedDate = currentDate.minusDays(7)
-                        if (adjustedDate >= minAllowedDate) {
-                            val isHoliday = hariLibur.any { it.dateHariLibur == adjustedDate }
-                            if (!isHoliday) {
-                                val conflictingPeminjaman = peminjaman.any { p ->
-                                    p.tanggalMulai <= adjustedDate && adjustedDate <= p.tanggalSelesai
+                    val matchingJadwal = allJadwalRutin.find { it.urutanSlot == currentSlot }
+                    if (matchingJadwal != null && matchingJadwal.idOrganisasi == idOrganisasi) {
+                        val isHoliday = hariLibur.any { it.dateHariLibur == currentDate }
+                        val conflictingPeminjaman = peminjaman.any { p ->
+                            p.tanggalMulai <= currentDate && currentDate <= p.tanggalSelesai
+                        }
+                        if (!isHoliday && !conflictingPeminjaman && currentDate >= minDate) {
+                            val newJadwal = JadwalTersedia(
+                                hari = dayOfWeek.getIndonesianName(),
+                                tanggal = currentDate,
+                                waktuMulai = matchingJadwal.waktuMulai,
+                                waktuSelesai = matchingJadwal.waktuSelesai,
+                                listLapangan = matchingJadwal.listLapangan,
+                                tipeJadwal = matchingJadwal.tipeJadwal,
+                                urutanSlot = currentSlot,
+                                isHoliday = false
+                            )
+                            result.add(newJadwal)
+
+                            // Log untuk hari, tanggal, dan nama organisasi
+                            val organisasi = supabaseClient.from("organisasi")
+                                .select() {
+                                    filter {
+                                        eq("id_organisasi", matchingJadwal.idOrganisasi)
+                                    }
                                 }
-                                if (!conflictingPeminjaman) {
-                                    val newJadwal = JadwalTersedia(
-                                        hari = dayOfWeek.getIndonesianName(),
-                                        tanggal = adjustedDate,
-                                        waktuMulai = matchingJadwal.waktuMulai,
-                                        waktuSelesai = matchingJadwal.waktuSelesai,
-                                        listLapangan = matchingJadwal.listLapangan,
-                                        tipeJadwal = matchingJadwal.tipeJadwal,
-                                        urutanSlot = currentSlot,
-                                        isHoliday = false
-                                    )
-                                    result.add(newJadwal)
-                                    Log.d("FasilitasRepository", "Adding jadwal tersedia for Fasilitas 30: ${newJadwal.hari}, ${newJadwal.tanggal}, ${newJadwal.waktuMulai}-${newJadwal.waktuSelesai}, Slot: ${newJadwal.urutanSlot}")
-                                }
-                            }
+                                .decodeSingle<Organisasi>()
+                            Log.d("FasilitasRepository", "Added jadwal tersedia: Hari: ${newJadwal.hari}, Tanggal: ${newJadwal.tanggal}, Organisasi: ${organisasi.namaOrganisasi}")
+                        } else {
+                            Log.d("FasilitasRepository", "Skipped jadwal: Hari: ${dayOfWeek.getIndonesianName()}, Tanggal: $currentDate, " +
+                                    "Alasan: ${when {
+                                        isHoliday -> "Hari Libur"
+                                        conflictingPeminjaman -> "Peminjaman yang Konflik"
+                                        currentDate < minDate -> "Kurang dari 7 hari dari hari ini"
+                                        else -> "Alasan lain"
+                                    }}")
                         }
                     }
                     currentSlot = if (currentSlot == 16) 1 else currentSlot + 1

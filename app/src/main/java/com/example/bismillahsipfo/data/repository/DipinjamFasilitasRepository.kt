@@ -41,7 +41,6 @@ class DipinjamFasilitasRepository {
         val successfulPayments = supabase.from("pembayaran")
             .select(Columns.ALL) {
                 filter {
-//                    `in`("id_pembayaran", idPembayaranList)
                     eq("status_pembayaran", "success")
                 }
             }

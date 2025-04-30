@@ -199,7 +199,7 @@
             android:id="@+id/container_jenis_lapangan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:padding="16dp"
             android:visibility="visible">
             <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
