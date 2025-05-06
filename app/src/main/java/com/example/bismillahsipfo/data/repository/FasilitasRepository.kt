@@ -604,6 +604,7 @@ class FasilitasRepository {
     suspend fun getJadwalTersediaForFasilitas30(): List<JadwalTersedia> {
         val hariLibur = getHariLibur()
         val today = LocalDate.now()
+        val startDate = today.plusDays(7) // Mulai dari 7 hari setelah hari ini
         val endDate = today.plusWeeks(12)
 
         // Ambil semua peminjaman yang sudah ada untuk fasilitas 30
@@ -611,14 +612,14 @@ class FasilitasRepository {
             .select() {
                 filter {
                     eq("id_fasilitas", 30)
-                    gte("tanggal_mulai", today)
+                    gte("tanggal_mulai", startDate)
                     lte("tanggal_mulai", endDate)
                 }
             }
             .decodeList<PeminjamanFasilitas>()
 
-        return (0..ChronoUnit.DAYS.between(today, endDate)).mapNotNull { dayOffset ->
-            val currentDate = today.plusDays(dayOffset)
+        return (0..ChronoUnit.DAYS.between(startDate, endDate)).mapNotNull { dayOffset ->
+            val currentDate = startDate.plusDays(dayOffset)
             if (currentDate.dayOfWeek in listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) &&
                 !hariLibur.any { it.dateHariLibur == currentDate }) {
 
