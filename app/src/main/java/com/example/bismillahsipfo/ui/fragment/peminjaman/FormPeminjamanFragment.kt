@@ -29,6 +29,7 @@ import com.example.bismillahsipfo.data.model.PenggunaKhusus
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
 import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModel
 import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModelFactory
+import com.example.bismillahsipfo.data.repository.JadwalAvailabilityStatus
 import com.example.bismillahsipfo.data.repository.UserRepository
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -213,7 +214,7 @@ class FormPeminjamanFragment : Fragment() {
         editTextJamMulai.addTextChangedListener(dateTimeChangeWatcher)
         editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
 
-        buttonNext.setOnClickListener { submitForm() }
+//        buttonNext.setOnClickListener { submitForm() }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -374,9 +375,25 @@ class FormPeminjamanFragment : Fragment() {
             Log.d("FormPeminjamanFragment", "Jadwal tersedia updated. Size: ${jadwalList.size}")
             jadwalTersediaAdapter.updateJadwalList(jadwalList)
         }
-        viewModel.jadwalAvailability.observe(viewLifecycleOwner) { isAvailable ->
-            if (!isAvailable) {
-                Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
+
+        viewModel.jadwalAvailability.observe(viewLifecycleOwner) { status ->
+            when (status) {
+                JadwalAvailabilityStatus.AVAILABLE -> {
+                    // Tidak ada peringatan, button Next tetap enabled
+                    buttonNext.isEnabled = true
+                }
+                JadwalAvailabilityStatus.UNAVAILABLE -> {
+                    Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
+                    buttonNext.isEnabled = false
+                }
+                JadwalAvailabilityStatus.HOLIDAY -> {
+                    Toast.makeText(context, "Jadwal tidak tersedia (Hari Libur)", Toast.LENGTH_SHORT).show()
+                    buttonNext.isEnabled = false
+                }
+                JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
+                    Toast.makeText(context, "Terdapat jadwal rutin, tolong hubungi dengan pemilik jadwal terlebih dahulu", Toast.LENGTH_LONG).show()
+                    buttonNext.isEnabled = true
+                }
             }
         }
 

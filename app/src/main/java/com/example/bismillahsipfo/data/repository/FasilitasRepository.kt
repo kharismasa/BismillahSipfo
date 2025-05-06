@@ -577,27 +577,59 @@ class FasilitasRepository {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun checkJadwalAvailability(idFasilitas: Int, tanggalMulai: String, tanggalSelesai: String, jamMulai: String, jamSelesai: String): Boolean {
+    suspend fun checkJadwalAvailability(idFasilitas: Int, tanggalMulai: String, tanggalSelesai: String, jamMulai: String, jamSelesai: String): JadwalAvailabilityStatus {
         val format = DateTimeFormatter.ofPattern("dd/MM/yyyy")
         val startDate = LocalDate.parse(tanggalMulai, format)
         val endDate = LocalDate.parse(tanggalSelesai, format)
         val startTime = LocalTime.parse(jamMulai)
         val endTime = LocalTime.parse(jamSelesai)
 
+        // Check for holidays
+        val hariLibur = getHariLibur()
+        if (hariLibur.any { it.dateHariLibur in startDate..endDate }) {
+            return JadwalAvailabilityStatus.HOLIDAY
+        }
+
+        // Check for existing peminjaman
         val existingPeminjaman = supabaseClient.from("peminjaman_fasilitas")
             .select() {
                 filter {
                     eq("id_fasilitas", idFasilitas)
-                    gte("tanggal_mulai", startDate)
-                    lte("tanggal_selesai", endDate)
+                    or {
+                        and {
+                            lte("tanggal_mulai", endDate)
+                            gte("tanggal_selesai", startDate)
+                        }
+                    }
                 }
             }
             .decodeList<PeminjamanFasilitas>()
 
-        return existingPeminjaman.none { peminjaman ->
-            (peminjaman.tanggalMulai <= endDate && startDate <= peminjaman.tanggalSelesai) &&
-                    (peminjaman.jamMulai < endTime && startTime < peminjaman.jamSelesai)
+        if (existingPeminjaman.any { peminjaman ->
+                (peminjaman.tanggalMulai <= endDate && startDate <= peminjaman.tanggalSelesai) &&
+                        (peminjaman.jamMulai < endTime && startTime < peminjaman.jamSelesai)
+            }) {
+            return JadwalAvailabilityStatus.UNAVAILABLE
         }
+
+        // Check for jadwal rutin
+        val jadwalRutin = supabaseClient.from("jadwal_rutin")
+            .select() {
+                filter {
+                    eq("id_fasilitas", idFasilitas)
+                }
+            }
+            .decodeList<JadwalRutin>()
+
+        if (jadwalRutin.any { jadwal ->
+                startDate.dayOfWeek.getIndonesianName() == jadwal.hari &&
+                        ((startTime <= jadwal.waktuMulai && jadwal.waktuMulai < endTime) ||
+                                (startTime < jadwal.waktuSelesai && jadwal.waktuSelesai <= endTime))
+            }) {
+            return JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN
+        }
+
+        return JadwalAvailabilityStatus.AVAILABLE
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
