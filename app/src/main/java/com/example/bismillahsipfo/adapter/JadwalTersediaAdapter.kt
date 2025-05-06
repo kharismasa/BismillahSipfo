@@ -40,8 +40,8 @@ class JadwalTersediaAdapter(
         val jadwal = jadwalList[position]
         Log.d("JadwalTersediaAdapter", "Binding view holder for position $position: $jadwal")
         holder.tvDay.text = jadwal.hari
-        holder.tvDate.text = jadwal.tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        holder.tvTime.text = "${jadwal.waktuMulai.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${jadwal.waktuSelesai.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+        holder.tvDate.text = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        holder.tvTime.text = "${jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm"))}"
         holder.itemView.setOnClickListener { onItemClick(jadwal) }
     }
 

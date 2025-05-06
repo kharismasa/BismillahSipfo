@@ -5,14 +5,18 @@ import android.app.TimePickerDialog
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.annotation.RequiresApi
+import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +30,7 @@ import com.example.bismillahsipfo.data.repository.FasilitasRepository
 import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModel
 import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModelFactory
 import com.example.bismillahsipfo.data.repository.UserRepository
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -102,10 +107,10 @@ class FormPeminjamanFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateSelectedJadwal(jadwal: JadwalTersedia) {
-        editTextTanggalMulai.setText(jadwal.tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-        editTextTanggalSelesai.setText(jadwal.tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-        editTextJamMulai.setText(jadwal.waktuMulai.format(DateTimeFormatter.ofPattern("HH:mm")))
-        editTextJamSelesai.setText(jadwal.waktuSelesai.format(DateTimeFormatter.ofPattern("HH:mm")))
+        editTextTanggalMulai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextTanggalSelesai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextJamMulai.setText(jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm")))
+        editTextJamSelesai.setText(jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm")))
         updateLapanganCheckboxes(viewModel.lapanganList.value ?: emptyList())
     }
 
@@ -138,6 +143,7 @@ class FormPeminjamanFragment : Fragment() {
                 containerJenisLapangan.removeAllViews()  // Hapus tampilan lapangan lama
                 containerPenggunaKhusus.visibility = View.GONE  // Sembunyikan pengguna khusus
                 viewModel.onFasilitasSelected(selectedFasilitas)
+                updateVisibilityBasedOnCurrentSelection()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -189,68 +195,141 @@ class FormPeminjamanFragment : Fragment() {
         spinnerOpsiPinjam.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val selectedOption = parent.getItemAtPosition(position).toString()
-                when (selectedOption) {
-                    "Sesuai Jadwal Rutin" -> {
-                        setSesuaiJadwalRutinVisibility()
-//                        loadOrganisasiList()
-                    }
-                    "Diluar Jadwal Rutin" -> {
-                        setDiluarJadwalRutinVisibility()
-                    }
-                }
+                val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+                Log.d("FormPeminjamanFragment", "Opsi peminjaman dipilih: $selectedOption")
+                Log.d("FormPeminjamanFragment", "Fasilitas terpilih: ${selectedFasilitas?.namaFasilitas}, ID: ${selectedFasilitas?.idFasilitas}")
+
+                updateVisibilityBasedOnCurrentSelection()
+                setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
+        // Tambahkan listener untuk tanggal dan jam
+        editTextTanggalMulai.addTextChangedListener(dateTimeChangeWatcher)
+        editTextTanggalSelesai.addTextChangedListener(dateTimeChangeWatcher)
+        editTextJamMulai.addTextChangedListener(dateTimeChangeWatcher)
+        editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
+
         buttonNext.setOnClickListener { submitForm() }
     }
 
-    private fun setSesuaiJadwalRutinVisibility() {
-        editTextNamaOrganisasi.visibility = View.GONE
-        spinnerNamaOrganisasi.visibility = View.VISIBLE
-        tvTanggal.visibility = View.GONE
-        tvJam.visibility = View.GONE
-        tvLapangan.visibility = View.GONE
-        containerJenisLapangan.visibility = View.GONE
-        tvJadwalTersedia.visibility = View.VISIBLE
-        containerJadwalTersedia.visibility = View.VISIBLE
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun setVisibilityBasedOnSelection(idFasilitas: Int?, selectedOption: String) {
+        Log.d("FormPeminjamanFragment", "setVisibilityBasedOnSelection called - Fasilitas ID: $idFasilitas, Opsi: $selectedOption")
+        when {
+            idFasilitas == 30 && selectedOption == "Sesuai Jadwal Rutin" -> {
+                // Logika untuk Fasilitas 30 dan Sesuai Jadwal Rutin
+                editTextNamaOrganisasi.visibility = View.GONE
+                spinnerNamaOrganisasi.visibility = View.VISIBLE
+                tvTanggal.visibility = View.GONE
+                tvJam.visibility = View.GONE
+                tvLapangan.visibility = View.GONE
+                containerJenisLapangan.visibility = View.GONE
+                tvJadwalTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.VISIBLE
+                containerPenggunaKhusus.visibility = View.VISIBLE
 
-        // Menampilkan containerPenggunaKhusus
-        containerPenggunaKhusus.visibility = View.VISIBLE
+                // Set dan nonaktifkan radio button Internal UII
+                val radioInternalUii = containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_uii)
+                radioInternalUii.isChecked = true
+                containerPenggunaKhusus.children.forEach { (it as? RadioButton)?.isEnabled = false }
 
-        // Mengatur radio button "Internal UII" menjadi terpilih
-        val radioInternalUii = containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_uii)
-        radioInternalUii.isChecked = true
-
-        // Menonaktifkan interaksi dengan radio button
-        for (i in 0 until containerPenggunaKhusus.childCount) {
-            val child = containerPenggunaKhusus.getChildAt(i)
-            if (child is RadioButton) {
-                child.isEnabled = false
+                viewModel.loadJadwalTersediaForFasilitas30()
+                Log.d("FormPeminjamanFragment", "Container jadwal tersedia ditampilkan untuk Fasilitas 30 - Sesuai Jadwal Rutin")
             }
+            idFasilitas == 30 && selectedOption == "Diluar Jadwal Rutin" -> {
+                // Logika untuk Fasilitas 30 dan Diluar Jadwal Rutin
+                editTextNamaOrganisasi.visibility = View.VISIBLE
+                spinnerNamaOrganisasi.visibility = View.GONE
+                tvTanggal.visibility = View.GONE
+                tvJam.visibility = View.GONE
+                tvJadwalTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.VISIBLE
+                Log.d("FormPeminjamanFragment", "Container jadwal tersedia ditampilkan untuk Fasilitas 30 - Diluar Jadwal Rutin")
+                containerPenggunaKhusus.visibility = View.VISIBLE
+
+                // Aktifkan semua radio button
+                containerPenggunaKhusus.children.forEach { (it as? RadioButton)?.isEnabled = true }
+
+                viewModel.loadJadwalTersediaForFasilitas30()
+            }
+            selectedOption == "Sesuai Jadwal Rutin" -> {
+                // Logika untuk Sesuai Jadwal Rutin (selain Fasilitas 30)
+                editTextNamaOrganisasi.visibility = View.GONE
+                spinnerNamaOrganisasi.visibility = View.VISIBLE
+                tvTanggal.visibility = View.GONE
+                tvJam.visibility = View.GONE
+                tvLapangan.visibility = View.GONE
+                containerJenisLapangan.visibility = View.GONE
+                tvJadwalTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.VISIBLE
+                containerPenggunaKhusus.visibility = View.GONE
+            }
+            selectedOption == "Diluar Jadwal Rutin" -> {
+                // Logika untuk Diluar Jadwal Rutin (selain Fasilitas 30)
+                editTextNamaOrganisasi.visibility = View.VISIBLE
+                spinnerNamaOrganisasi.visibility = View.GONE
+                tvTanggal.visibility = View.VISIBLE
+                tvJam.visibility = View.VISIBLE
+                tvJadwalTersedia.visibility = View.GONE
+                containerJadwalTersedia.visibility = View.GONE
+                containerPenggunaKhusus.visibility = View.GONE
+            }
+            else -> {
+                // Logika default atau untuk pilihan lain
+                // Misalnya, sembunyikan semua atau tampilkan pesan error
+            }
+        }
+
+        // Elemen yang selalu ditampilkan
+        editTextNamaAcara.visibility = View.VISIBLE
+        tvLapangan.visibility = View.VISIBLE
+        containerJenisLapangan.visibility = View.VISIBLE
+
+        // Memastikan perubahan tampilan segera terjadi
+        view?.post {
+            containerJadwalTersedia.requestLayout()
+            containerJadwalTersedia.invalidate()
+            Log.d("FormPeminjamanFragment", "Container jadwal tersedia visibility: ${containerJadwalTersedia.visibility == View.VISIBLE}")
+        }
+
+        if (idFasilitas == 30 && (selectedOption == "Sesuai Jadwal Rutin" || selectedOption == "Diluar Jadwal Rutin")) {
+            viewModel.loadJadwalTersediaForFasilitas30()
+            Log.d("FormPeminjamanFragment", "Memanggil loadJadwalTersediaForFasilitas30()")
         }
     }
 
-    private fun setDiluarJadwalRutinVisibility() {
-        editTextNamaOrganisasi.visibility = View.VISIBLE
-        spinnerNamaOrganisasi.visibility = View.GONE
-        tvTanggal.visibility = View.VISIBLE
-        tvJam.visibility = View.VISIBLE
-        tvLapangan.visibility = View.VISIBLE
-        containerJenisLapangan.visibility = View.VISIBLE
-        tvJadwalTersedia.visibility = View.GONE
-        containerJadwalTersedia.visibility = View.GONE
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateVisibilityBasedOnCurrentSelection() {
+        val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+        val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
 
-        // Menampilkan containerPenggunaKhusus
-        containerPenggunaKhusus.visibility = View.VISIBLE
+        Log.d("FormPeminjamanFragment", "Updating visibility - Fasilitas: ${selectedFasilitas?.namaFasilitas}, ID: ${selectedFasilitas?.idFasilitas}, Opsi: $selectedOption")
 
-        // Mengaktifkan kembali interaksi dengan radio button
-        for (i in 0 until containerPenggunaKhusus.childCount) {
-            val child = containerPenggunaKhusus.getChildAt(i)
-            if (child is RadioButton) {
-                child.isEnabled = true
-            }
+        setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
+    }
+
+    private val dateTimeChangeWatcher = object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        @RequiresApi(Build.VERSION_CODES.O)
+        override fun afterTextChanged(s: Editable?) {
+            checkJadwalAvailability()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun checkJadwalAvailability() {
+        val tanggalMulai = editTextTanggalMulai.text.toString()
+        val tanggalSelesai = editTextTanggalSelesai.text.toString()
+        val jamMulai = editTextJamMulai.text.toString()
+        val jamSelesai = editTextJamSelesai.text.toString()
+
+        if (tanggalMulai.isNotEmpty() && tanggalSelesai.isNotEmpty() && jamMulai.isNotEmpty() && jamSelesai.isNotEmpty()) {
+            viewModel.checkJadwalAvailability(tanggalMulai, tanggalSelesai, jamMulai, jamSelesai)
         }
     }
 
@@ -294,6 +373,18 @@ class FormPeminjamanFragment : Fragment() {
         viewModel.jadwalTersedia.observe(viewLifecycleOwner) { jadwalList ->
             Log.d("FormPeminjamanFragment", "Jadwal tersedia updated. Size: ${jadwalList.size}")
             jadwalTersediaAdapter.updateJadwalList(jadwalList)
+        }
+        viewModel.jadwalAvailability.observe(viewLifecycleOwner) { isAvailable ->
+            if (!isAvailable) {
+                Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.jadwalTersediaFasilitas30.observe(viewLifecycleOwner) { jadwalList ->
+            Log.d("FormPeminjamanFragment", "Jadwal tersedia for Fasilitas 30 updated. Size: ${jadwalList.size}")
+            jadwalTersediaAdapter.updateJadwalList(jadwalList)
+            containerJadwalTersedia.visibility = View.VISIBLE
+            containerJadwalTersedia.invalidate()
         }
     }
 

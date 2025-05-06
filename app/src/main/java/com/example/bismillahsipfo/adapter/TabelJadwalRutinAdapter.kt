@@ -3,7 +3,7 @@ package com.example.bismillahsipfo.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.bismillahsipfo.data.repository.JadwalRutinWithOrganisasi
+import com.example.bismillahsipfo.data.model.JadwalRutinWithOrganisasi
 import com.example.bismillahsipfo.databinding.TabelJadwalRutinBinding
 
 class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutinWithOrganisasi>) :

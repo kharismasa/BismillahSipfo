@@ -5,11 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bismillahsipfo.BuildConfig
-import com.example.bismillahsipfo.data.model.JadwalRutin
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.postgrest
+import com.example.bismillahsipfo.data.model.JadwalRutinWithOrganisasi
 import kotlinx.coroutines.launch
 
 class JadwalRutinViewModel : ViewModel() {

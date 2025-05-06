@@ -8,6 +8,7 @@ import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.model.HariLibur
 import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import com.example.bismillahsipfo.data.model.JadwalRutin
+import com.example.bismillahsipfo.data.model.JadwalRutinWithOrganisasi
 import com.example.bismillahsipfo.data.model.JadwalTersedia
 import com.example.bismillahsipfo.data.model.Lapangan
 import com.example.bismillahsipfo.data.model.LapanganDipinjam
@@ -24,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 class FasilitasRepository {
@@ -387,6 +390,7 @@ class FasilitasRepository {
     suspend fun getJadwalTersedia(idFasilitas: Int, idOrganisasi: Int): List<JadwalTersedia> {
         Log.d("FasilitasRepository", "Getting jadwal tersedia for idFasilitas: $idFasilitas, idOrganisasi: $idOrganisasi")
 
+        // Mengambil jadwal rutin
         val jadwalRutin = supabaseClient.from("jadwal_rutin")
             .select(){
                 filter {
@@ -421,9 +425,11 @@ class FasilitasRepository {
         }
         Log.d("FasilitasRepository", "Filtered peminjaman fetched. Size: ${peminjaman.size}")
 
+        // Mengambil data hari libur
         val hariLibur = getHariLibur()
         Log.d("FasilitasRepository", "Hari libur fetched. Size: ${hariLibur.size}")
 
+        // Menentukan rentang tanggal
         val today = LocalDate.now()
         val startDate = today.plusDays(7)
         var endDate = startDate.plusWeeks(36)
@@ -432,6 +438,7 @@ class FasilitasRepository {
         val result = mutableListOf<JadwalTersedia>()
 
         if (idFasilitas == 30) {
+            // Logika khusus untuk fasilitas dengan ID 30
             val allJadwalRutin = supabaseClient.from("jadwal_rutin")
                 .select(){
                     filter {
@@ -569,10 +576,87 @@ class FasilitasRepository {
         }
     }
 
-}
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun checkJadwalAvailability(idFasilitas: Int, tanggalMulai: String, tanggalSelesai: String, jamMulai: String, jamSelesai: String): Boolean {
+        val format = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val startDate = LocalDate.parse(tanggalMulai, format)
+        val endDate = LocalDate.parse(tanggalSelesai, format)
+        val startTime = LocalTime.parse(jamMulai)
+        val endTime = LocalTime.parse(jamSelesai)
 
-data class JadwalRutinWithOrganisasi(
-    val jadwalRutin: JadwalRutin,
-    val namaOrganisasi: String,
-    val namaLapangan: List<String>
-)
+        val existingPeminjaman = supabaseClient.from("peminjaman_fasilitas")
+            .select() {
+                filter {
+                    eq("id_fasilitas", idFasilitas)
+                    gte("tanggal_mulai", startDate)
+                    lte("tanggal_selesai", endDate)
+                }
+            }
+            .decodeList<PeminjamanFasilitas>()
+
+        return existingPeminjaman.none { peminjaman ->
+            (peminjaman.tanggalMulai <= endDate && startDate <= peminjaman.tanggalSelesai) &&
+                    (peminjaman.jamMulai < endTime && startTime < peminjaman.jamSelesai)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getJadwalTersediaForFasilitas30(): List<JadwalTersedia> {
+        val hariLibur = getHariLibur()
+        val today = LocalDate.now()
+        val endDate = today.plusWeeks(12)
+
+        // Ambil semua peminjaman yang sudah ada untuk fasilitas 30
+        val existingPeminjaman = supabaseClient.from("peminjaman_fasilitas")
+            .select() {
+                filter {
+                    eq("id_fasilitas", 30)
+                    gte("tanggal_mulai", today)
+                    lte("tanggal_mulai", endDate)
+                }
+            }
+            .decodeList<PeminjamanFasilitas>()
+
+        return (0..ChronoUnit.DAYS.between(today, endDate)).mapNotNull { dayOffset ->
+            val currentDate = today.plusDays(dayOffset)
+            if (currentDate.dayOfWeek in listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) &&
+                !hariLibur.any { it.dateHariLibur == currentDate }) {
+
+                val morningSlot = createJadwalTersedia(currentDate, LocalTime.of(7, 0), LocalTime.of(9, 30), "Pagi", 1)
+                val eveningSlot = createJadwalTersedia(currentDate, LocalTime.of(15, 0), LocalTime.of(17, 30), "Sore", 2)
+
+                listOfNotNull(
+                    if (isSlotAvailable(morningSlot, existingPeminjaman)) morningSlot else null,
+                    if (isSlotAvailable(eveningSlot, existingPeminjaman)) eveningSlot else null
+                )
+            } else {
+                null
+            }
+        }.flatten()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createJadwalTersedia(date: LocalDate, startTime: LocalTime, endTime: LocalTime, tipeJadwal: String, urutanSlot: Int): JadwalTersedia {
+        return JadwalTersedia(
+            hari = date.dayOfWeek.getIndonesianName(),
+            tanggal = date,
+            waktuMulai = startTime,
+            waktuSelesai = endTime,
+            listLapangan = emptyList(),
+            tipeJadwal = tipeJadwal,
+            urutanSlot = urutanSlot,
+            isHoliday = false
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun isSlotAvailable(slot: JadwalTersedia, existingPeminjaman: List<PeminjamanFasilitas>): Boolean {
+        return existingPeminjaman.none { peminjaman ->
+            peminjaman.tanggalMulai <= slot.tanggal && slot.tanggal!! <= peminjaman.tanggalSelesai &&
+                    ((peminjaman.jamMulai <= slot.waktuMulai && slot.waktuMulai!! < peminjaman.jamSelesai) ||
+                            (peminjaman.jamMulai < slot.waktuSelesai && slot.waktuSelesai!! <= peminjaman.jamSelesai) ||
+                            (slot.waktuMulai!! <= peminjaman.jamMulai && peminjaman.jamSelesai <= slot.waktuSelesai))
+        }
+    }
+
+}

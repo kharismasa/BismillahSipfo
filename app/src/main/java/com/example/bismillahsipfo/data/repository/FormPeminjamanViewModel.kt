@@ -39,6 +39,12 @@ class FormPeminjamanViewModel(
     private val _organisasiList = MutableLiveData<List<Organisasi>>()
     val organisasiList: LiveData<List<Organisasi>> = _organisasiList
 
+    private val _jadwalAvailability = MutableLiveData<Boolean>()
+    val jadwalAvailability: LiveData<Boolean> = _jadwalAvailability
+
+    private val _jadwalTersediaFasilitas30 = MutableLiveData<List<JadwalTersedia>>()
+    val jadwalTersediaFasilitas30: LiveData<List<JadwalTersedia>> = _jadwalTersediaFasilitas30
+
     private var selectedOrganisasiId: Int? = null
 
     private var selectedFasilitas: Fasilitas? = null
@@ -50,6 +56,28 @@ class FormPeminjamanViewModel(
 
     init {
         loadFasilitas()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun checkJadwalAvailability(tanggalMulai: String, tanggalSelesai: String, jamMulai: String, jamSelesai: String) {
+        viewModelScope.launch {
+            val isAvailable = fasilitasRepository.checkJadwalAvailability(
+                selectedFasilitas?.idFasilitas ?: return@launch,
+                tanggalMulai,
+                tanggalSelesai,
+                jamMulai,
+                jamSelesai
+            )
+            _jadwalAvailability.postValue(isAvailable)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loadJadwalTersediaForFasilitas30() {
+        viewModelScope.launch {
+            val jadwalList = fasilitasRepository.getJadwalTersediaForFasilitas30()
+            _jadwalTersediaFasilitas30.postValue(jadwalList)
+        }
     }
 
     private fun loadFasilitas() {
@@ -86,22 +114,6 @@ class FormPeminjamanViewModel(
             loadJadwalTersedia()
         }
     }
-
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    private fun loadJadwalTersedia() {
-//        viewModelScope.launch {
-//            val idFasilitas = selectedFasilitas?.idFasilitas
-//            Log.d("FormPeminjamanViewModel", "Loading jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
-//
-//            if (idFasilitas != null && selectedOrganisasiId != null) {
-//                val jadwalList = fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
-//                Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
-//                _jadwalTersedia.value = jadwalList
-//            } else {
-//                Log.e("FormPeminjamanViewModel", "Failed to load jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
-//            }
-//        }
-//    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJadwalTersedia() {
