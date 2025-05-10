@@ -377,23 +377,31 @@ class FormPeminjamanFragment : Fragment() {
         }
 
         viewModel.jadwalAvailability.observe(viewLifecycleOwner) { status ->
-            when (status) {
-                JadwalAvailabilityStatus.AVAILABLE -> {
-                    // Tidak ada peringatan, button Next tetap enabled
-                    buttonNext.isEnabled = true
+            // Hanya berlaku jika opsi "Diluar Jadwal Rutin" dipilih
+            val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+
+            if (selectedOption == "Diluar Jadwal Rutin") {
+                when (status) {
+                    JadwalAvailabilityStatus.AVAILABLE -> {
+                        // Tidak ada peringatan, button Next tetap enabled
+                        buttonNext.isEnabled = true
+                    }
+                    JadwalAvailabilityStatus.UNAVAILABLE -> {
+                        Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
+                        buttonNext.isEnabled = false
+                    }
+                    JadwalAvailabilityStatus.HOLIDAY -> {
+                        Toast.makeText(context, "Jadwal tidak tersedia (Hari Libur)", Toast.LENGTH_SHORT).show()
+                        buttonNext.isEnabled = false
+                    }
+                    JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
+                        Toast.makeText(context, "Terdapat jadwal rutin, tolong hubungi dengan pemilik jadwal terlebih dahulu", Toast.LENGTH_LONG).show()
+                        buttonNext.isEnabled = true
+                    }
                 }
-                JadwalAvailabilityStatus.UNAVAILABLE -> {
-                    Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
-                    buttonNext.isEnabled = false
-                }
-                JadwalAvailabilityStatus.HOLIDAY -> {
-                    Toast.makeText(context, "Jadwal tidak tersedia (Hari Libur)", Toast.LENGTH_SHORT).show()
-                    buttonNext.isEnabled = false
-                }
-                JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
-                    Toast.makeText(context, "Terdapat jadwal rutin, tolong hubungi dengan pemilik jadwal terlebih dahulu", Toast.LENGTH_LONG).show()
-                    buttonNext.isEnabled = true
-                }
+            } else {
+                // Untuk opsi selain "Diluar Jadwal Rutin", button Next selalu enabled
+                buttonNext.isEnabled = true
             }
         }
 
