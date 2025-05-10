@@ -278,6 +278,8 @@ class FormPeminjamanFragment : Fragment() {
                 tvJadwalTersedia.visibility = View.GONE
                 containerJadwalTersedia.visibility = View.GONE
                 containerPenggunaKhusus.visibility = View.GONE
+                tvLapangan.visibility = View.VISIBLE
+                containerJenisLapangan.visibility = View.VISIBLE
             }
             else -> {
                 // Logika default atau untuk pilihan lain
@@ -287,8 +289,6 @@ class FormPeminjamanFragment : Fragment() {
 
         // Elemen yang selalu ditampilkan
         editTextNamaAcara.visibility = View.VISIBLE
-        tvLapangan.visibility = View.VISIBLE
-        containerJenisLapangan.visibility = View.VISIBLE
 
         // Memastikan perubahan tampilan segera terjadi
         view?.post {
