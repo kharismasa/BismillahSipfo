@@ -84,28 +84,32 @@ class FormPeminjamanFragment : Fragment() {
             Log.d("FormPeminjamanFragment", "Jadwal selected: $jadwal")
             viewModel.onJadwalTersediaSelected(jadwal)
             updateSelectedJadwal(jadwal)
+
+            // Toast konfirmasi tambahan dari Fragment jika diperlukan
+            val tanggal = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            val jamMulai = jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm"))
+            val jamSelesai = jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm"))
+            Toast.makeText(requireContext(),
+                "Jadwal dipilih: ${jadwal.hari}, $tanggal ($jamMulai - $jamSelesai)",
+                Toast.LENGTH_SHORT).show()
         }
 
-        // Menggunakan GridLayoutManager dengan 1 kolom untuk tampilan vertikal penuh
-        val layoutManager = GridLayoutManager(requireContext(), 1, GridLayoutManager.VERTICAL, false)
+        // Menggunakan GridLayoutManager dengan 2 kolom
+        val layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
         containerJadwalTersedia.layoutManager = layoutManager
         containerJadwalTersedia.adapter = jadwalTersediaAdapter
 
         // Menambahkan ItemDecoration untuk memberikan jarak antar item
         val itemDecoration = object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-                val position = parent.getChildAdapterPosition(view)
-                outRect.bottom = resources.getDimensionPixelSize(R.dimen.item_jadwal_margin)
-                if (position == 0) {
-                    outRect.top = resources.getDimensionPixelSize(R.dimen.item_jadwal_margin)
-                }
+                val spacing = 8 // 8dp spacing
+                outRect.set(spacing, spacing, spacing, spacing)
             }
         }
         containerJadwalTersedia.addItemDecoration(itemDecoration)
 
         Log.d("FormPeminjamanFragment", "JadwalTersediaRecyclerView setup complete")
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateSelectedJadwal(jadwal: JadwalTersedia) {
         editTextTanggalMulai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
@@ -471,6 +475,7 @@ class FormPeminjamanFragment : Fragment() {
             containerJenisLapangan.addView(textView)
         }
     }
+    
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun submitForm() {

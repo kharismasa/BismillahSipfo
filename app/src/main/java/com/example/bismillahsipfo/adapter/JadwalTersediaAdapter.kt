@@ -1,11 +1,13 @@
 package com.example.bismillahsipfo.adapter
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.R
@@ -17,6 +19,8 @@ class JadwalTersediaAdapter(
     private val onItemClick: (JadwalTersedia) -> Unit
 ) : RecyclerView.Adapter<JadwalTersediaAdapter.ViewHolder>() {
 
+    private lateinit var context: Context
+
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDay: TextView = view.findViewById(R.id.tvDay)
         val tvDate: TextView = view.findViewById(R.id.tvDate)
@@ -24,6 +28,7 @@ class JadwalTersediaAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        context = parent.context
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.card_jadwal_tersedia, parent, false)
         return ViewHolder(view)
@@ -39,10 +44,20 @@ class JadwalTersediaAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val jadwal = jadwalList[position]
         Log.d("JadwalTersediaAdapter", "Binding view holder for position $position: $jadwal")
+
         holder.tvDay.text = jadwal.hari
         holder.tvDate.text = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        holder.tvTime.text = "${jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm"))}"
-        holder.itemView.setOnClickListener { onItemClick(jadwal) }
+        val jamMulai = jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm"))
+        val jamSelesai = jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm"))
+        holder.tvTime.text = "$jamMulai - $jamSelesai"
+
+        holder.itemView.setOnClickListener {
+            val tanggal = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            val message = "Jadwal tersedia terselect:\n${jadwal.hari}, $tanggal\n$jamMulai - $jamSelesai"
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+
+            onItemClick(jadwal)
+        }
     }
 
     override fun getItemCount() = jadwalList.size
