@@ -9,14 +9,35 @@ import com.example.bismillahsipfo.adapter.PeminjamanPagerAdapter
 class PeminjamanActivity : AppCompatActivity() {
 
     lateinit var viewPager: ViewPager2
-    private lateinit var peminjamanPagerAdapter: PeminjamanPagerAdapter
+    private lateinit var pagerAdapter: PeminjamanPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_peminjaman)
 
         viewPager = findViewById(R.id.viewPager)
-        peminjamanPagerAdapter = PeminjamanPagerAdapter(this)  // Inisialisasi adapter
-        viewPager.adapter = peminjamanPagerAdapter  // Set adapter ke ViewPager2
+        pagerAdapter = PeminjamanPagerAdapter(this)
+        viewPager.adapter = pagerAdapter
+
+        // Disable swipe
+        viewPager.isUserInputEnabled = false
+    }
+
+    fun navigateToNextPage(data: Bundle) {
+        // Update shared data in adapter
+        pagerAdapter.updateSharedData(data)
+
+        // Navigate to next page
+        val nextItem = viewPager.currentItem + 1
+        if (nextItem < pagerAdapter.itemCount) {
+            viewPager.setCurrentItem(nextItem, true)
+        }
+    }
+
+    fun navigateToPreviousPage() {
+        val previousItem = viewPager.currentItem - 1
+        if (previousItem >= 0) {
+            viewPager.setCurrentItem(previousItem, true)
+        }
     }
 }

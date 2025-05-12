@@ -11,143 +11,6 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Header -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pengajuan Pinjam Fasilitas Olahraga"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:padding="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pinjam fasilitas olahraga UII mudah dan cepat, langsung dari genggaman Anda!"
-            android:gravity="center"
-            android:padding="8dp" />
-
-        <!-- Progress Bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="8dp">
-
-            <!-- Step 1 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/circle_active"
-                    android:text="1"
-                    android:textColor="@android:color/white"
-                    android:padding="6dp"
-                    android:gravity="center" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mengisi Form"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
-                    android:gravity="center" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pengajuan"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
-                    android:gravity="center" />
-            </LinearLayout>
-
-            <!-- Line between steps -->
-            <View
-                android:layout_width="0dp"
-                android:layout_height="2dp"
-                android:layout_weight="1"
-                android:background="@color/blue" />
-
-            <!-- Step 2 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/circle_active"
-                    android:text="2"
-                    android:textColor="@android:color/white"
-                    android:padding="6dp"
-                    android:gravity="center" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mengisi Form"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
-                    android:gravity="center" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="tata tertib"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
-                    android:gravity="center" />
-            </LinearLayout>
-
-            <!-- Line between steps -->
-            <View
-                android:layout_width="0dp"
-                android:layout_height="2dp"
-                android:layout_weight="1"
-                android:background="@color/blue" />
-
-            <!-- Step 3 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/circle_active"
-                    android:text="3"
-                    android:textColor="@android:color/white"
-                    android:padding="6dp"
-                    android:gravity="center" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Melakukan"
-                    android:textSize="12sp"
-                    android:gravity="center"
-                    android:textColor="@color/blue"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pembayaran"
-                    android:textSize="12sp"
-                    android:gravity="center"
-                    android:textColor="@color/blue"/>
-            </LinearLayout>
-        </LinearLayout>
-
         <!-- Form Section -->
         <TextView
             android:layout_width="match_parent"
@@ -167,10 +30,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Jumlah Hari Libur"/>
+                android:text="Jumlah Hari"/>
 
             <TextView
-                android:id="@+id/tvJumlahHariLibur"
+                android:id="@+id/tvJumlahHari"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAlignment="textEnd"
@@ -242,13 +105,32 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Opsi Peminjaman"
+                android:layout_marginRight="10dp"/>
+            <TextView
+                android:id="@+id/tvOpsiPeminjaman"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Jadwal Rutin"
+                android:textAlignment="textEnd"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginBottom="5dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Nama Fasilitas"
                 android:layout_marginRight="10dp"/>
             <TextView
                 android:id="@+id/tvNamaFasilitas"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Gedung Olahraga UII (GOR)"
+                android:text="GOR"
                 android:textAlignment="textEnd"/>
         </LinearLayout>
 
@@ -361,10 +243,11 @@
                 android:text="Tambahan"
                 android:layout_marginRight="10dp"/>
             <TextView
-                android:id="@+id/tvTambahan"
+                android:id="@+id/tvPenggunaKhusus"
+                android:visibility="visible"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Internal UII (1jt)"
+                android:text="UII"
                 android:textAlignment="textEnd"/>
         </LinearLayout>
 

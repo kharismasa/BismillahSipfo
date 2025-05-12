@@ -14,11 +14,11 @@ enum class PenggunaKhusus(val description: String) {
     @SerialName("Internal UII")
     INTERNAL_UII("Internal UII"),
 
-    @SerialName("Internal UII vs team eksternal")
-    INTERNAL_VS_EKSTERNAL("Internal UII vs team eksternal"),
+    @SerialName("Internal UII vs Team Eksternal")
+    INTERNAL_VS_EKSTERNAL("Internal UII vs Team Eksternal"),
 
-    @SerialName("Eksternal UII")
-    EKSTERNAL_UII("Eksternal UII")
+    @SerialName("Team Eksternal")
+    EKSTERNAL_UII("Team Eksternal")
 }
 
 @Serializable

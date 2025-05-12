@@ -195,6 +195,7 @@
             android:layout_marginTop="16dp" />
 
         <!-- Jadwal Tersedia -->
+
         <LinearLayout
             android:id="@+id/container_jenis_lapangan"
             android:layout_width="match_parent"
@@ -245,13 +246,13 @@
                 android:id="@+id/radio_internal_vs_eksternal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Internal UII vs team eksternal" />
+                android:text="Internal UII vs Team Eksternal" />
 
             <RadioButton
                 android:id="@+id/radio_eksternal_uii"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Eksternal UII" />
+                android:text="Team Eksternal" />
 
         </RadioGroup>
         

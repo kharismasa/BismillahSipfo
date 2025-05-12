@@ -2,6 +2,7 @@ package com.example.bismillahsipfo.ui.fragment.peminjaman
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.res.ColorStateList
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
@@ -12,7 +13,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -58,6 +61,28 @@ class FormPeminjamanFragment : Fragment() {
     private lateinit var containerJadwalTersedia: RecyclerView
     private lateinit var jadwalTersediaAdapter: JadwalTersediaAdapter
 
+    // Variables untuk menyimpan data yang dipilih
+    private var selectedJadwalTersedia: JadwalTersedia? = null
+    private val selectedLapangan = mutableListOf<Lapangan>()
+
+    companion object {
+        // Define keys for Bundle/Intent extras
+        const val EXTRA_ID_FASILITAS = "extra_id_fasilitas"
+        const val EXTRA_NAMA_FASILITAS = "extra_nama_fasilitas"
+        const val EXTRA_OPSI_PEMINJAMAN = "extra_opsi_peminjaman"
+        const val EXTRA_NAMA_ACARA = "extra_nama_acara"
+        const val EXTRA_ID_ORGANISASI = "extra_id_organisasi"
+        const val EXTRA_NAMA_ORGANISASI = "extra_nama_organisasi"
+        const val EXTRA_JADWAL_TERSEDIA = "extra_jadwal_tersedia"
+        const val EXTRA_LIST_LAPANGAN = "extra_list_lapangan"
+        const val EXTRA_PENGGUNA_KHUSUS = "extra_pengguna_khusus"
+        const val EXTRA_TANGGAL_MULAI = "extra_tanggal_mulai"
+        const val EXTRA_TANGGAL_SELESAI = "extra_tanggal_selesai"
+        const val EXTRA_JAM_MULAI = "extra_jam_mulai"
+        const val EXTRA_JAM_SELESAI = "extra_jam_selesai"
+        const val EXTRA_LAPANGAN_DIPINJAM = "extra_lapangan_dipinjam"
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_form_peminjaman, container, false)
     }
@@ -75,6 +100,215 @@ class FormPeminjamanFragment : Fragment() {
         setupListeners()
         setupJadwalTersediaRecyclerView()
         observeViewModel()
+        setupFieldValidation()
+
+        // Set tombol Next disabled secara default dan atur warnanya
+        buttonNext.isEnabled = false
+        buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray))
+
+        // Tambahkan callback untuk tombol back
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Ambil activity parent
+                val activity = requireActivity() as PeminjamanActivity
+
+                // Jika berada di halaman pertama, kembalikan ke halaman sebelumnya
+                if (activity.viewPager.currentItem > 0) {
+                    activity.viewPager.currentItem = activity.viewPager.currentItem - 1
+                } else {
+                    // Jika sudah di halaman pertama, kembalikan ke activity sebelumnya
+                    activity.finish()
+                }
+            }
+        })
+    }
+
+    private fun setupFieldValidation() {
+        // Setup text watcher for nama acara
+        editTextNamaAcara.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                checkFormValidity()
+            }
+        })
+
+        // Setup text watcher for nama organisasi
+        editTextNamaOrganisasi.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (editTextNamaOrganisasi.visibility == View.VISIBLE) {
+                    checkFormValidity()
+                }
+            }
+        })
+    }
+
+    private fun checkFormValidity() {
+        val isNamaAcaraFilled = editTextNamaAcara.text.toString().trim().isNotEmpty()
+        val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+
+        val isValid = when {
+            selectedOption == "Sesuai Jadwal Rutin" -> {
+                isNamaAcaraFilled && selectedJadwalTersedia != null
+            }
+            selectedOption == "Diluar Jadwal Rutin" -> {
+                val isNamaOrganisasiFilled = editTextNamaOrganisasi.text.toString().trim().isNotEmpty()
+                val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+                if (selectedFasilitas?.idFasilitas == 30) {
+                    isNamaAcaraFilled && isNamaOrganisasiFilled && selectedJadwalTersedia != null
+                } else {
+                    isNamaAcaraFilled && isNamaOrganisasiFilled &&
+                            editTextTanggalMulai.text.toString().isNotEmpty() &&
+                            editTextTanggalSelesai.text.toString().isNotEmpty() &&
+                            editTextJamMulai.text.toString().isNotEmpty() &&
+                            editTextJamSelesai.text.toString().isNotEmpty() &&
+                            selectedLapangan.isNotEmpty()
+                }
+            }
+            else -> false
+        }
+
+        buttonNext.isEnabled = isValid
+
+        // Set warna button berdasarkan status enabled/disabled menggunakan ContextCompat
+        val context = requireContext()
+        if (isValid) {
+            buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.dark_blue))
+        } else {
+            buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.gray))
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun saveDataToExtras(bundle: Bundle) {
+        val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+        val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+
+        selectedFasilitas?.let {
+            bundle.putInt(EXTRA_ID_FASILITAS, it.idFasilitas)
+            bundle.putString(EXTRA_NAMA_FASILITAS, it.namaFasilitas)
+        }
+
+        bundle.putString(EXTRA_OPSI_PEMINJAMAN, selectedOption)
+        bundle.putString(EXTRA_NAMA_ACARA, editTextNamaAcara.text.toString())
+
+        when {
+            // Skenario 1: Sesuai Jadwal Rutin
+            selectedOption == "Sesuai Jadwal Rutin" -> {
+                // Simpan organisasi dari spinner
+                val selectedOrganisasi = spinnerNamaOrganisasi.selectedItem
+                val organisasiIndex = spinnerNamaOrganisasi.selectedItemPosition
+                val organisasi = viewModel.organisasiList.value?.getOrNull(organisasiIndex)
+
+                organisasi?.let {
+                    bundle.putInt(EXTRA_ID_ORGANISASI, it.idOrganisasi)
+                    bundle.putString(EXTRA_NAMA_ORGANISASI, it.namaOrganisasi)
+                }
+
+                // Simpan jadwal tersedia
+                selectedJadwalTersedia?.let { jadwal ->
+                    if (jadwal is java.io.Serializable) {
+                        bundle.putSerializable(EXTRA_JADWAL_TERSEDIA, jadwal as java.io.Serializable)
+
+                        // Tambahkan informasi tanggal dan jam
+                        jadwal.tanggal?.let { tanggal ->
+                            val formattedDate = tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            bundle.putString(EXTRA_TANGGAL_MULAI, formattedDate)
+                            bundle.putString(EXTRA_TANGGAL_SELESAI, formattedDate)
+                        }
+
+                        jadwal.waktuMulai?.let { waktu ->
+                            val formattedTime = waktu.format(DateTimeFormatter.ofPattern("HH:mm"))
+                            bundle.putString(EXTRA_JAM_MULAI, formattedTime)
+                        }
+
+                        jadwal.waktuSelesai?.let { waktu ->
+                            val formattedTime = waktu.format(DateTimeFormatter.ofPattern("HH:mm"))
+                            bundle.putString(EXTRA_JAM_SELESAI, formattedTime)
+                        }
+
+                        // Simpan list lapangan dari jadwal rutin
+                        val intArray = ArrayList<Int>(jadwal.listLapangan)
+                        bundle.putIntegerArrayList(EXTRA_LIST_LAPANGAN, intArray)
+                        // Juga simpan sebagai lapangan dipinjam untuk konsistensi
+                        bundle.putIntegerArrayList(EXTRA_LAPANGAN_DIPINJAM, intArray)
+                    }
+                }
+
+                // Jika fasilitas 30, simpan pengguna khusus "Internal UII"
+                if (selectedFasilitas?.idFasilitas == 30) {
+                    bundle.putString(EXTRA_PENGGUNA_KHUSUS, PenggunaKhusus.INTERNAL_UII.name)
+                }
+            }
+
+            // Skenario 2: Diluar Jadwal Rutin untuk fasilitas selain 30
+            selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas != 30 -> {
+                bundle.putString(EXTRA_NAMA_ORGANISASI, editTextNamaOrganisasi.text.toString())
+                bundle.putString(EXTRA_TANGGAL_MULAI, editTextTanggalMulai.text.toString())
+                bundle.putString(EXTRA_TANGGAL_SELESAI, editTextTanggalSelesai.text.toString())
+                bundle.putString(EXTRA_JAM_MULAI, editTextJamMulai.text.toString())
+                bundle.putString(EXTRA_JAM_SELESAI, editTextJamSelesai.text.toString())
+
+                // Simpan lapangan yang dicentang
+                val selectedLapanganIds = selectedLapangan.map { it.idLapangan }
+                bundle.putIntegerArrayList(EXTRA_LAPANGAN_DIPINJAM, ArrayList<Int>(selectedLapanganIds))
+            }
+
+            // Skenario 3: Diluar Jadwal Rutin untuk fasilitas 30
+            selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas == 30 -> {
+                bundle.putString(EXTRA_NAMA_ORGANISASI, editTextNamaOrganisasi.text.toString())
+
+                // Simpan jadwal tersedia
+                selectedJadwalTersedia?.let { jadwal ->
+                    if (jadwal is java.io.Serializable) {
+                        bundle.putSerializable(EXTRA_JADWAL_TERSEDIA, jadwal as java.io.Serializable)
+
+                        // Tambahkan informasi tanggal dan jam
+                        jadwal.tanggal?.let { tanggal ->
+                            val formattedDate = tanggal.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            bundle.putString(EXTRA_TANGGAL_MULAI, formattedDate)
+                            bundle.putString(EXTRA_TANGGAL_SELESAI, formattedDate)
+                        }
+
+                        jadwal.waktuMulai?.let { waktu ->
+                            val formattedTime = waktu.format(DateTimeFormatter.ofPattern("HH:mm"))
+                            bundle.putString(EXTRA_JAM_MULAI, formattedTime)
+                        }
+
+                        jadwal.waktuSelesai?.let { waktu ->
+                            val formattedTime = waktu.format(DateTimeFormatter.ofPattern("HH:mm"))
+                            bundle.putString(EXTRA_JAM_SELESAI, formattedTime)
+                        }
+
+                        // Simpan list lapangan jika ada
+                        if (jadwal.listLapangan.isNotEmpty()) {
+                            val intArray = ArrayList<Int>(jadwal.listLapangan)
+                            bundle.putIntegerArrayList(EXTRA_LIST_LAPANGAN, intArray)
+                            bundle.putIntegerArrayList(EXTRA_LAPANGAN_DIPINJAM, intArray)
+                        }
+                    }
+                }
+
+                // Simpan pengguna khusus dari radio button
+                val penggunaKhusus = when (containerPenggunaKhusus.checkedRadioButtonId) {
+                    R.id.radio_internal_uii -> PenggunaKhusus.INTERNAL_UII
+                    R.id.radio_internal_vs_eksternal -> PenggunaKhusus.INTERNAL_VS_EKSTERNAL
+                    R.id.radio_eksternal_uii -> PenggunaKhusus.EKSTERNAL_UII
+                    else -> null
+                }
+                penggunaKhusus?.let {
+                    bundle.putString(EXTRA_PENGGUNA_KHUSUS, it.name)
+                }
+            }
+        }
+
+        // Debug log
+        Log.d("FormPeminjamanFragment", "Bundle complete, jadwal tersedia: ${selectedJadwalTersedia != null}, " +
+                "list lapangan: ${bundle.getIntegerArrayList(EXTRA_LIST_LAPANGAN)?.size ?: 0}, " +
+                "tanggal: ${bundle.getString(EXTRA_TANGGAL_MULAI)}")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -82,8 +316,10 @@ class FormPeminjamanFragment : Fragment() {
         Log.d("FormPeminjamanFragment", "Setting up JadwalTersediaRecyclerView")
         jadwalTersediaAdapter = JadwalTersediaAdapter(emptyList()) { jadwal ->
             Log.d("FormPeminjamanFragment", "Jadwal selected: $jadwal")
+            selectedJadwalTersedia = jadwal
             viewModel.onJadwalTersediaSelected(jadwal)
             updateSelectedJadwal(jadwal)
+            checkFormValidity()
 
             // Toast konfirmasi tambahan dari Fragment jika diperlukan
             val tanggal = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
@@ -110,34 +346,6 @@ class FormPeminjamanFragment : Fragment() {
 
         Log.d("FormPeminjamanFragment", "JadwalTersediaRecyclerView setup complete")
     }
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun updateSelectedJadwal(jadwal: JadwalTersedia) {
-        editTextTanggalMulai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-        editTextTanggalSelesai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-        editTextJamMulai.setText(jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm")))
-        editTextJamSelesai.setText(jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm")))
-        updateLapanganCheckboxes(viewModel.lapanganList.value ?: emptyList())
-    }
-
-    private fun initViews(view: View) {
-        spinnerFasilitas = view.findViewById(R.id.spinner_fasilitas)
-        editTextTanggalMulai = view.findViewById(R.id.edittext_tanggal_mulai)
-        editTextTanggalSelesai = view.findViewById(R.id.edittext_tanggal_selesai)
-        editTextJamMulai = view.findViewById(R.id.edittext_jam_mulai)
-        editTextJamSelesai = view.findViewById(R.id.edittext_jam_selesai)
-        editTextNamaAcara = view.findViewById(R.id.edittext_nama_acara)
-        editTextNamaOrganisasi = view.findViewById(R.id.edittext_nama_organisasi)
-        containerJenisLapangan = view.findViewById(R.id.container_jenis_lapangan)
-        containerPenggunaKhusus = view.findViewById(R.id.container_pengguna_khusus)
-        buttonNext = view.findViewById(R.id.button_next)
-        spinnerOpsiPinjam = view.findViewById(R.id.spinner_opsi_pinjam)
-        spinnerNamaOrganisasi = view.findViewById(R.id.spinner_nama_organisasi)
-        tvTanggal = view.findViewById(R.id.tvTanggal)
-        tvJam = view.findViewById(R.id.tvJam)
-        tvLapangan = view.findViewById(R.id.tvLapangan)
-        tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
-        containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupListeners() {
@@ -145,10 +353,12 @@ class FormPeminjamanFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val selectedFasilitas = parent.getItemAtPosition(position) as Fasilitas
                 Log.d("FormPeminjamanFragment", "Fasilitas selected: ${selectedFasilitas.namaFasilitas}")
-                containerJenisLapangan.removeAllViews()  // Hapus tampilan lapangan lama
-                containerPenggunaKhusus.visibility = View.GONE  // Sembunyikan pengguna khusus
+                containerJenisLapangan.removeAllViews()
+                containerPenggunaKhusus.visibility = View.GONE
+                selectedLapangan.clear()
                 viewModel.onFasilitasSelected(selectedFasilitas)
                 updateVisibilityBasedOnCurrentSelection()
+                checkFormValidity()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -159,6 +369,7 @@ class FormPeminjamanFragment : Fragment() {
                 if (selectedOrganisasi != null) {
                     viewModel.onOrganisasiSelected(selectedOrganisasi)
                 }
+                checkFormValidity()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -170,9 +381,14 @@ class FormPeminjamanFragment : Fragment() {
 
         // Listener untuk tombol Next
         buttonNext.setOnClickListener {
+            val bundle = Bundle()
+            saveDataToExtras(bundle)
+
+            // Debug log untuk memastikan data tersimpan
+            Log.d("FormPeminjamanFragment", "Data saved to extras: $bundle")
+
             val activity = requireActivity() as PeminjamanActivity
-            val nextItem = (activity.viewPager.currentItem + 1) % activity.viewPager.adapter?.itemCount!!
-            activity.viewPager.setCurrentItem(nextItem, true)  // Navigasi ke fragment berikutnya
+            activity.navigateToNextPage(bundle)
         }
 
         // Listener untuk edittext yang akan menghilangkan hint saat diketik
@@ -219,6 +435,46 @@ class FormPeminjamanFragment : Fragment() {
         editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
 
 //        buttonNext.setOnClickListener { submitForm() }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateSelectedJadwal(jadwal: JadwalTersedia) {
+        // Pastikan jadwal tersedia di objek formnya
+        selectedJadwalTersedia = jadwal
+
+        // Update UI dengan informasi jadwal
+        editTextTanggalMulai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextTanggalSelesai.setText(jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        editTextJamMulai.setText(jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm")))
+        editTextJamSelesai.setText(jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm")))
+
+        // Update lapangan
+        updateLapanganCheckboxes(viewModel.lapanganList.value ?: emptyList())
+
+        // Log untuk konfirmasi data
+        Log.d("FormPeminjamanFragment", "Selected jadwal tersedia updated: " +
+                "tanggal=${jadwal.tanggal}, waktuMulai=${jadwal.waktuMulai}, " +
+                "waktuSelesai=${jadwal.waktuSelesai}, listLapangan=${jadwal.listLapangan}")
+    }
+
+    private fun initViews(view: View) {
+        spinnerFasilitas = view.findViewById(R.id.spinner_fasilitas)
+        editTextTanggalMulai = view.findViewById(R.id.edittext_tanggal_mulai)
+        editTextTanggalSelesai = view.findViewById(R.id.edittext_tanggal_selesai)
+        editTextJamMulai = view.findViewById(R.id.edittext_jam_mulai)
+        editTextJamSelesai = view.findViewById(R.id.edittext_jam_selesai)
+        editTextNamaAcara = view.findViewById(R.id.edittext_nama_acara)
+        editTextNamaOrganisasi = view.findViewById(R.id.edittext_nama_organisasi)
+        containerJenisLapangan = view.findViewById(R.id.container_jenis_lapangan)
+        containerPenggunaKhusus = view.findViewById(R.id.container_pengguna_khusus)
+        buttonNext = view.findViewById(R.id.button_next)
+        spinnerOpsiPinjam = view.findViewById(R.id.spinner_opsi_pinjam)
+        spinnerNamaOrganisasi = view.findViewById(R.id.spinner_nama_organisasi)
+        tvTanggal = view.findViewById(R.id.tvTanggal)
+        tvJam = view.findViewById(R.id.tvJam)
+        tvLapangan = view.findViewById(R.id.tvLapangan)
+        tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
+        containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -458,24 +714,33 @@ class FormPeminjamanFragment : Fragment() {
 
     private fun updateLapanganCheckboxes(lapanganList: List<Lapangan>) {
         containerJenisLapangan.removeAllViews()
+        selectedLapangan.clear()
+
         if (lapanganList.isNotEmpty()) {
             lapanganList.forEach { lapangan ->
                 val checkbox = CheckBox(context)
                 checkbox.text = lapangan.namaLapangan
-                checkbox.isChecked = true // Set default to checked
+                checkbox.isChecked = true
+                selectedLapangan.add(lapangan) // Add to selected list by default
+
                 checkbox.setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        selectedLapangan.add(lapangan)
+                    } else {
+                        selectedLapangan.remove(lapangan)
+                    }
                     viewModel.onLapanganChecked(lapangan, isChecked)
+                    checkFormValidity()
                 }
                 containerJenisLapangan.addView(checkbox)
             }
         } else {
-            // Tambahkan TextView untuk menampilkan pesan ketika tidak ada lapangan
             val textView = TextView(context)
             textView.text = "Tidak ada lapangan tersedia"
             containerJenisLapangan.addView(textView)
         }
+
     }
-    
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun submitForm() {
