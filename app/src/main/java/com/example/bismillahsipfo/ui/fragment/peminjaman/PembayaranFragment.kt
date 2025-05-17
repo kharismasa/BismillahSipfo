@@ -1,5 +1,8 @@
 package com.example.bismillahsipfo.ui.fragment.peminjaman
 
+import android.app.Activity
+import android.content.ContentValues.TAG
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -10,21 +13,36 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
-import com.example.bismillahsipfo.data.model.Gamifikasi
 import com.example.bismillahsipfo.data.model.JadwalTersedia
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.PenggunaKhusus
-import com.example.bismillahsipfo.data.model.Voucher
+import com.example.bismillahsipfo.data.network.ApiService
+import com.example.bismillahsipfo.data.network.RetrofitClient
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
 import com.example.bismillahsipfo.data.repository.GamifikasiRepository
 import com.example.bismillahsipfo.data.repository.UserRepository
+import com.google.gson.Gson
+import com.midtrans.sdk.uikit.api.model.TransactionResult
+import com.midtrans.sdk.uikit.external.UiKitApi
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.LocalTime
@@ -33,6 +51,17 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 class PembayaranFragment : Fragment() {
+
+    private val supabaseClient = createSupabaseClient(
+        supabaseUrl = BuildConfig.BASE_URL,
+        supabaseKey = BuildConfig.API_KEY
+    ) {
+        install(Postgrest)
+//        install(Storage)
+    }
+
+    // Midtrans launcher
+    private lateinit var midtransLauncher: ActivityResultLauncher<Intent>
 
     // All data collected from previous fragments
     private var idFasilitas: Int = -1
@@ -455,74 +484,201 @@ class PembayaranFragment : Fragment() {
     private fun processPayment() {
         lifecycleScope.launch {
             try {
-                Toast.makeText(requireContext(), "Memproses pembayaran...", Toast.LENGTH_SHORT).show()
+                // Disable button to prevent multiple requests
+                buttonBayar.isEnabled = false
 
-                // Here you would integrate with your payment gateway (Midtrans)
-                // For now, we'll just simulate the payment process
+                // Check if this is a free booking
+                val isFreeBooking = opsiPeminjaman == "Sesuai Jadwal Rutin" || finalPrice <= 0
 
-                // Create a PeminjamanFasilitas object
-                val peminjaman = createPeminjamanObject()
-
-                // TODO: Implement actual payment processing
-                // For now, just navigate to the next page or show a success message
-
-                Toast.makeText(requireContext(), "Pembayaran berhasil", Toast.LENGTH_SHORT).show()
-
-                // Navigate to HasilPembayaranFragment or show success UI
-                // For now, we'll finish the activity
-                requireActivity().finish()
-            } catch (e: Exception) {
-                Log.e("PembayaranFragment", "Error processing payment: ${e.message}")
-                Toast.makeText(requireContext(), "Terjadi kesalahan dalam pemrosesan pembayaran", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun createPeminjamanObject(): PeminjamanFasilitas? {
-        try {
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
-            val startDate = LocalDate.parse(tanggalMulai, formatter)
-            val endDate = LocalDate.parse(tanggalSelesai, formatter)
-            val startTime = LocalTime.parse(jamMulai, timeFormatter)
-            val endTime = LocalTime.parse(jamSelesai, timeFormatter)
-
-            // Convert penggunaKhusus string to enum if not null
-            val penggunaKhususEnum = if (!penggunaKhusus.isNullOrEmpty()) {
-                try {
-                    PenggunaKhusus.valueOf(penggunaKhusus!!)
-                } catch (e: Exception) {
-                    null
+                if (isFreeBooking) {
+                    Toast.makeText(requireContext(), "Memproses peminjaman gratis...", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Memproses pembayaran...", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                null
+
+                // Generate order ID
+                val orderId = "ORDER-${System.currentTimeMillis()}"
+
+                // Get current user
+                val user = userRepository.getCurrentUser()
+
+                // Prepare payment data
+                val itemDetails = ArrayList<Map<String, Any>>()
+                val item = HashMap<String, Any>()
+                item["id"] = "RENT-$idFasilitas"
+                item["price"] = if (isFreeBooking) 0 else finalPrice.toInt()
+                item["quantity"] = 1
+                item["name"] = "Sewa $namaFasilitas"
+                itemDetails.add(item)
+
+                // Customer details
+                val customerName = user?.nama ?: ""
+                val nameParts = customerName.split(" ", limit = 2)
+                val firstName = nameParts.firstOrNull() ?: ""
+                val lastName = if (nameParts.size > 1) nameParts[1] else ""
+
+                // Create transaction data map
+                val requestMap = HashMap<String, Any>()
+                requestMap["transaction_details"] = mapOf(
+                    "order_id" to orderId,
+                    "gross_amount" to if (isFreeBooking) 0 else finalPrice.toInt()
+                )
+                requestMap["item_details"] = itemDetails
+                requestMap["customer_details"] = mapOf(
+                    "first_name" to firstName,
+                    "last_name" to lastName,
+                    "email" to (user?.email ?: ""),
+                    "phone" to (user?.noTelp ?: "")
+                )
+
+                // Add data for Supabase database
+                requestMap["id_pengguna"] = userRepository.getCurrentUserId()
+                requestMap["id_fasilitas"] = idFasilitas
+
+                // Add flag indicating if this is a free booking
+                requestMap["is_free_booking"] = isFreeBooking
+
+                // Get user's voucher if available
+                val userGamifikasi = withContext(Dispatchers.IO) {
+                    user?.let { gamifikasiRepository.getGamifikasiForUser(it) }
+                }
+                if (userGamifikasi?.idVoucher != null) {
+                    requestMap["id_voucher"] = userGamifikasi.idVoucher
+                }
+
+                // Add booking data
+                val peminjamanData = HashMap<String, Any?>()
+                peminjamanData["tanggal_mulai"] = tanggalMulai
+                peminjamanData["tanggal_selesai"] = tanggalSelesai
+                peminjamanData["jam_mulai"] = jamMulai
+                peminjamanData["jam_selesai"] = jamSelesai
+                peminjamanData["nama_organisasi"] = namaOrganisasi
+                peminjamanData["nama_acara"] = namaAcara
+                peminjamanData["pengguna_khusus"] = penggunaKhusus
+
+                // Add the selected courts as integer list
+                val lapanganIds = lapanganDipinjam ?: listLapangan ?: ArrayList<Int>()
+                peminjamanData["lapangan_ids"] = lapanganIds
+
+                requestMap["peminjaman_data"] = peminjamanData
+
+                // Convert to JSON string using Gson
+                val gson = Gson()
+                val jsonString = gson.toJson(requestMap)
+
+                // Create request body
+                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
+
+                // Call Supabase Function via Retrofit
+                val apiService = RetrofitClient.createService(ApiService::class.java)
+                val response = withContext(Dispatchers.IO) {
+                    apiService.createTransaction(
+                        url = "midtrans-sipfo",
+                        authHeader = "Bearer ${BuildConfig.API_KEY}",
+                        requestBody = requestBody
+                    )
+                }
+
+                // Process response
+                if (response.isSuccessful) {
+                    val responseBody = response.body()?.string()
+                    if (responseBody != null) {
+                        val jsonResponse = JSONObject(responseBody)
+
+                        // For free bookings, just check for success and finish
+                        if (isFreeBooking) {
+                            val success = jsonResponse.optBoolean("success", false)
+                            if (success) {
+                                Toast.makeText(requireContext(),
+                                    "Peminjaman gratis berhasil dicatat",
+                                    Toast.LENGTH_SHORT).show()
+                                requireActivity().finish()
+                            } else {
+                                val errorMessages = jsonResponse.optJSONArray("error_messages")
+                                val errorMsg = if (errorMessages != null && errorMessages.length() > 0)
+                                    errorMessages.getString(0) else "Gagal menyimpan peminjaman"
+                                showPaymentError(errorMsg)
+                            }
+                            return@launch
+                        }
+
+                        // For paid bookings, get the token and proceed with Midtrans
+                        val token = jsonResponse.optString("token")
+                        if (token.isNotEmpty()) {
+                            Log.d(TAG, "Midtrans token received: $token")
+
+                            // Register launcher for Midtrans response
+                            midtransLauncher = registerForActivityResult(
+                                ActivityResultContracts.StartActivityForResult()
+                            ) { result ->
+                                buttonBayar.isEnabled = true
+                                if (result.resultCode == Activity.RESULT_OK) {
+                                    val data = result.data
+                                    val transactionResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        data?.getParcelableExtra(UiKitConstants.KEY_TRANSACTION_RESULT, TransactionResult::class.java)
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        data?.getParcelableExtra(UiKitConstants.KEY_TRANSACTION_RESULT) as? TransactionResult
+                                    }
+
+                                    if (transactionResult != null) {
+                                        when (transactionResult.status) {
+                                            // Successful status
+                                            UiKitConstants.STATUS_SUCCESS -> {
+                                                Toast.makeText(requireContext(),
+                                                    "Pembayaran berhasil",
+                                                    Toast.LENGTH_SHORT).show()
+                                                requireActivity().finish()
+                                            }
+                                            // Pending status
+                                            UiKitConstants.STATUS_PENDING -> {
+                                                Toast.makeText(requireContext(),
+                                                    "Pembayaran masih dalam proses",
+                                                    Toast.LENGTH_SHORT).show()
+                                                requireActivity().finish()
+                                            }
+                                            // Other status
+                                            else -> {
+                                                Toast.makeText(requireContext(),
+                                                    "Pembayaran: ${transactionResult.status}",
+                                                    Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(requireContext(),
+                                            "Tidak ada hasil transaksi",
+                                            Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+
+                            // Start Midtrans payment flow
+                            UiKitApi.getDefaultInstance().startPaymentUiFlow(
+                                activity = requireActivity(),
+                                launcher = midtransLauncher,
+                                snapToken = token
+                            )
+                        } else {
+                            showPaymentError("Token tidak ditemukan dalam respons server")
+                        }
+                    } else {
+                        showPaymentError("Respons kosong dari server")
+                    }
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "Error ${response.code()}"
+                    showPaymentError(errorMessage)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing payment: ${e.message}", e)
+                showPaymentError(e.message ?: "Terjadi kesalahan")
             }
-
-            // Generate a unique payment ID
-            val paymentId = "PAY-${System.currentTimeMillis()}"
-
-            // Get current user ID
-            val idPengguna = userRepository.getCurrentUserId()
-
-            return PeminjamanFasilitas(
-                idPeminjaman = 0, // Will be generated by the database
-                idFasilitas = idFasilitas,
-                tanggalMulai = startDate,
-                tanggalSelesai = endDate,
-                jamMulai = startTime,
-                jamSelesai = endTime,
-                namaOrganisasi = namaOrganisasi ?: "",
-                namaAcara = namaAcara ?: "",
-                idPembayaran = paymentId,
-                penggunaKhusus = penggunaKhususEnum,
-                idPengguna = idPengguna,
-                createdAtPeminjaman = java.time.Instant.now()
-            )
-        } catch (e: Exception) {
-            Log.e("PembayaranFragment", "Error creating peminjaman object: ${e.message}")
-            return null
         }
     }
+
+    private fun showPaymentError(message: String) {
+        buttonBayar.isEnabled = true
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        Log.e(TAG, "Payment error: $message")
+    }
+
 }

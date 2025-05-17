@@ -77,8 +77,22 @@ dependencies {
     implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.1.2")
     implementation("io.github.jan-tennert.supabase:storage-kt:3.1.2")
-//    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    //    implementation("io.github.jan-tennert.supabase:realtime-kt")
     implementation("io.ktor:ktor-client-android:3.1.1")
 
+    // Gson untuk konversi JSON
+    implementation("com.google.code.gson:gson:2.10.1")
 
+    // OkHttp dan Retrofit untuk network requests
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Midtrans SDK
+    implementation("com.midtrans:uikit:2.0.0-SANDBOX")
+
+    // Kotlin Coroutines (jika belum ada)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
 }

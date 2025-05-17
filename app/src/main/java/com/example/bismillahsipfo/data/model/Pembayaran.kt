@@ -28,5 +28,7 @@ data class Pembayaran (
     @SerialName("status_pembayaran") @Serializable(with = StatusPembayaranSerializer::class) val statusPembayaran: StatusPembayaran,
     @SerialName("total_biaya") val totalBiaya: Double,
     @SerialName("created_at") @Serializable(with = InstantSerializer::class) val createdAtPembayaran: Instant,
-    @SerialName("waktu_kadaluwarsa") @Serializable(with = InstantSerializer::class) val waktuKadaluwarsa: Instant
+    @SerialName("waktu_kadaluwarsa") @Serializable(with = InstantSerializer::class) val waktuKadaluwarsa: Instant,
+    @SerialName("midtrans_token") val midtransToken: String?,
+    @SerialName("midtrans_redirect_url") val midtransRedirectUrl: String?
 )

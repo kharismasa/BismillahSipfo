@@ -19,9 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.adapter.JadwalTersediaAdapter
@@ -145,6 +143,7 @@ class FormPeminjamanFragment : Fragment() {
         })
     }
 
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun checkFormValidity() {
         val isNamaAcaraFilled = editTextNamaAcara.text.toString().trim().isNotEmpty()
         val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""

@@ -24,7 +24,7 @@ enum class PenggunaKhusus(val description: String) {
 @Serializable
 // tabel "peminjaman_fasilitas"
 data class PeminjamanFasilitas(
-    @SerialName("id_peminjaman") val idPeminjaman: Int,
+    @SerialName("id_peminjaman") val idPeminjaman: Int? = null,
     @SerialName("id_fasilitas") val idFasilitas: Int,
     @SerialName("tanggal_mulai") @Serializable(with = LocalDateSerializer::class) val tanggalMulai: LocalDate,
     @SerialName("tanggal_selesai") @Serializable(with = LocalDateSerializer::class) val tanggalSelesai: LocalDate,

@@ -6,7 +6,6 @@ import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.Gamifikasi
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.Pembayaran
-import com.example.bismillahsipfo.data.model.StatusPembayaran
 import com.example.bismillahsipfo.data.model.User
 import com.example.bismillahsipfo.data.model.Voucher
 import io.github.jan.supabase.createSupabaseClient
@@ -16,7 +15,6 @@ import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.result.PostgrestResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.lang.System.`in`
 
 class GamifikasiRepository(private val context: Context) {
 
@@ -32,13 +30,13 @@ class GamifikasiRepository(private val context: Context) {
         return userRepository.getCurrentUser()
     }
 
-    suspend fun getGamifikasiForUser(user: User): Gamifikasi? {
+    suspend fun getGamifikasiForUser(user: User?): Gamifikasi? {
         return withContext(Dispatchers.IO) {
             try {
                 val response: PostgrestResult = supabase.from("gamifikasi")
                     .select(Columns.ALL) {
                         filter {
-                            eq("id_gamifikasi", user.idGamifikasi)
+                            eq("id_gamifikasi", user!!.idGamifikasi)
                         }
                     }
                 val gamifikasi = response.decodeSingle<Gamifikasi>()
@@ -124,4 +122,11 @@ class GamifikasiRepository(private val context: Context) {
             }
         }
     }
+
+    // Tambahkan ke file GamifikasiRepository.kt
+    suspend fun getCurrentUserGamifikasi(): Gamifikasi? {
+        val user = getCurrentUser() ?: return null
+        return getGamifikasiForUser(user)
+    }
+
 }

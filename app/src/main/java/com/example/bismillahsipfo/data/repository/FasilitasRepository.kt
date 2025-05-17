@@ -327,12 +327,12 @@ class FasilitasRepository {
                     select()
                 }
                 .decodeSingle<PeminjamanFasilitas>()
-    
+
             result.idPeminjaman
         } catch (e: Exception) {
             Log.e("FasilitasRepository", "Error inserting PeminjamanFasilitas: ${e.message}")
             -1
-        }
+        }!!
     }
 
     suspend fun insertLapanganDipinjam(idPeminjaman: Int, idLapangan: Int) {
