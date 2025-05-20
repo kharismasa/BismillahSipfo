@@ -3,6 +3,7 @@ package com.example.bismillahsipfo.ui.fragment.peminjaman
 import android.app.Activity
 import android.content.ContentValues.TAG
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -43,6 +44,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.jvm.java
 
 class PembayaranFragment : Fragment() {
 
@@ -721,10 +723,33 @@ class PembayaranFragment : Fragment() {
                                 if (midtransResponseBody != null) {
                                     val midtransJsonResponse = JSONObject(midtransResponseBody)
                                     val token = midtransJsonResponse.optString("token")
+                                    val redirectUrl = midtransJsonResponse.optString("redirect_url")
 
                                     if (token.isNotEmpty()) {
                                         Log.d(TAG, "Midtrans token received: $token")
 
+                                        // PERBAIKAN: Jika redirect URL tersedia, buka di browser
+                                        if (redirectUrl.isNotEmpty()) {
+                                            try {
+                                                // Buka dengan WebView dalam aplikasi
+                                                val webViewIntent = Intent(requireContext(), MidtransWebViewActivity::class.java)
+                                                webViewIntent.putExtra("MIDTRANS_URL", redirectUrl)
+                                                webViewIntent.putExtra("PAYMENT_ID", paymentId)
+                                                startActivity(webViewIntent)
+
+                                                // Don't navigate to hasil yet - wait for WebView to complete
+                                                return@launch
+                                            } catch (e: Exception) {
+                                                Log.e(TAG, "Error opening WebView: ${e.message}", e)
+                                                // Fallback to external browser if WebView fails
+                                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(redirectUrl))
+                                                startActivity(browserIntent)
+                                                navigateToHasilPembayaran(true, paymentId)
+                                                return@launch
+                                            }
+                                        }
+
+                                        // Jika tidak ada redirect URL atau browser gagal, coba SDK Midtrans
                                         try {
                                             // Mulai UI Midtrans
                                             UiKitApi.getDefaultInstance().startPaymentUiFlow(
@@ -774,46 +799,6 @@ class PembayaranFragment : Fragment() {
         }
     }
 
-    private fun processBookingDirectly(paymentId: String?) {
-        lifecycleScope.launch {
-            try {
-                // Buat request untuk memproses peminjaman tanpa menunggu pembayaran
-                val directProcessMap = HashMap<String, Any>()
-                directProcessMap["payment_id"] = paymentId ?: ""
-                directProcessMap["force_process"] = true
-                directProcessMap["direct_process"] = true
-
-                val gson = Gson()
-                val jsonString = gson.toJson(directProcessMap)
-                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
-
-                // Panggil endpoint baru untuk memproses peminjaman langsung
-                val apiService = RetrofitClient.createService(ApiService::class.java)
-                val response = withContext(Dispatchers.IO) {
-                    apiService.createTransaction(
-                        url = "midtrans-sipfo", // Endpoint baru di backend
-                        authHeader = "Bearer ${BuildConfig.API_KEY}",
-                        requestBody = requestBody
-                    )
-                }
-
-                if (response.isSuccessful) {
-                    // Jika berhasil, navigasi ke halaman sukses
-                    navigateToHasilPembayaran(true, paymentId)
-                } else {
-                    // Jika gagal, tampilkan pesan error dan tetap navigasi ke halaman hasil
-                    // dengan status berhasil agar pengguna tidak perlu mengulang proses
-                    Log.e(TAG, "Error processing booking directly: ${response.code()}")
-                    navigateToHasilPembayaran(true, paymentId)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in direct processing: ${e.message}", e)
-                // Tetap navigasi ke halaman hasil dengan status berhasil
-                navigateToHasilPembayaran(true, paymentId)
-            }
-        }
-    }
-
     // Tambahkan method ini di dalam class
     private fun navigateToHasilPembayaran(isSuccess: Boolean, paymentId: String? = null) {
         val intent = Intent(requireContext(), HasilPembayaranActivity::class.java).apply {
@@ -827,8 +812,6 @@ class PembayaranFragment : Fragment() {
         startActivity(intent)
         requireActivity().finish() // Tutup activity PeminjamanActivity
     }
-
-
 
     private fun showPaymentError(message: String) {
         buttonBayar.isEnabled = true

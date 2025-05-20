@@ -192,6 +192,15 @@
             android:textColor="@color/black"
             android:layout_marginBottom="32dp"/>
 
+        <Button
+            android:id="@+id/btnCheckStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Cek Status Pembayaran"
+            android:backgroundTint="@color/dark_blue"
+            android:textColor="@android:color/white" />
+
         <!-- Action Button -->
         <Button
             android:id="@+id/btnKembaliBeranda"

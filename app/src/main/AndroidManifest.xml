@@ -23,6 +23,10 @@
         android:theme="@style/Theme.BismillahSipfo"
         tools:targetApi="31">
         <activity
+            android:name=".ui.fragment.peminjaman.MidtransWebViewActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+        <activity
             android:name=".ui.fragment.riwayat.DetailPeminjamanActivity"
             android:exported="false" />
         <activity
