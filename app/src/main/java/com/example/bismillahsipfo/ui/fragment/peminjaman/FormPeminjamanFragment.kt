@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class FormPeminjamanFragment : Fragment() {
 
@@ -62,6 +63,8 @@ class FormPeminjamanFragment : Fragment() {
     // Variables untuk menyimpan data yang dipilih
     private var selectedJadwalTersedia: JadwalTersedia? = null
     private val selectedLapangan = mutableListOf<Lapangan>()
+
+    private lateinit var tvDateWarning: LinearLayout
 
     companion object {
         // Define keys for Bundle/Intent extras
@@ -121,6 +124,108 @@ class FormPeminjamanFragment : Fragment() {
         })
     }
 
+    // Tambahkan fungsi helper untuk validasi tanggal dan jam
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun isDateTimeValid(): Boolean {
+        val tanggalMulaiText = editTextTanggalMulai.text.toString().trim()
+        val tanggalSelesaiText = editTextTanggalSelesai.text.toString().trim()
+        val jamMulaiText = editTextJamMulai.text.toString().trim()
+        val jamSelesaiText = editTextJamSelesai.text.toString().trim()
+
+        // Jika ada field yang kosong, return false (tidak perlu warning untuk ini)
+        if (tanggalMulaiText.isEmpty() || tanggalSelesaiText.isEmpty() ||
+            jamMulaiText.isEmpty() || jamSelesaiText.isEmpty()) {
+            hideDateWarning() // Sembunyikan warning jika field kosong
+            return false
+        }
+
+        return try {
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+            val tanggalMulai = LocalDate.parse(tanggalMulaiText, formatter)
+            val tanggalSelesai = LocalDate.parse(tanggalSelesaiText, formatter)
+            val jamMulai = LocalTime.parse(jamMulaiText, timeFormatter)
+            val jamSelesai = LocalTime.parse(jamSelesaiText, timeFormatter)
+
+            val today = LocalDate.now()
+            val minDate = today.plusDays(7) // H+7 dari hari ini
+
+            // Validasi 1: tanggal mulai harus minimal H+7 dari hari ini
+            if (tanggalMulai < minDate) {
+                showDateWarning("Masukkan tanggal minimal H+7 dari hari ini")
+                return false
+            }
+
+            // Validasi 2: tanggal selesai >= tanggal mulai
+            if (tanggalSelesai < tanggalMulai) {
+                showDateWarning("Tanggal selesai harus lebih besar atau sama dengan tanggal mulai")
+                return false
+            }
+
+            // Validasi 3: Durasi maksimal (untuk tanggal berbeda)
+            if (tanggalMulai != tanggalSelesai) {
+                val daysBetween = ChronoUnit.DAYS.between(tanggalMulai, tanggalSelesai)
+                if (daysBetween > 7) {
+                    showDateWarning("Durasi peminjaman maksimal 7 hari")
+                    return false
+                }
+            }
+
+            // Validasi 4: Jam selesai > jam mulai (untuk tanggal yang sama atau berbeda)
+            if (tanggalMulai <= tanggalSelesai && jamSelesai <= jamMulai) {
+                showDateWarning("Jam selesai harus lebih besar dari jam mulai")
+                return false
+            }
+
+            // Validasi 5: Durasi minimum (hanya untuk tanggal yang sama)
+            if (tanggalMulai <= tanggalSelesai) {
+                val durationMinutes = ChronoUnit.MINUTES.between(jamMulai, jamSelesai)
+                if (durationMinutes < 30) {
+                    showDateWarning("Durasi peminjaman minimal 30 menit")
+                    return false
+                }
+            }
+
+            // Validasi 6: Availability check (untuk opsi "Diluar Jadwal Rutin")
+            val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+            val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+            if (selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas != 30) {
+                val currentAvailabilityStatus = viewModel.jadwalAvailability.value
+                when (currentAvailabilityStatus) {
+                    is JadwalAvailabilityStatus.UNAVAILABLE -> {
+                        showDateWarning("Jadwal tidak tersedia - sudah ada peminjaman lain")
+                        return false
+                    }
+                    is JadwalAvailabilityStatus.HOLIDAY -> {
+                        // Menampilkan nama hari libur dan tanggalnya
+                        showDateWarning("Jadwal tidak tersedia - Hari Libur: ${currentAvailabilityStatus.namaHariLibur} (${currentAvailabilityStatus.tanggal})")
+                        return false
+                    }
+                    is JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
+                        showDateWarning("Terdapat jadwal rutin, tolong hubungi pemilik jadwal terlebih dahulu")
+                        // Tetap return true sesuai requirement (button tetap enabled)
+                        return true
+                    }
+                    else -> {
+                        // AVAILABLE atau null, lanjut ke validasi berikutnya
+                    }
+                }
+            }
+
+            // Semua validasi berhasil - sembunyikan warning
+            hideDateWarning()
+            return true
+
+        } catch (e: Exception) {
+            // Handle parsing error dengan aman
+            Log.e("FormPeminjamanFragment", "Error parsing date/time: ${e.message}")
+            showDateWarning("Format tanggal atau jam tidak valid")
+            return false
+        }
+    }
+
     private fun setupFieldValidation() {
         // Setup text watcher for nama acara
         editTextNamaAcara.addTextChangedListener(object : TextWatcher {
@@ -159,12 +264,19 @@ class FormPeminjamanFragment : Fragment() {
                 if (selectedFasilitas?.idFasilitas == 30) {
                     isNamaAcaraFilled && isNamaOrganisasiFilled && selectedJadwalTersedia != null
                 } else {
+                    // Tambahkan validasi tanggal dan jam
+                    val isDateTimeValid = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        isDateTimeValid()
+                    } else {
+                        // Fallback untuk versi Android yang lebih lama
+                        editTextTanggalMulai.text.toString().isNotEmpty() &&
+                                editTextTanggalSelesai.text.toString().isNotEmpty() &&
+                                editTextJamMulai.text.toString().isNotEmpty() &&
+                                editTextJamSelesai.text.toString().isNotEmpty()
+                    }
+
                     isNamaAcaraFilled && isNamaOrganisasiFilled &&
-                            editTextTanggalMulai.text.toString().isNotEmpty() &&
-                            editTextTanggalSelesai.text.toString().isNotEmpty() &&
-                            editTextJamMulai.text.toString().isNotEmpty() &&
-                            editTextJamSelesai.text.toString().isNotEmpty() &&
-                            selectedLapangan.isNotEmpty()
+                            isDateTimeValid && selectedLapangan.isNotEmpty()
                 }
             }
             else -> false
@@ -179,6 +291,31 @@ class FormPeminjamanFragment : Fragment() {
         } else {
             buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.gray))
         }
+    }
+
+    // Tambahkan TextWatcher untuk field tanggal dan jam agar validasi real-time
+    private fun setupDateTimeValidation() {
+        val dateTimeWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun afterTextChanged(s: Editable?) {
+                checkFormValidity()
+
+                // Tambahkan pengecekan availability untuk opsi "Diluar Jadwal Rutin"
+                val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+                val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+                if (selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas != 30) {
+                    checkJadwalAvailability()
+                }
+            }
+        }
+
+        editTextTanggalMulai.addTextChangedListener(dateTimeWatcher)
+        editTextTanggalSelesai.addTextChangedListener(dateTimeWatcher)
+        editTextJamMulai.addTextChangedListener(dateTimeWatcher)
+        editTextJamSelesai.addTextChangedListener(dateTimeWatcher)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -428,12 +565,13 @@ class FormPeminjamanFragment : Fragment() {
         }
 
         // Tambahkan listener untuk tanggal dan jam
-        editTextTanggalMulai.addTextChangedListener(dateTimeChangeWatcher)
-        editTextTanggalSelesai.addTextChangedListener(dateTimeChangeWatcher)
-        editTextJamMulai.addTextChangedListener(dateTimeChangeWatcher)
-        editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
+//        editTextTanggalMulai.addTextChangedListener(dateTimeChangeWatcher)
+//        editTextTanggalSelesai.addTextChangedListener(dateTimeChangeWatcher)
+//        editTextJamMulai.addTextChangedListener(dateTimeChangeWatcher)
+//        editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
 
-//        buttonNext.setOnClickListener { submitForm() }
+        // Tambahkan setup validasi tanggal dan jam
+        setupDateTimeValidation()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -474,11 +612,27 @@ class FormPeminjamanFragment : Fragment() {
         tvLapangan = view.findViewById(R.id.tvLapangan)
         tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
         containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
+        tvDateWarning = view.findViewById(R.id.tv_date_warning)
+    }
+
+    // Tambahkan fungsi untuk menampilkan dan menyembunyikan warning
+    private fun showDateWarning(message: String) {
+        val textView = tvDateWarning.findViewById<TextView>(R.id.warning_text) // Tambahkan ID di XML
+        textView.text = message
+        tvDateWarning.visibility = View.VISIBLE
+    }
+
+    private fun hideDateWarning() {
+        tvDateWarning.visibility = View.GONE
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setVisibilityBasedOnSelection(idFasilitas: Int?, selectedOption: String) {
         Log.d("FormPeminjamanFragment", "setVisibilityBasedOnSelection called - Fasilitas ID: $idFasilitas, Opsi: $selectedOption")
+
+        // Sembunyikan warning saat mode berubah
+        hideDateWarning()
+
         when {
             idFasilitas == 30 && selectedOption == "Sesuai Jadwal Rutin" -> {
                 // Logika untuk Fasilitas 30 dan Sesuai Jadwal Rutin
@@ -491,6 +645,7 @@ class FormPeminjamanFragment : Fragment() {
                 tvJadwalTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.VISIBLE
                 containerPenggunaKhusus.visibility = View.VISIBLE
+                tvDateWarning.visibility = View.GONE
 
                 // Set dan nonaktifkan radio button Internal UII
                 val radioInternalUii = containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_uii)
@@ -508,6 +663,7 @@ class FormPeminjamanFragment : Fragment() {
                 tvJam.visibility = View.GONE
                 tvJadwalTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.VISIBLE
+                tvDateWarning.visibility = View.GONE // Sembunyikan warning
                 Log.d("FormPeminjamanFragment", "Container jadwal tersedia ditampilkan untuk Fasilitas 30 - Diluar Jadwal Rutin")
                 containerPenggunaKhusus.visibility = View.VISIBLE
 
@@ -527,6 +683,7 @@ class FormPeminjamanFragment : Fragment() {
                 tvJadwalTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.VISIBLE
                 containerPenggunaKhusus.visibility = View.GONE
+                tvDateWarning.visibility = View.GONE // Sembunyikan warning
             }
             selectedOption == "Diluar Jadwal Rutin" -> {
                 // Logika untuk Diluar Jadwal Rutin (selain Fasilitas 30)
@@ -539,10 +696,11 @@ class FormPeminjamanFragment : Fragment() {
                 containerPenggunaKhusus.visibility = View.GONE
                 tvLapangan.visibility = View.VISIBLE
                 containerJenisLapangan.visibility = View.VISIBLE
+                tvDateWarning.visibility = View.GONE // Warning akan muncul saat validasi
             }
             else -> {
                 // Logika default atau untuk pilihan lain
-                // Misalnya, sembunyikan semua atau tampilkan pesan error
+                tvDateWarning.visibility = View.GONE
             }
         }
 
@@ -570,15 +728,6 @@ class FormPeminjamanFragment : Fragment() {
         Log.d("FormPeminjamanFragment", "Updating visibility - Fasilitas: ${selectedFasilitas?.namaFasilitas}, ID: ${selectedFasilitas?.idFasilitas}, Opsi: $selectedOption")
 
         setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
-    }
-
-    private val dateTimeChangeWatcher = object : TextWatcher {
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        @RequiresApi(Build.VERSION_CODES.O)
-        override fun afterTextChanged(s: Editable?) {
-            checkJadwalAvailability()
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -636,31 +785,25 @@ class FormPeminjamanFragment : Fragment() {
         }
 
         viewModel.jadwalAvailability.observe(viewLifecycleOwner) { status ->
-            // Hanya berlaku jika opsi "Diluar Jadwal Rutin" dipilih
             val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
 
             if (selectedOption == "Diluar Jadwal Rutin") {
                 when (status) {
-                    JadwalAvailabilityStatus.AVAILABLE -> {
-                        // Tidak ada peringatan, button Next tetap enabled
-                        buttonNext.isEnabled = true
+                    is JadwalAvailabilityStatus.AVAILABLE -> {
+                        // Tidak ada peringatan tambahan
                     }
-                    JadwalAvailabilityStatus.UNAVAILABLE -> {
-                        Toast.makeText(context, "Jadwal tidak tersedia", Toast.LENGTH_SHORT).show()
-                        buttonNext.isEnabled = false
+                    is JadwalAvailabilityStatus.UNAVAILABLE -> {
+                        showDateWarning("Jadwal tidak tersedia - sudah ada peminjaman lain")
                     }
-                    JadwalAvailabilityStatus.HOLIDAY -> {
-                        Toast.makeText(context, "Jadwal tidak tersedia (Hari Libur)", Toast.LENGTH_SHORT).show()
-                        buttonNext.isEnabled = false
+                    is JadwalAvailabilityStatus.HOLIDAY -> {
+                        showDateWarning("Jadwal tidak tersedia - Hari Libur: ${status.namaHariLibur} (${status.tanggal})")
                     }
-                    JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
-                        Toast.makeText(context, "Terdapat jadwal rutin, tolong hubungi dengan pemilik jadwal terlebih dahulu", Toast.LENGTH_LONG).show()
-                        buttonNext.isEnabled = true
+                    is JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
+                        showDateWarning("Terdapat jadwal rutin, tolong hubungi pemilik jadwal terlebih dahulu")
                     }
                 }
-            } else {
-                // Untuk opsi selain "Diluar Jadwal Rutin", button Next selalu enabled
-                buttonNext.isEnabled = true
+                // Panggil ulang checkFormValidity setelah status availability berubah
+                checkFormValidity()
             }
         }
 
@@ -679,9 +822,14 @@ class FormPeminjamanFragment : Fragment() {
         val month = calendar.get(java.util.Calendar.MONTH)
         val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
 
-        DatePickerDialog(requireContext(), { _, selectedYear, selectedMonth, selectedDay ->
+        // Set minimum date to H+7
+        val today = LocalDate.now()
+        val minDate = today.plusDays(7)
+
+        val datePickerDialog = DatePickerDialog(requireContext(), { _, selectedYear, selectedMonth, selectedDay ->
             val selectedDate = LocalDate.of(selectedYear, selectedMonth + 1, selectedDay)
             val formattedDate = selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
             if (isStartDate) {
                 editTextTanggalMulai.setText(formattedDate)
                 viewModel.setTanggalMulai(selectedDate)
@@ -689,7 +837,16 @@ class FormPeminjamanFragment : Fragment() {
                 editTextTanggalSelesai.setText(formattedDate)
                 viewModel.setTanggalSelesai(selectedDate)
             }
-        }, year, month, day).show()
+
+            checkFormValidity()
+        }, year, month, day)
+
+        // Set minimum date untuk DatePicker
+        val minCalendar = java.util.Calendar.getInstance()
+        minCalendar.set(minDate.year, minDate.monthValue - 1, minDate.dayOfMonth)
+        datePickerDialog.datePicker.minDate = minCalendar.timeInMillis
+
+        datePickerDialog.show()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -741,18 +898,5 @@ class FormPeminjamanFragment : Fragment() {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun submitForm() {
-        val namaAcara = editTextNamaAcara.text.toString()
-        val namaOrganisasi = editTextNamaOrganisasi.text.toString()
-        val penggunaKhusus = when (containerPenggunaKhusus.checkedRadioButtonId) {
-            R.id.radio_internal_uii -> PenggunaKhusus.INTERNAL_UII
-            R.id.radio_internal_vs_eksternal -> PenggunaKhusus.INTERNAL_VS_EKSTERNAL
-            R.id.radio_eksternal_uii -> PenggunaKhusus.EKSTERNAL_UII
-            else -> null
-        }
-
-        viewModel.submitForm(namaAcara, namaOrganisasi, penggunaKhusus)
-    }
 
 }

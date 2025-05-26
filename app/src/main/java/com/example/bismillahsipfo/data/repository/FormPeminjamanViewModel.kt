@@ -223,9 +223,16 @@ class FormPeminjamanViewModel(
 
 }
 
-enum class JadwalAvailabilityStatus {
-    AVAILABLE,
-    UNAVAILABLE,
-    HOLIDAY,
-    CONFLICT_WITH_JADWAL_RUTIN
+//enum class JadwalAvailabilityStatus {
+//    AVAILABLE,
+//    UNAVAILABLE,
+//    HOLIDAY,
+//    CONFLICT_WITH_JADWAL_RUTIN
+//}
+
+sealed class JadwalAvailabilityStatus {
+    object AVAILABLE : JadwalAvailabilityStatus()
+    object UNAVAILABLE : JadwalAvailabilityStatus()
+    data class HOLIDAY(val namaHariLibur: String, val tanggal: String) : JadwalAvailabilityStatus()
+    object CONFLICT_WITH_JADWAL_RUTIN : JadwalAvailabilityStatus()
 }

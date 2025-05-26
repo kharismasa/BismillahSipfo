@@ -586,8 +586,13 @@ class FasilitasRepository {
 
         // Check for holidays
         val hariLibur = getHariLibur()
-        if (hariLibur.any { it.dateHariLibur in startDate..endDate }) {
-            return JadwalAvailabilityStatus.HOLIDAY
+        val holidayInRange = hariLibur.find { it.dateHariLibur in startDate..endDate }
+        if (holidayInRange != null) {
+            val formattedDate = holidayInRange.dateHariLibur.format(DateTimeFormatter.ofPattern("dd/MM/yy"))
+            return JadwalAvailabilityStatus.HOLIDAY(
+                namaHariLibur = holidayInRange.namaHariLibur,
+                tanggal = formattedDate
+            )
         }
 
         // Check for existing peminjaman
