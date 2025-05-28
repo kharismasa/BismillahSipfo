@@ -151,6 +151,15 @@ class FormPeminjamanFragment : Fragment() {
             val today = LocalDate.now()
             val minDate = today.plusDays(7) // H+7 dari hari ini
 
+            // Validasi jam operasional (06:00 - 22:00)
+            val minTime = LocalTime.of(6, 0) // 06:00
+            val maxTime = LocalTime.of(22, 0) // 22:00
+
+            if (jamMulai < minTime || jamMulai > maxTime || jamSelesai < minTime || jamSelesai > maxTime) {
+                showDateWarning("Jam mulai dan jam selesai min max 06.00-22.00 WIB")
+                return false
+            }
+
             // Validasi 1: tanggal mulai harus minimal H+7 dari hari ini
             if (tanggalMulai < minDate) {
                 showDateWarning("Masukkan tanggal minimal H+7 dari hari ini")
@@ -849,9 +858,16 @@ class FormPeminjamanFragment : Fragment() {
         val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
         val minute = calendar.get(java.util.Calendar.MINUTE)
 
-        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+        val timePickerDialog = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+            // Validasi jam yang dipilih (06:00 - 22:00)
+            if (selectedHour < 6 || selectedHour > 22) {
+                showDateWarning("Jam mulai dan jam selesai min max 06.00-22.00 WIB")
+                return@TimePickerDialog
+            }
+
             val selectedTime = LocalTime.of(selectedHour, selectedMinute)
             val formattedTime = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+
             if (isStartTime) {
                 editTextJamMulai.setText(formattedTime)
                 viewModel.setJamMulai(selectedTime)
@@ -859,7 +875,13 @@ class FormPeminjamanFragment : Fragment() {
                 editTextJamSelesai.setText(formattedTime)
                 viewModel.setJamSelesai(selectedTime)
             }
-        }, hour, minute, true).show()
+
+            checkFormValidity()
+        }, hour, minute, true)
+
+        // Tambahkan informasi tentang batasan jam
+        timePickerDialog.setTitle("Pilih Jam (06:00 - 22:00)")
+        timePickerDialog.show()
     }
 
     private fun updateLapanganCheckboxes(lapanganList: List<Lapangan>) {
