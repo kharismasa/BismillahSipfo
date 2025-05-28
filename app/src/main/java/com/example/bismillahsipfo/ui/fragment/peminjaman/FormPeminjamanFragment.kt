@@ -564,12 +564,6 @@ class FormPeminjamanFragment : Fragment() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Tambahkan listener untuk tanggal dan jam
-//        editTextTanggalMulai.addTextChangedListener(dateTimeChangeWatcher)
-//        editTextTanggalSelesai.addTextChangedListener(dateTimeChangeWatcher)
-//        editTextJamMulai.addTextChangedListener(dateTimeChangeWatcher)
-//        editTextJamSelesai.addTextChangedListener(dateTimeChangeWatcher)
-
         // Tambahkan setup validasi tanggal dan jam
         setupDateTimeValidation()
     }
