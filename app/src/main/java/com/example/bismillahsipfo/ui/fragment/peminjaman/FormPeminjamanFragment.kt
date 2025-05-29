@@ -59,6 +59,7 @@ class FormPeminjamanFragment : Fragment() {
     private lateinit var tvJadwalTersedia: TextView
     private lateinit var containerJadwalTersedia: RecyclerView
     private lateinit var jadwalTersediaAdapter: JadwalTersediaAdapter
+    private lateinit var tvJadwalTidakTersedia: TextView
 
     // Variables untuk menyimpan data yang dipilih
     private var selectedJadwalTersedia: JadwalTersedia? = null
@@ -575,6 +576,7 @@ class FormPeminjamanFragment : Fragment() {
 
         // Tambahkan setup validasi tanggal dan jam
         setupDateTimeValidation()
+        setupSpinnerOpsiPinjam()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -616,6 +618,53 @@ class FormPeminjamanFragment : Fragment() {
         tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
         containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
         tvDateWarning = view.findViewById(R.id.tv_date_warning)
+        tvJadwalTidakTersedia = view.findViewById(R.id.tv_jadwal_tidak_tersedia)
+        tvJadwalTidakTersedia.visibility = View.GONE // Sembunyikan secara default
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun setupSpinnerOpsiPinjam() {
+        val opsiPinjamAdapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.opsi_pinjam_array,
+            android.R.layout.simple_spinner_item
+        )
+        opsiPinjamAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerOpsiPinjam.adapter = opsiPinjamAdapter
+
+        spinnerOpsiPinjam.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                val selectedOption = parent.getItemAtPosition(position).toString()
+                val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+                // Reset jadwal tersedia selection
+                selectedJadwalTersedia = null
+
+                // Update UI berdasarkan opsi yang dipilih
+                setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
+
+                // Reset tampilan jadwal tidak tersedia
+                tvJadwalTidakTersedia.visibility = View.GONE
+
+                // Jika opsi "Sesuai Jadwal Rutin" dipilih dan fasilitas valid, muat jadwal tersedia
+                if (selectedOption == "Sesuai Jadwal Rutin" && selectedFasilitas != null && selectedFasilitas.idFasilitas != -1) {
+                    val organisasiIndex = spinnerNamaOrganisasi.selectedItemPosition
+                    val organisasi = viewModel.organisasiList.value?.getOrNull(organisasiIndex)
+                    if (organisasi != null) {
+                        viewModel.onOrganisasiSelected(organisasi)
+                    }
+                }
+
+                // Jika opsi "Diluar Jadwal Rutin" dipilih dan fasilitas adalah 30, muat jadwal tersedia khusus
+                if (selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas == 30) {
+                    viewModel.loadJadwalTersediaForFasilitas30()
+                }
+
+                checkFormValidity()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
     }
 
     // Tambahkan fungsi untuk menampilkan dan menyembunyikan warning
@@ -725,12 +774,60 @@ class FormPeminjamanFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateVisibilityBasedOnCurrentSelection() {
-        val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
         val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+        val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
 
-        Log.d("FormPeminjamanFragment", "Updating visibility - Fasilitas: ${selectedFasilitas?.namaFasilitas}, ID: ${selectedFasilitas?.idFasilitas}, Opsi: $selectedOption")
+        // Reset visibility
+        tvTanggal.visibility = View.GONE
+        tvJam.visibility = View.GONE
+        tvLapangan.visibility = View.GONE
+        containerJadwalTersedia.visibility = View.GONE
+        tvJadwalTersedia.visibility = View.GONE
+        tvJadwalTidakTersedia.visibility = View.GONE
+        containerJenisLapangan.visibility = View.GONE
+        containerPenggunaKhusus.visibility = View.GONE
+        editTextNamaOrganisasi.visibility = View.GONE
+        spinnerNamaOrganisasi.visibility = View.GONE
 
-        setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
+        when {
+            selectedOption == "Sesuai Jadwal Rutin" -> {
+                tvJadwalTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.VISIBLE
+                spinnerNamaOrganisasi.visibility = View.VISIBLE
+
+                // Cek apakah jadwal tersedia kosong
+                val jadwalList = viewModel.jadwalTersedia.value ?: emptyList()
+                if (jadwalList.isEmpty() && selectedFasilitas != null) {
+                    tvJadwalTidakTersedia.visibility = View.VISIBLE
+                    containerJadwalTersedia.visibility = View.GONE
+                }
+            }
+
+            selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas == 30 -> {
+                tvJadwalTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.VISIBLE
+                editTextNamaOrganisasi.visibility = View.VISIBLE
+                containerPenggunaKhusus.visibility = View.VISIBLE
+
+                // Cek apakah jadwal tersedia kosong
+                val jadwalList = viewModel.jadwalTersediaFasilitas30.value ?: emptyList()
+                if (jadwalList.isEmpty()) {
+                    tvJadwalTidakTersedia.visibility = View.VISIBLE
+                    containerJadwalTersedia.visibility = View.GONE
+                }
+            }
+
+            selectedOption == "Diluar Jadwal Rutin" && selectedFasilitas?.idFasilitas != 30 -> {
+                tvTanggal.visibility = View.VISIBLE
+                tvJam.visibility = View.VISIBLE
+                tvLapangan.visibility = View.VISIBLE
+                containerJenisLapangan.visibility = View.VISIBLE
+                editTextNamaOrganisasi.visibility = View.VISIBLE
+            }
+        }
+
+        // Reset selected jadwal
+        selectedJadwalTersedia = null
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -784,7 +881,19 @@ class FormPeminjamanFragment : Fragment() {
 
         viewModel.jadwalTersedia.observe(viewLifecycleOwner) { jadwalList ->
             Log.d("FormPeminjamanFragment", "Jadwal tersedia updated. Size: ${jadwalList.size}")
-            jadwalTersediaAdapter.updateJadwalList(jadwalList)
+
+            val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+            val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+            if (selectedOption == "Sesuai Jadwal Rutin" && jadwalList.isEmpty() && selectedFasilitas != null && selectedFasilitas.idFasilitas != -1) {
+                // Tampilkan pesan jadwal tidak tersedia
+                tvJadwalTidakTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.GONE
+            } else {
+                tvJadwalTidakTersedia.visibility = View.GONE
+                containerJadwalTersedia.visibility = if (jadwalList.isNotEmpty()) View.VISIBLE else View.GONE
+                jadwalTersediaAdapter.updateJadwalList(jadwalList)
+            }
         }
 
         viewModel.jadwalAvailability.observe(viewLifecycleOwner) { status ->
@@ -810,12 +919,24 @@ class FormPeminjamanFragment : Fragment() {
             }
         }
 
+        // Observasi jadwal tersedia untuk fasilitas 30
         viewModel.jadwalTersediaFasilitas30.observe(viewLifecycleOwner) { jadwalList ->
             Log.d("FormPeminjamanFragment", "Jadwal tersedia for Fasilitas 30 updated. Size: ${jadwalList.size}")
-            jadwalTersediaAdapter.updateJadwalList(jadwalList)
-            containerJadwalTersedia.visibility = View.VISIBLE
-            containerJadwalTersedia.invalidate()
+
+            val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+            val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+            if (selectedOption == "Diluar Jadwal Rutin" && jadwalList.isEmpty() && selectedFasilitas?.idFasilitas == 30) {
+                // Tampilkan pesan jadwal tidak tersedia
+                tvJadwalTidakTersedia.visibility = View.VISIBLE
+                containerJadwalTersedia.visibility = View.GONE
+            } else {
+                tvJadwalTidakTersedia.visibility = View.GONE
+                containerJadwalTersedia.visibility = if (jadwalList.isNotEmpty()) View.VISIBLE else View.GONE
+                jadwalTersediaAdapter.updateJadwalList(jadwalList)
+            }
         }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

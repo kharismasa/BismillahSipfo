@@ -249,6 +249,19 @@
             android:padding="16dp">
         </androidx.recyclerview.widget.RecyclerView>
 
+        <TextView
+            android:id="@+id/tv_jadwal_tidak_tersedia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jadwal Rutin Tidak Tersedia"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            android:textColor="@color/dark_blue"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
         <RadioGroup
             android:id="@+id/container_pengguna_khusus"
             android:layout_width="match_parent"

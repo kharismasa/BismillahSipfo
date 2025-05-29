@@ -73,14 +73,6 @@ class FormPeminjamanViewModel(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun loadJadwalTersediaForFasilitas30() {
-        viewModelScope.launch {
-            val jadwalList = fasilitasRepository.getJadwalTersediaForFasilitas30()
-            _jadwalTersediaFasilitas30.postValue(jadwalList)
-        }
-    }
-
     private fun loadFasilitas() {
         viewModelScope.launch {
             _fasilitasList.value = fasilitasRepository.getFasilitas()
@@ -119,22 +111,30 @@ class FormPeminjamanViewModel(
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadJadwalTersedia() {
         viewModelScope.launch {
-            val idFasilitas = selectedFasilitas?.idFasilitas
-            Log.d("FormPeminjamanViewModel", "Loading jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+            try {
+                val jadwalList = selectedFasilitas?.idFasilitas?.let { idFasilitas ->
+                    selectedOrganisasiId?.let { idOrganisasi ->
+                        fasilitasRepository.getJadwalTersedia(idFasilitas, idOrganisasi)
+                    } ?: emptyList()
+                } ?: emptyList()
 
-            if (idFasilitas != null && selectedOrganisasiId != null) {
-                try {
-                    val jadwalList = withContext(Dispatchers.IO) {
-                        fasilitasRepository.getJadwalTersedia(idFasilitas, selectedOrganisasiId!!)
-                    }
-                    Log.d("FormPeminjamanViewModel", "Jadwal tersedia loaded. Size: ${jadwalList.size}")
-                    _jadwalTersedia.value = jadwalList
-                } catch (e: Exception) {
-                    Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia", e)
-                    // Handle error, misalnya dengan menampilkan pesan error ke user
-                }
-            } else {
-                Log.e("FormPeminjamanViewModel", "Failed to load jadwal tersedia. idFasilitas: $idFasilitas, idOrganisasi: $selectedOrganisasiId")
+                _jadwalTersedia.postValue(jadwalList)
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia: ${e.message}")
+                _jadwalTersedia.postValue(emptyList())
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loadJadwalTersediaForFasilitas30() {
+        viewModelScope.launch {
+            try {
+                val jadwalList = fasilitasRepository.getJadwalTersediaForFasilitas30()
+                _jadwalTersediaFasilitas30.postValue(jadwalList)
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia for fasilitas 30: ${e.message}")
+                _jadwalTersediaFasilitas30.postValue(emptyList())
             }
         }
     }
