@@ -45,6 +45,10 @@ class FormPeminjamanViewModel(
     private val _jadwalTersediaFasilitas30 = MutableLiveData<List<JadwalTersedia>>()
     val jadwalTersediaFasilitas30: LiveData<List<JadwalTersedia>> = _jadwalTersediaFasilitas30
 
+    // Loading state
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
     private var selectedOrganisasiId: Int? = null
 
     private var selectedFasilitas: Fasilitas? = null
@@ -58,42 +62,83 @@ class FormPeminjamanViewModel(
         loadFasilitas()
     }
 
+    private fun setLoading(loading: Boolean) {
+        _isLoading.value = loading
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun checkJadwalAvailability(tanggalMulai: String, tanggalSelesai: String, jamMulai: String, jamSelesai: String) {
         viewModelScope.launch {
             val idFasilitas = selectedFasilitas?.idFasilitas ?: return@launch
-            val status = fasilitasRepository.checkJadwalAvailability(
-                idFasilitas,
-                tanggalMulai,
-                tanggalSelesai,
-                jamMulai,
-                jamSelesai
-            )
-            _jadwalAvailability.postValue(status)
+            try {
+                setLoading(true)
+                val status = fasilitasRepository.checkJadwalAvailability(
+                    idFasilitas,
+                    tanggalMulai,
+                    tanggalSelesai,
+                    jamMulai,
+                    jamSelesai
+                )
+                _jadwalAvailability.postValue(status)
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error checking jadwal availability: ${e.message}")
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
     private fun loadFasilitas() {
         viewModelScope.launch {
-            _fasilitasList.value = fasilitasRepository.getFasilitas()
+            try {
+                setLoading(true)
+                _fasilitasList.value = fasilitasRepository.getFasilitas()
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error loading fasilitas: ${e.message}")
+                _fasilitasList.value = emptyList()
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
     fun onFasilitasSelected(fasilitas: Fasilitas) {
         Log.d("FormPeminjamanViewModel", "Fasilitas selected: ${fasilitas.namaFasilitas}")
+
+        // Reset semua data saat ganti fasilitas
+        selectedOrganisasiId = null
+        _jadwalTersedia.value = emptyList()
+        _jadwalTersediaFasilitas30.value = emptyList()
+
         if (fasilitas.idFasilitas == -1) {
             // Pilihan default, kosongkan lapangan
             _lapanganList.value = emptyList()
             _showPenggunaKhusus.value = false
             selectedFasilitas = null
             _organisasiList.value = emptyList()
+            setLoading(false)
         } else {
             selectedFasilitas = fasilitas
             viewModelScope.launch {
-                _lapanganList.value = fasilitasRepository.getLapanganByFasilitasId(fasilitas.idFasilitas)
-                val organisasiList = fasilitasRepository.getOrganisasiListByFasilitasId(fasilitas.idFasilitas)
-                Log.d("FormPeminjamanViewModel", "Organisasi list fetched: $organisasiList")
-                _organisasiList.value = organisasiList
+                try {
+                    setLoading(true)
+
+                    // Load lapangan data
+                    val lapanganData = fasilitasRepository.getLapanganByFasilitasId(fasilitas.idFasilitas)
+                    _lapanganList.postValue(lapanganData)
+
+                    // Load organisasi data
+                    val organisasiList = fasilitasRepository.getOrganisasiListByFasilitasId(fasilitas.idFasilitas)
+                    Log.d("FormPeminjamanViewModel", "Organisasi list fetched: $organisasiList")
+                    _organisasiList.postValue(organisasiList)
+
+                } catch (e: Exception) {
+                    Log.e("FormPeminjamanViewModel", "Error loading fasilitas data: ${e.message}")
+                    _lapanganList.postValue(emptyList())
+                    _organisasiList.postValue(emptyList())
+                } finally {
+                    setLoading(false)
+                }
             }
             _showPenggunaKhusus.value = fasilitas.idFasilitas == 30 // UTG
         }
@@ -112,6 +157,7 @@ class FormPeminjamanViewModel(
     private fun loadJadwalTersedia() {
         viewModelScope.launch {
             try {
+                setLoading(true)
                 val jadwalList = selectedFasilitas?.idFasilitas?.let { idFasilitas ->
                     selectedOrganisasiId?.let { idOrganisasi ->
                         fasilitasRepository.getJadwalTersedia(idFasilitas, idOrganisasi)
@@ -122,6 +168,8 @@ class FormPeminjamanViewModel(
             } catch (e: Exception) {
                 Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia: ${e.message}")
                 _jadwalTersedia.postValue(emptyList())
+            } finally {
+                setLoading(false)
             }
         }
     }
@@ -130,11 +178,14 @@ class FormPeminjamanViewModel(
     fun loadJadwalTersediaForFasilitas30() {
         viewModelScope.launch {
             try {
+                setLoading(true)
                 val jadwalList = fasilitasRepository.getJadwalTersediaForFasilitas30()
                 _jadwalTersediaFasilitas30.postValue(jadwalList)
             } catch (e: Exception) {
                 Log.e("FormPeminjamanViewModel", "Error loading jadwal tersedia for fasilitas 30: ${e.message}")
                 _jadwalTersediaFasilitas30.postValue(emptyList())
+            } finally {
+                setLoading(false)
             }
         }
     }
@@ -144,9 +195,23 @@ class FormPeminjamanViewModel(
         tanggalSelesai = jadwal.tanggal
         jamMulai = jadwal.waktuMulai
         jamSelesai = jadwal.waktuSelesai
-        _lapanganList.value = jadwal.listLapangan.mapNotNull { id ->
-            _lapanganList.value?.find { it.idLapangan == id }
+
+        // Update lapangan list dengan data dari jadwal tersedia
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val currentLapangan = _lapanganList.value ?: emptyList()
+                val selectedLapanganFromJadwal = jadwal.listLapangan.mapNotNull { id ->
+                    currentLapangan.find { it.idLapangan == id }
+                }
+                _lapanganList.postValue(selectedLapanganFromJadwal)
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error updating lapangan from jadwal: ${e.message}")
+            } finally {
+                setLoading(false)
+            }
         }
+
         // Tambahkan logging untuk tipe_jadwal dan urutan_slot
         Log.d("FormPeminjamanViewModel", "Jadwal tersedia selected: Tipe: ${jadwal.tipeJadwal}, Urutan: ${jadwal.urutanSlot}")
     }
@@ -178,32 +243,39 @@ class FormPeminjamanViewModel(
     @RequiresApi(Build.VERSION_CODES.O)
     fun submitForm(namaAcara: String, namaOrganisasi: String, penggunaKhusus: PenggunaKhusus?) {
         viewModelScope.launch {
-            if (validateForm(namaAcara, namaOrganisasi)) {
-                val idPengguna = userRepository.getCurrentUserId()
-                val peminjamanFasilitas = PeminjamanFasilitas(
-                    idPeminjaman = 0, // ID akan di-generate oleh database
-                    idFasilitas = selectedFasilitas?.idFasilitas ?: 0,
-                    tanggalMulai = tanggalMulai!!,
-                    tanggalSelesai = tanggalSelesai!!,
-                    jamMulai = jamMulai!!,
-                    jamSelesai = jamSelesai!!,
-                    namaOrganisasi = namaOrganisasi,
-                    namaAcara = namaAcara,
-                    idPembayaran = "", // ID pembayaran akan di-generate nanti
-                    penggunaKhusus = penggunaKhusus,
-                    idPengguna = idPengguna,
-                    createdAtPeminjaman = java.time.Instant.now()
-                )
+            try {
+                setLoading(true)
+                if (validateForm(namaAcara, namaOrganisasi)) {
+                    val idPengguna = userRepository.getCurrentUserId()
+                    val peminjamanFasilitas = PeminjamanFasilitas(
+                        idPeminjaman = 0, // ID akan di-generate oleh database
+                        idFasilitas = selectedFasilitas?.idFasilitas ?: 0,
+                        tanggalMulai = tanggalMulai!!,
+                        tanggalSelesai = tanggalSelesai!!,
+                        jamMulai = jamMulai!!,
+                        jamSelesai = jamSelesai!!,
+                        namaOrganisasi = namaOrganisasi,
+                        namaAcara = namaAcara,
+                        idPembayaran = "", // ID pembayaran akan di-generate nanti
+                        penggunaKhusus = penggunaKhusus,
+                        idPengguna = idPengguna,
+                        createdAtPeminjaman = java.time.Instant.now()
+                    )
 
-                val idPeminjaman = fasilitasRepository.insertPeminjamanFasilitas(peminjamanFasilitas)
+                    val idPeminjaman = fasilitasRepository.insertPeminjamanFasilitas(peminjamanFasilitas)
 
-                // Insert lapangan yang dipinjam
-                selectedLapangan.forEach { lapangan ->
-                    fasilitasRepository.insertLapanganDipinjam(idPeminjaman, lapangan.idLapangan)
+                    // Insert lapangan yang dipinjam
+                    selectedLapangan.forEach { lapangan ->
+                        fasilitasRepository.insertLapanganDipinjam(idPeminjaman, lapangan.idLapangan)
+                    }
+
+                    // Navigasi ke halaman berikutnya atau tampilkan pesan sukses
+                    // Anda bisa menggunakan LiveData untuk ini
                 }
-
-                // Navigasi ke halaman berikutnya atau tampilkan pesan sukses
-                // Anda bisa menggunakan LiveData untuk ini
+            } catch (e: Exception) {
+                Log.e("FormPeminjamanViewModel", "Error submitting form: ${e.message}")
+            } finally {
+                setLoading(false)
             }
         }
     }
