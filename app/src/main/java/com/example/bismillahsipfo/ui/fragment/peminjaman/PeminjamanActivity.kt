@@ -1,13 +1,17 @@
 package com.example.bismillahsipfo.ui.fragment.peminjaman
 
 import android.os.Bundle
+import android.util.Log
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.adapter.PeminjamanPagerAdapter
+import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
 
 class PeminjamanActivity : AppCompatActivity() {
 
+    private val sharedViewModel: SharedPeminjamanViewModel by viewModels()
     lateinit var viewPager: ViewPager2
     private lateinit var pagerAdapter: PeminjamanPagerAdapter
 
@@ -40,4 +44,15 @@ class PeminjamanActivity : AppCompatActivity() {
             viewPager.setCurrentItem(previousItem, true)
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Clear SharedViewModel data saat activity selesai
+        if (isFinishing) {
+            Log.d("PeminjamanActivity", "Activity finishing, clearing SharedViewModel data")
+            sharedViewModel.clearData()
+        }
+    }
+
 }

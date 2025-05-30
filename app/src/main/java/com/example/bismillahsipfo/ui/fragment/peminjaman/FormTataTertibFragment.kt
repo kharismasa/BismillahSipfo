@@ -19,18 +19,20 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.model.JadwalTersedia
+import androidx.fragment.app.activityViewModels
+import com.example.bismillahsipfo.data.repository.PeminjamanData
+import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
 
 class FormTataTertibFragment : Fragment() {
 
     private val PDF_REQUEST_CODE = 123
     private var selectedPdfUri: Uri? = null
 
-    private var idFasilitas: Int = -1
-    private var namaFasilitas: String? = null
-    private var opsiPeminjaman: String? = null
-    private var namaAcara: String? = null
-    private var namaOrganisasi: String? = null
-    private var jadwalTersedia: JadwalTersedia? = null
+    // TAMBAHAN: SharedViewModel untuk data antar fragment
+    private val sharedViewModel: SharedPeminjamanViewModel by activityViewModels()
+
+    // TAMBAHAN: Variable untuk menyimpan data saat ini
+    private var currentData: PeminjamanData? = null
 
     // UI components
     private lateinit var tvUploadSurat: TextView
@@ -59,8 +61,13 @@ class FormTataTertibFragment : Fragment() {
         checkboxTataTertib = view.findViewById(R.id.checkbox_tata_tertib)
         buttonNext = view.findViewById(R.id.button_next)
 
-        // Retrieve data from arguments
-        retrieveDataFromExtras()
+        // MODIFIKASI: Ambil data dari SharedViewModel dulu, baru dari Bundle
+        retrieveDataFromSharedViewModel()
+
+        // Fallback: Jika SharedViewModel kosong, ambil dari Bundle
+        if (currentData == null) {
+            retrieveDataFromBundle()
+        }
 
         // Initialize views
         setupViews(view)
@@ -78,44 +85,80 @@ class FormTataTertibFragment : Fragment() {
         displayData()
     }
 
-    private fun retrieveDataFromExtras() {
-        arguments?.let { bundle ->
-            // Basic data
-            idFasilitas = bundle.getInt(FormPeminjamanFragment.EXTRA_ID_FASILITAS, -1)
-            namaFasilitas = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_FASILITAS)
-            opsiPeminjaman = bundle.getString(FormPeminjamanFragment.EXTRA_OPSI_PEMINJAMAN)
-            namaAcara = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ACARA)
+    // TAMBAHAN: Method untuk mengambil data dari SharedViewModel
+    private fun retrieveDataFromSharedViewModel() {
+        currentData = sharedViewModel.getCurrentData()
+        currentData?.let { data ->
+            Log.d("FormTataTertibFragment", "Data retrieved from SharedViewModel: $data")
+        }
+    }
 
-            // Conditional data based on opsiPeminjaman
-            when (opsiPeminjaman) {
+    // MODIFIKASI: Method untuk mengambil data dari Bundle sebagai fallback
+    private fun retrieveDataFromBundle() {
+        arguments?.let { bundle ->
+            val idFasilitas = bundle.getInt(FormPeminjamanFragment.EXTRA_ID_FASILITAS, -1)
+            val namaFasilitas = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_FASILITAS)
+            val opsiPeminjaman = bundle.getString(FormPeminjamanFragment.EXTRA_OPSI_PEMINJAMAN)
+            val namaAcara = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ACARA)
+
+            // Create PeminjamanData from Bundle
+            val bundleData = when (opsiPeminjaman) {
                 "Sesuai Jadwal Rutin" -> {
                     val idOrganisasi = bundle.getInt(FormPeminjamanFragment.EXTRA_ID_ORGANISASI, -1)
-                    namaOrganisasi = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ORGANISASI)
-                    jadwalTersedia = bundle.getSerializable(FormPeminjamanFragment.EXTRA_JADWAL_TERSEDIA) as? JadwalTersedia
+                    val namaOrganisasi = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ORGANISASI)
+                    val jadwalTersedia = bundle.getSerializable(FormPeminjamanFragment.EXTRA_JADWAL_TERSEDIA) as? JadwalTersedia
                     val listLapangan = bundle.getIntegerArrayList(FormPeminjamanFragment.EXTRA_LIST_LAPANGAN)
-
-                    // Log data retrieved
-                    Log.d("FormTataTertibFragment", "Jadwal Tersedia: $jadwalTersedia, List Lapangan: $listLapangan")
-
-                    // Get tanggal and jam even if jadwalTersedia is null
                     val tanggalMulai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_MULAI)
                     val tanggalSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_SELESAI)
                     val jamMulai = bundle.getString(FormPeminjamanFragment.EXTRA_JAM_MULAI)
                     val jamSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_JAM_SELESAI)
+                    val penggunaKhusus = if (idFasilitas == 30) {
+                        bundle.getString(FormPeminjamanFragment.EXTRA_PENGGUNA_KHUSUS)
+                    } else null
 
-                    Log.d("FormTataTertibFragment", "Tanggal: $tanggalMulai - $tanggalSelesai, Jam: $jamMulai - $jamSelesai")
-
-                    if (idFasilitas == 30) {
-                        val penggunaKhusus = bundle.getString(FormPeminjamanFragment.EXTRA_PENGGUNA_KHUSUS)
-                        Log.d("FormTataTertibFragment", "Pengguna Khusus: $penggunaKhusus")
-                    }
+                    PeminjamanData(
+                        idFasilitas = idFasilitas,
+                        namaFasilitas = namaFasilitas,
+                        opsiPeminjaman = opsiPeminjaman,
+                        namaAcara = namaAcara,
+                        namaOrganisasi = namaOrganisasi,
+                        idOrganisasi = idOrganisasi,
+                        jadwalTersedia = jadwalTersedia,
+                        listLapangan = listLapangan,
+                        penggunaKhusus = penggunaKhusus,
+                        tanggalMulai = tanggalMulai,
+                        tanggalSelesai = tanggalSelesai,
+                        jamMulai = jamMulai,
+                        jamSelesai = jamSelesai,
+                        lapanganDipinjam = bundle.getIntegerArrayList(FormPeminjamanFragment.EXTRA_LAPANGAN_DIPINJAM)
+                    )
                 }
+
                 "Diluar Jadwal Rutin" -> {
-                    namaOrganisasi = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ORGANISASI)
+                    val namaOrganisasi = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ORGANISASI)
+
                     if (idFasilitas == 30) {
-                        jadwalTersedia = bundle.getSerializable(FormPeminjamanFragment.EXTRA_JADWAL_TERSEDIA) as? JadwalTersedia
+                        val jadwalTersedia = bundle.getSerializable(FormPeminjamanFragment.EXTRA_JADWAL_TERSEDIA) as? JadwalTersedia
                         val penggunaKhusus = bundle.getString(FormPeminjamanFragment.EXTRA_PENGGUNA_KHUSUS)
-                        Log.d("FormTataTertibFragment", "Jadwal Tersedia: $jadwalTersedia, Pengguna Khusus: $penggunaKhusus")
+                        val tanggalMulai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_MULAI)
+                        val tanggalSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_SELESAI)
+                        val jamMulai = bundle.getString(FormPeminjamanFragment.EXTRA_JAM_MULAI)
+                        val jamSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_JAM_SELESAI)
+
+                        PeminjamanData(
+                            idFasilitas = idFasilitas,
+                            namaFasilitas = namaFasilitas,
+                            opsiPeminjaman = opsiPeminjaman,
+                            namaAcara = namaAcara,
+                            namaOrganisasi = namaOrganisasi,
+                            jadwalTersedia = jadwalTersedia,
+                            penggunaKhusus = penggunaKhusus,
+                            tanggalMulai = tanggalMulai,
+                            tanggalSelesai = tanggalSelesai,
+                            jamMulai = jamMulai,
+                            jamSelesai = jamSelesai,
+                            lapanganDipinjam = bundle.getIntegerArrayList(FormPeminjamanFragment.EXTRA_LAPANGAN_DIPINJAM)
+                        )
                     } else {
                         val tanggalMulai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_MULAI)
                         val tanggalSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_SELESAI)
@@ -123,17 +166,43 @@ class FormTataTertibFragment : Fragment() {
                         val jamSelesai = bundle.getString(FormPeminjamanFragment.EXTRA_JAM_SELESAI)
                         val lapanganDipinjam = bundle.getIntegerArrayList(FormPeminjamanFragment.EXTRA_LAPANGAN_DIPINJAM)
 
-                        Log.d("FormTataTertibFragment", "Tanggal: $tanggalMulai - $tanggalSelesai, Jam: $jamMulai - $jamSelesai, Lapangan: $lapanganDipinjam")
+                        PeminjamanData(
+                            idFasilitas = idFasilitas,
+                            namaFasilitas = namaFasilitas,
+                            opsiPeminjaman = opsiPeminjaman,
+                            namaAcara = namaAcara,
+                            namaOrganisasi = namaOrganisasi,
+                            tanggalMulai = tanggalMulai,
+                            tanggalSelesai = tanggalSelesai,
+                            jamMulai = jamMulai,
+                            jamSelesai = jamSelesai,
+                            lapanganDipinjam = lapanganDipinjam
+                        )
                     }
                 }
+
+                else -> PeminjamanData(
+                    idFasilitas = idFasilitas,
+                    namaFasilitas = namaFasilitas,
+                    opsiPeminjaman = opsiPeminjaman,
+                    namaAcara = namaAcara
+                )
             }
 
-            Log.d("FormTataTertibFragment", "Data retrieved - Fasilitas: $namaFasilitas, Opsi: $opsiPeminjaman")
+            currentData = bundleData
+
+            // Update SharedViewModel dengan data dari Bundle
+            sharedViewModel.updatePeminjamanData(bundleData)
+
+            Log.d("FormTataTertibFragment", "Data retrieved from Bundle and saved to SharedViewModel: $bundleData")
         }
     }
 
+    // MODIFIKASI: Update setupUploadSectionVisibility untuk menggunakan currentData
     private fun setupUploadSectionVisibility() {
-        if (opsiPeminjaman == "Sesuai Jadwal Rutin") {
+        val opsi = currentData?.opsiPeminjaman
+
+        if (opsi == "Sesuai Jadwal Rutin") {
             // Hide upload section for "Sesuai Jadwal Rutin"
             tvUploadSurat.visibility = View.GONE
             containerSurat.visibility = View.GONE
@@ -175,20 +244,24 @@ class FormTataTertibFragment : Fragment() {
         buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray))
 
         buttonNext.setOnClickListener {
+            val opsi = currentData?.opsiPeminjaman
+
             // Check if we need to validate file upload for "Diluar Jadwal Rutin"
-            if (opsiPeminjaman == "Diluar Jadwal Rutin" && selectedPdfUri == null) {
+            if (opsi == "Diluar Jadwal Rutin" && selectedPdfUri == null) {
                 Toast.makeText(requireContext(), "Mohon upload surat peminjaman terlebih dahulu", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            // MODIFIKASI: Update data di SharedViewModel dengan PDF URI
+            currentData?.let { data ->
+                val updatedData = data.copy(pdfUri = selectedPdfUri?.toString())
+                sharedViewModel.updatePeminjamanData(updatedData)
+                currentData = updatedData
+            }
+
             // Navigate to next page with all data
             val activity = requireActivity() as PeminjamanActivity
-            val bundle = arguments ?: Bundle()
-
-            // Add selected PDF URI to bundle if available
-            selectedPdfUri?.let {
-                bundle.putString("EXTRA_PDF_URI", it.toString())
-            }
+            val bundle = createBundleFromCurrentData()
 
             activity.navigateToNextPage(bundle)
         }
@@ -199,9 +272,54 @@ class FormTataTertibFragment : Fragment() {
         }
     }
 
+    // TAMBAHAN: Method untuk membuat Bundle dari currentData
+    private fun createBundleFromCurrentData(): Bundle {
+        val bundle = Bundle()
+
+        currentData?.let { data ->
+            bundle.putInt(FormPeminjamanFragment.EXTRA_ID_FASILITAS, data.idFasilitas)
+            bundle.putString(FormPeminjamanFragment.EXTRA_NAMA_FASILITAS, data.namaFasilitas)
+            bundle.putString(FormPeminjamanFragment.EXTRA_OPSI_PEMINJAMAN, data.opsiPeminjaman)
+            bundle.putString(FormPeminjamanFragment.EXTRA_NAMA_ACARA, data.namaAcara)
+            bundle.putString(FormPeminjamanFragment.EXTRA_NAMA_ORGANISASI, data.namaOrganisasi)
+
+            if (data.idOrganisasi > 0) {
+                bundle.putInt(FormPeminjamanFragment.EXTRA_ID_ORGANISASI, data.idOrganisasi)
+            }
+
+            data.jadwalTersedia?.let { jadwal ->
+                if (jadwal is java.io.Serializable) {
+                    bundle.putSerializable(FormPeminjamanFragment.EXTRA_JADWAL_TERSEDIA, jadwal)
+                }
+            }
+
+            data.listLapangan?.let { list ->
+                bundle.putIntegerArrayList(FormPeminjamanFragment.EXTRA_LIST_LAPANGAN, ArrayList(list))
+            }
+
+            data.lapanganDipinjam?.let { list ->
+                bundle.putIntegerArrayList(FormPeminjamanFragment.EXTRA_LAPANGAN_DIPINJAM, ArrayList(list))
+            }
+
+            bundle.putString(FormPeminjamanFragment.EXTRA_PENGGUNA_KHUSUS, data.penggunaKhusus)
+            bundle.putString(FormPeminjamanFragment.EXTRA_TANGGAL_MULAI, data.tanggalMulai)
+            bundle.putString(FormPeminjamanFragment.EXTRA_TANGGAL_SELESAI, data.tanggalSelesai)
+            bundle.putString(FormPeminjamanFragment.EXTRA_JAM_MULAI, data.jamMulai)
+            bundle.putString(FormPeminjamanFragment.EXTRA_JAM_SELESAI, data.jamSelesai)
+
+            // Add PDF URI if available
+            data.pdfUri?.let { pdfUri ->
+                bundle.putString("EXTRA_PDF_URI", pdfUri)
+            }
+        }
+
+        return bundle
+    }
+
     private fun updateNextButtonState() {
         val isChecked = checkboxTataTertib.isChecked
-        val needsFile = opsiPeminjaman == "Diluar Jadwal Rutin"
+        val opsi = currentData?.opsiPeminjaman
+        val needsFile = opsi == "Diluar Jadwal Rutin"
 
         // Button is enabled if checkbox is checked AND
         // either no file is needed OR a file has been selected
@@ -282,7 +400,25 @@ class FormTataTertibFragment : Fragment() {
 
     private fun displayData() {
         // Use the retrieved data to update your UI
-        // For example, display facility name, event name, etc.
-        Log.d("FormTataTertibFragment", "Displaying data for: $namaFasilitas - $namaAcara")
+        currentData?.let { data ->
+            Log.d("FormTataTertibFragment", "Displaying data for: ${data.namaFasilitas} - ${data.namaAcara}")
+            Log.d("FormTataTertibFragment", "Opsi Peminjaman: ${data.opsiPeminjaman}")
+        }
+    }
+
+    // TAMBAHAN: Override onResume untuk memperbarui data jika ada perubahan
+    override fun onResume() {
+        super.onResume()
+
+        // Periksa apakah ada data baru dari SharedViewModel
+        val latestData = sharedViewModel.getCurrentData()
+        if (latestData != null && latestData != currentData) {
+            Log.d("FormTataTertibFragment", "Data updated from SharedViewModel")
+            currentData = latestData
+
+            // Update visibility based on new data
+            setupUploadSectionVisibility()
+            displayData()
+        }
     }
 }

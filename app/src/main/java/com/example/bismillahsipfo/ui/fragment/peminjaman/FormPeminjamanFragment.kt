@@ -32,13 +32,18 @@ import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModel
 import com.example.bismillahsipfo.data.repository.FormPeminjamanViewModelFactory
 import com.example.bismillahsipfo.data.repository.JadwalAvailabilityStatus
 import com.example.bismillahsipfo.data.repository.UserRepository
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import androidx.fragment.app.activityViewModels
+import com.example.bismillahsipfo.data.repository.PeminjamanData
+import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
 
 class FormPeminjamanFragment : Fragment() {
+
+    // TAMBAHAN: SharedViewModel untuk komunikasi antar fragment
+    private val sharedViewModel: SharedPeminjamanViewModel by activityViewModels()
 
     private lateinit var viewModel: FormPeminjamanViewModel
     private lateinit var spinnerFasilitas: Spinner
@@ -108,6 +113,9 @@ class FormPeminjamanFragment : Fragment() {
         observeViewModel()
         setupFieldValidation()
 
+        // TAMBAHAN: Restore data dari SharedViewModel jika ada
+        restoreDataFromSharedViewModel()
+
         // Set tombol Next disabled secara default dan atur warnanya
         buttonNext.isEnabled = false
         buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray))
@@ -115,8 +123,10 @@ class FormPeminjamanFragment : Fragment() {
         // Tambahkan callback untuk tombol back
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val activity = requireActivity() as PeminjamanActivity
+                // TAMBAHAN: Simpan data sebelum kembali
+                saveCurrentDataToSharedViewModel()
 
+                val activity = requireActivity() as PeminjamanActivity
                 if (activity.viewPager.currentItem > 0) {
                     activity.viewPager.currentItem = activity.viewPager.currentItem - 1
                 } else {
@@ -124,6 +134,117 @@ class FormPeminjamanFragment : Fragment() {
                 }
             }
         })
+    }
+
+    // TAMBAHAN: Method untuk restore data dari SharedViewModel
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun restoreDataFromSharedViewModel() {
+        val savedData = sharedViewModel.getCurrentData()
+        savedData?.let { data ->
+            Log.d("FormPeminjamanFragment", "Restoring data from SharedViewModel: $data")
+
+            // Restore data ke UI components
+            restoreUIFromData(data)
+        }
+    }
+
+    // TAMBAHAN: Method untuk restore UI dari data
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun restoreUIFromData(data: PeminjamanData) {
+        // Restore fasilitas
+        if (data.idFasilitas != -1) {
+            val fasilitasList = viewModel.fasilitasList.value
+            fasilitasList?.let { list ->
+                val index = list.indexOfFirst { it.idFasilitas == data.idFasilitas }
+                if (index >= 0) {
+                    spinnerFasilitas.setSelection(index)
+                }
+            }
+        }
+
+        // Restore opsi peminjaman
+        data.opsiPeminjaman?.let { opsi ->
+            val adapter = spinnerOpsiPinjam.adapter
+            for (i in 0 until adapter.count) {
+                if (adapter.getItem(i).toString() == opsi) {
+                    spinnerOpsiPinjam.setSelection(i)
+                    break
+                }
+            }
+        }
+
+        // Restore other data
+        data.namaAcara?.let { editTextNamaAcara.setText(it) }
+        data.namaOrganisasi?.let { editTextNamaOrganisasi.setText(it) }
+        data.tanggalMulai?.let { editTextTanggalMulai.setText(it) }
+        data.tanggalSelesai?.let { editTextTanggalSelesai.setText(it) }
+        data.jamMulai?.let { editTextJamMulai.setText(it) }
+        data.jamSelesai?.let { editTextJamSelesai.setText(it) }
+
+        // Restore pengguna khusus
+        data.penggunaKhusus?.let { pengguna ->
+            when (pengguna) {
+                PenggunaKhusus.INTERNAL_UII.name -> {
+                    containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_uii)?.isChecked = true
+                }
+                PenggunaKhusus.INTERNAL_VS_EKSTERNAL.name -> {
+                    containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_internal_vs_eksternal)?.isChecked = true
+                }
+                PenggunaKhusus.EKSTERNAL_UII.name -> {
+                    containerPenggunaKhusus.findViewById<RadioButton>(R.id.radio_eksternal_uii)?.isChecked = true
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun saveCurrentDataToSharedViewModel() {
+        val currentData = createPeminjamanDataFromCurrentUI()
+        sharedViewModel.updatePeminjamanData(currentData)
+        Log.d("FormPeminjamanFragment", "Data saved to SharedViewModel: $currentData")
+    }
+
+    // TAMBAHAN: Method untuk membuat PeminjamanData dari UI saat ini
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createPeminjamanDataFromCurrentUI(): PeminjamanData {
+        val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+        val selectedOption = spinnerOpsiPinjam.selectedItem?.toString() ?: ""
+
+        val penggunaKhusus = when (containerPenggunaKhusus.checkedRadioButtonId) {
+            R.id.radio_internal_uii -> PenggunaKhusus.INTERNAL_UII.name
+            R.id.radio_internal_vs_eksternal -> PenggunaKhusus.INTERNAL_VS_EKSTERNAL.name
+            R.id.radio_eksternal_uii -> PenggunaKhusus.EKSTERNAL_UII.name
+            else -> null
+        }
+
+        val selectedLapanganIds = selectedLapangan.map { it.idLapangan }
+
+        return PeminjamanData(
+            idFasilitas = selectedFasilitas?.idFasilitas ?: -1,
+            namaFasilitas = selectedFasilitas?.namaFasilitas,
+            opsiPeminjaman = selectedOption,
+            namaAcara = editTextNamaAcara.text.toString(),
+            namaOrganisasi = if (editTextNamaOrganisasi.visibility == View.VISIBLE) {
+                editTextNamaOrganisasi.text.toString()
+            } else {
+                val organisasiIndex = spinnerNamaOrganisasi.selectedItemPosition
+                val organisasi = viewModel.organisasiList.value?.getOrNull(organisasiIndex)
+                organisasi?.namaOrganisasi
+            },
+            idOrganisasi = if (spinnerNamaOrganisasi.visibility == View.VISIBLE) {
+                val organisasiIndex = spinnerNamaOrganisasi.selectedItemPosition
+                val organisasi = viewModel.organisasiList.value?.getOrNull(organisasiIndex)
+                organisasi?.idOrganisasi ?: -1
+            } else -1,
+            jadwalTersedia = selectedJadwalTersedia,
+            listLapangan = selectedJadwalTersedia?.listLapangan,
+            penggunaKhusus = penggunaKhusus,
+            tanggalMulai = editTextTanggalMulai.text.toString(),
+            tanggalSelesai = editTextTanggalSelesai.text.toString(),
+            jamMulai = editTextJamMulai.text.toString(),
+            jamSelesai = editTextJamSelesai.text.toString(),
+            lapanganDipinjam = if (selectedLapanganIds.isNotEmpty()) selectedLapanganIds else null
+        )
     }
 
     // Loading functions
@@ -368,6 +489,7 @@ class FormPeminjamanFragment : Fragment() {
         editTextJamSelesai.addTextChangedListener(dateTimeWatcher)
     }
 
+    // MODIFIKASI: Update method saveDataToExtras untuk juga menyimpan ke SharedViewModel
     @RequiresApi(Build.VERSION_CODES.O)
     private fun saveDataToExtras(bundle: Bundle) {
         val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
@@ -477,6 +599,9 @@ class FormPeminjamanFragment : Fragment() {
             }
         }
 
+        // TAMBAHAN: Simpan juga ke SharedViewModel
+        saveCurrentDataToSharedViewModel()
+
         Log.d("FormPeminjamanFragment", "Bundle complete, jadwal tersedia: ${selectedJadwalTersedia != null}, " +
                 "list lapangan: ${bundle.getIntegerArrayList(EXTRA_LIST_LAPANGAN)?.size ?: 0}, " +
                 "tanggal: ${bundle.getString(EXTRA_TANGGAL_MULAI)}")
@@ -492,12 +617,6 @@ class FormPeminjamanFragment : Fragment() {
             updateSelectedJadwal(jadwal)
             checkFormValidity()
 
-            val tanggal = jadwal.tanggal?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-            val jamMulai = jadwal.waktuMulai?.format(DateTimeFormatter.ofPattern("HH:mm"))
-            val jamSelesai = jadwal.waktuSelesai?.format(DateTimeFormatter.ofPattern("HH:mm"))
-            Toast.makeText(requireContext(),
-                "Jadwal dipilih: ${jadwal.hari}, $tanggal ($jamMulai - $jamSelesai)",
-                Toast.LENGTH_SHORT).show()
         }
 
         val layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
@@ -517,6 +636,9 @@ class FormPeminjamanFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupListeners() {
+        // Gunakan method terpisah untuk data change listeners
+        setupDataChangeListeners()
+
         spinnerFasilitas.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val selectedFasilitas = parent.getItemAtPosition(position) as Fasilitas
@@ -543,7 +665,6 @@ class FormPeminjamanFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val organisasiList = viewModel.organisasiList.value
 
-                // Check if organisasi list is not empty and position is valid
                 if (organisasiList != null && organisasiList.isNotEmpty() && position < organisasiList.size) {
                     val selectedOrganisasi = organisasiList[position]
                     showLoading("Memuat jadwal tersedia...")
@@ -552,6 +673,9 @@ class FormPeminjamanFragment : Fragment() {
                     Log.d("FormPeminjamanFragment", "No valid organisasi to select at position $position")
                 }
                 checkFormValidity()
+
+                // TAMBAHAN: Simpan perubahan ke SharedViewModel
+                saveCurrentDataToSharedViewModel()
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -1099,4 +1223,94 @@ class FormPeminjamanFragment : Fragment() {
             containerJenisLapangan.addView(textView)
         }
     }
+
+    // TAMBAHAN: Override onResume untuk memperbarui data ketika kembali ke fragment
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onResume() {
+        super.onResume()
+
+        // Periksa apakah ada data yang perlu di-restore
+        val savedData = sharedViewModel.getCurrentData()
+        if (savedData != null) {
+            // Check jika data berbeda dengan yang saat ini ditampilkan
+            val currentData = createPeminjamanDataFromCurrentUI()
+            if (savedData != currentData) {
+                Log.d("FormPeminjamanFragment", "Data changed, restoring from SharedViewModel")
+                restoreUIFromData(savedData)
+                checkFormValidity()
+            }
+        }
+    }
+
+    // TAMBAHAN: Method untuk listener perubahan data
+    private fun setupDataChangeListeners() {
+        // Listener untuk fasilitas
+        spinnerFasilitas.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                val selectedFasilitas = parent.getItemAtPosition(position) as Fasilitas
+                Log.d("FormPeminjamanFragment", "Fasilitas selected: ${selectedFasilitas.namaFasilitas}")
+
+                resetFormData()
+
+                if (selectedFasilitas.idFasilitas != -1) {
+                    showLoading("Memuat data fasilitas...")
+                }
+
+                containerJenisLapangan.removeAllViews()
+                containerPenggunaKhusus.visibility = View.GONE
+                selectedLapangan.clear()
+                viewModel.onFasilitasSelected(selectedFasilitas)
+                updateVisibilityBasedOnCurrentSelection()
+                checkFormValidity()
+
+                // TAMBAHAN: Simpan perubahan ke SharedViewModel
+                saveCurrentDataToSharedViewModel()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        // Listener untuk opsi peminjaman
+        spinnerOpsiPinjam.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                val selectedOption = parent.getItemAtPosition(position).toString()
+                val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
+
+                Log.d("FormPeminjamanFragment", "Opsi peminjaman dipilih: $selectedOption")
+
+                if (selectedFasilitas != null && selectedFasilitas.idFasilitas != -1) {
+                    when (selectedOption) {
+                        "Sesuai Jadwal Rutin" -> {
+                            showLoading("Memuat jadwal rutin...")
+                        }
+                        "Diluar Jadwal Rutin" -> {
+                            if (selectedFasilitas.idFasilitas == 30) {
+                                showLoading("Memuat jadwal tersedia...")
+                            }
+                        }
+                    }
+                }
+
+                updateVisibilityBasedOnCurrentSelection()
+                setVisibilityBasedOnSelection(selectedFasilitas?.idFasilitas, selectedOption)
+
+                // TAMBAHAN: Simpan perubahan ke SharedViewModel
+                saveCurrentDataToSharedViewModel()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Jika ini adalah fragment terakhir, clear data
+        val activity = requireActivity() as? PeminjamanActivity
+        if (activity?.isFinishing == true) {
+            sharedViewModel.clearData()
+        }
+    }
+
 }

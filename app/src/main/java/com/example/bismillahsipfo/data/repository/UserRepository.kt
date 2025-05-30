@@ -2,7 +2,6 @@ package com.example.bismillahsipfo.data.repository
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import android.content.SharedPreferences
 import android.util.Log
 import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.data.model.User
