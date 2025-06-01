@@ -54,5 +54,4 @@ class PeminjamanActivity : AppCompatActivity() {
             sharedViewModel.clearData()
         }
     }
-
 }

@@ -401,17 +401,20 @@ class FasilitasRepository {
             .decodeList<JadwalRutin>()
         Log.d("FasilitasRepository", "Jadwal rutin fetched. Size: ${jadwalRutin.size}")
 
-        // Ambil semua pembayaran dengan status "success"
-        val successfulPembayaran = supabaseClient.from("pembayaran")
+        // PERBAIKAN: Ambil pembayaran dengan status "success" DAN "pending"
+        val activePembayaran = supabaseClient.from("pembayaran")
             .select(){
                 filter {
-                    eq("status_pembayaran", "success")
+                    or {
+                        eq("status_pembayaran", "success")
+                        eq("status_pembayaran", "pending")
+                    }
                 }
             }
             .decodeList<Pembayaran>()
-        Log.d("FasilitasRepository", "Successful pembayaran fetched. Size: ${successfulPembayaran.size}")
+        Log.d("FasilitasRepository", "Active pembayaran (success + pending) fetched. Size: ${activePembayaran.size}")
 
-        // Ambil peminjaman fasilitas dan filter berdasarkan pembayaran yang sukses
+        // PERBAIKAN: Filter peminjaman berdasarkan pembayaran yang success ATAU pending
         val allPeminjaman = supabaseClient.from("peminjaman_fasilitas")
             .select(){
                 filter {
@@ -421,9 +424,16 @@ class FasilitasRepository {
             .decodeList<PeminjamanFasilitas>()
 
         val peminjaman = allPeminjaman.filter { peminjaman ->
-            successfulPembayaran.any { it.idPembayaran == peminjaman.idPembayaran }
+            activePembayaran.any { it.idPembayaran == peminjaman.idPembayaran }
         }
-        Log.d("FasilitasRepository", "Filtered peminjaman fetched. Size: ${peminjaman.size}")
+        Log.d("FasilitasRepository", "Filtered peminjaman (success + pending) fetched. Size: ${peminjaman.size}")
+
+        // Log pembayaran yang dikecualikan untuk debugging
+        val excludedPayments = peminjaman.map { p ->
+            val payment = activePembayaran.find { it.idPembayaran == p.idPembayaran }
+            "${p.idPembayaran} (${payment?.statusPembayaran})"
+        }
+        Log.d("FasilitasRepository", "Excluded payments: $excludedPayments")
 
         // Mengambil data hari libur
         val hariLibur = getHariLibur()
@@ -458,6 +468,8 @@ class FasilitasRepository {
                     val matchingJadwal = allJadwalRutin.find { it.urutanSlot == currentSlot }
                     if (matchingJadwal != null && matchingJadwal.idOrganisasi == idOrganisasi) {
                         val isHoliday = hariLibur.any { it.dateHariLibur == currentDate }
+
+                        // PERBAIKAN: Check conflict dengan peminjaman yang memiliki status success/pending
                         val conflictingPeminjaman = peminjaman.any { p ->
                             p.tanggalMulai <= currentDate && currentDate <= p.tanggalSelesai
                         }
@@ -539,6 +551,69 @@ class FasilitasRepository {
 
         Log.d("FasilitasRepository", "Final jadwal tersedia list: $result")
         return result
+    }
+
+    // PERBAIKAN: Update method getJadwalTersediaForFasilitas30 untuk mengecualikan status pending dan success
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getJadwalTersediaForFasilitas30(): List<JadwalTersedia> {
+        val hariLibur = getHariLibur()
+        val today = LocalDate.now()
+        val startDate = today.plusDays(7) // Mulai dari 7 hari setelah hari ini
+        val endDate = today.plusWeeks(12)
+
+        // PERBAIKAN: Ambil semua pembayaran dengan status success dan pending
+        val activePembayaran = supabaseClient.from("pembayaran")
+            .select(){
+                filter {
+                    or {
+                        eq("status_pembayaran", "success")
+                        eq("status_pembayaran", "pending")
+                    }
+                }
+            }
+            .decodeList<Pembayaran>()
+        Log.d("FasilitasRepository", "Active pembayaran (success + pending) for fasilitas 30. Size: ${activePembayaran.size}")
+
+        // PERBAIKAN: Ambil peminjaman yang sudah ada untuk fasilitas 30 dengan status success/pending
+        val allPeminjamanFasilitas30 = supabaseClient.from("peminjaman_fasilitas")
+            .select() {
+                filter {
+                    eq("id_fasilitas", 30)
+                    gte("tanggal_mulai", startDate)
+                    lte("tanggal_mulai", endDate)
+                }
+            }
+            .decodeList<PeminjamanFasilitas>()
+
+        // Filter hanya peminjaman dengan pembayaran success/pending
+        val existingPeminjaman = allPeminjamanFasilitas30.filter { peminjaman ->
+            activePembayaran.any { it.idPembayaran == peminjaman.idPembayaran }
+        }
+        Log.d("FasilitasRepository", "Existing peminjaman with active payments for fasilitas 30. Size: ${existingPeminjaman.size}")
+
+        // Log pembayaran yang dikecualikan untuk debugging
+        val excludedPayments = existingPeminjaman.map { p ->
+            val payment = activePembayaran.find { it.idPembayaran == p.idPembayaran }
+            "${p.idPembayaran} (${payment?.statusPembayaran}) - ${p.tanggalMulai} to ${p.tanggalSelesai}"
+        }
+        Log.d("FasilitasRepository", "Excluded payments for fasilitas 30: $excludedPayments")
+
+        return (0..ChronoUnit.DAYS.between(startDate, endDate)).mapNotNull { dayOffset ->
+            val currentDate = startDate.plusDays(dayOffset)
+            if (currentDate.dayOfWeek in listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) &&
+                !hariLibur.any { it.dateHariLibur == currentDate }) {
+
+                val morningSlot = createJadwalTersedia(currentDate, LocalTime.of(7, 0), LocalTime.of(9, 30), "Pagi", 1)
+                val eveningSlot = createJadwalTersedia(currentDate, LocalTime.of(15, 0), LocalTime.of(17, 30), "Sore", 2)
+
+                listOfNotNull(
+                    if (isSlotAvailable(morningSlot, existingPeminjaman)) morningSlot else null,
+                    if (isSlotAvailable(eveningSlot, existingPeminjaman)) eveningSlot else null
+                )
+            } else {
+                null
+            }
+        }.flatten()
     }
 
     // Extension function untuk mendapatkan nama hari dalam bahasa Indonesia
@@ -638,42 +713,6 @@ class FasilitasRepository {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun getJadwalTersediaForFasilitas30(): List<JadwalTersedia> {
-        val hariLibur = getHariLibur()
-        val today = LocalDate.now()
-        val startDate = today.plusDays(7) // Mulai dari 7 hari setelah hari ini
-        val endDate = today.plusWeeks(12)
-
-        // Ambil semua peminjaman yang sudah ada untuk fasilitas 30
-        val existingPeminjaman = supabaseClient.from("peminjaman_fasilitas")
-            .select() {
-                filter {
-                    eq("id_fasilitas", 30)
-                    gte("tanggal_mulai", startDate)
-                    lte("tanggal_mulai", endDate)
-                }
-            }
-            .decodeList<PeminjamanFasilitas>()
-
-        return (0..ChronoUnit.DAYS.between(startDate, endDate)).mapNotNull { dayOffset ->
-            val currentDate = startDate.plusDays(dayOffset)
-            if (currentDate.dayOfWeek in listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) &&
-                !hariLibur.any { it.dateHariLibur == currentDate }) {
-
-                val morningSlot = createJadwalTersedia(currentDate, LocalTime.of(7, 0), LocalTime.of(9, 30), "Pagi", 1)
-                val eveningSlot = createJadwalTersedia(currentDate, LocalTime.of(15, 0), LocalTime.of(17, 30), "Sore", 2)
-
-                listOfNotNull(
-                    if (isSlotAvailable(morningSlot, existingPeminjaman)) morningSlot else null,
-                    if (isSlotAvailable(eveningSlot, existingPeminjaman)) eveningSlot else null
-                )
-            } else {
-                null
-            }
-        }.flatten()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun createJadwalTersedia(date: LocalDate, startTime: LocalTime, endTime: LocalTime, tipeJadwal: String, urutanSlot: Int): JadwalTersedia {
         return JadwalTersedia(
             hari = date.dayOfWeek.getIndonesianName(),
@@ -689,12 +728,42 @@ class FasilitasRepository {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun isSlotAvailable(slot: JadwalTersedia, existingPeminjaman: List<PeminjamanFasilitas>): Boolean {
-        return existingPeminjaman.none { peminjaman ->
+        val isAvailable = existingPeminjaman.none { peminjaman ->
             peminjaman.tanggalMulai <= slot.tanggal && slot.tanggal!! <= peminjaman.tanggalSelesai &&
                     ((peminjaman.jamMulai <= slot.waktuMulai && slot.waktuMulai!! < peminjaman.jamSelesai) ||
                             (peminjaman.jamMulai < slot.waktuSelesai && slot.waktuSelesai!! <= peminjaman.jamSelesai) ||
                             (slot.waktuMulai!! <= peminjaman.jamMulai && peminjaman.jamSelesai <= slot.waktuSelesai))
         }
+
+        // Log untuk debugging slot availability
+        if (!isAvailable) {
+            val conflictingPeminjaman = existingPeminjaman.filter { peminjaman ->
+                peminjaman.tanggalMulai <= slot.tanggal && slot.tanggal!! <= peminjaman.tanggalSelesai &&
+                        ((peminjaman.jamMulai <= slot.waktuMulai && slot.waktuMulai!! < peminjaman.jamSelesai) ||
+                                (peminjaman.jamMulai < slot.waktuSelesai && slot.waktuSelesai!! <= peminjaman.jamSelesai) ||
+                                (slot.waktuMulai!! <= peminjaman.jamMulai && peminjaman.jamSelesai <= slot.waktuSelesai))
+            }
+            Log.d("FasilitasRepository", "Slot ${slot.tanggal} ${slot.waktuMulai}-${slot.waktuSelesai} tidak tersedia karena konflik dengan: ${conflictingPeminjaman.map { "${it.idPembayaran} (${it.tanggalMulai}-${it.tanggalSelesai} ${it.jamMulai}-${it.jamSelesai})" }}")
+        }
+
+        return isAvailable
     }
 
+    // TAMBAHAN: Method untuk get detail status pembayaran (untuk debugging)
+    suspend fun getPembayaranStatus(idPembayaran: String): StatusPembayaran? {
+        return try {
+            val pembayaran = supabaseClient.from("pembayaran")
+                .select() {
+                    filter {
+                        eq("id_pembayaran", idPembayaran)
+                    }
+                    limit(1)
+                }
+                .decodeSingle<Pembayaran>()
+            pembayaran.statusPembayaran
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error getting payment status for $idPembayaran: ${e.message}")
+            null
+        }
+    }
 }

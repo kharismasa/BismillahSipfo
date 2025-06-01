@@ -1,12 +1,10 @@
 // SharedPeminjamanViewModel.kt - ViewModel yang dibagi antar fragment
 package com.example.bismillahsipfo.data.repository
 
-import android.annotation.SuppressLint
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.bismillahsipfo.data.model.JadwalTersedia
-import com.example.bismillahsipfo.data.model.PenggunaKhusus
 
 class SharedPeminjamanViewModel : ViewModel() {
 

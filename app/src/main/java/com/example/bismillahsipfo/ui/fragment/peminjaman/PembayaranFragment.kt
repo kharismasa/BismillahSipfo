@@ -156,6 +156,9 @@ class PembayaranFragment : Fragment() {
         // Initialize UI components
         initializeViews(view)
 
+        // TAMBAHAN: Setup LiveData Observer
+        setupSharedViewModelObserver()
+
         // MODIFIKASI: Retrieve data dari SharedViewModel dulu, baru dari Bundle
         retrieveDataFromSharedViewModel()
 
@@ -163,6 +166,9 @@ class PembayaranFragment : Fragment() {
         if (currentData == null) {
             retrieveAllDataFromBundle()
         }
+
+        // TAMBAHAN: Log all data for debugging
+        logAllData()
 
         // Setup UI with data
         setupUI()
@@ -172,6 +178,27 @@ class PembayaranFragment : Fragment() {
 
         // Calculate payment
         calculatePayment()
+    }
+
+    // TAMBAHAN: Setup Observer untuk SharedViewModel
+    private fun setupSharedViewModelObserver() {
+        sharedViewModel.peminjamanData.observe(viewLifecycleOwner) { data ->
+            Log.d("PembayaranFragment", "SharedViewModel data observed: $data")
+
+            if (data != null && data != currentData) {
+                Log.d("PembayaranFragment", "Data changed, recalculating payment")
+                currentData = data
+
+                // Update UI dan recalculate payment
+                setupUI()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    calculatePayment()
+                }
+
+                // Log updated data
+                logAllData()
+            }
+        }
     }
 
     private fun initializeViews(view: View) {
@@ -316,24 +343,32 @@ class PembayaranFragment : Fragment() {
     private fun logAllData() {
         currentData?.let { data ->
             Log.d("PembayaranFragment", """
-                Retrieved Data Summary:
-                - ID Fasilitas: ${data.idFasilitas}
-                - Nama Fasilitas: ${data.namaFasilitas}
-                - Opsi Peminjaman: ${data.opsiPeminjaman}
-                - Nama Acara: ${data.namaAcara}
-                - ID Organisasi: ${data.idOrganisasi}
-                - Nama Organisasi: ${data.namaOrganisasi}
-                - Jadwal Tersedia: ${data.jadwalTersedia}
-                - List Lapangan: ${data.listLapangan}
-                - Pengguna Khusus: ${data.penggunaKhusus}
-                - Tanggal Mulai: ${data.tanggalMulai}
-                - Tanggal Selesai: ${data.tanggalSelesai}
-                - Jam Mulai: ${data.jamMulai}
-                - Jam Selesai: ${data.jamSelesai}
-                - Lapangan Dipinjam: ${data.lapanganDipinjam}
-                - PDF URI: ${data.pdfUri}
+                === PEMBAYARAN FRAGMENT DATA ===
+                ID Fasilitas: ${data.idFasilitas}
+                Nama Fasilitas: ${data.namaFasilitas}
+                Opsi Peminjaman: ${data.opsiPeminjaman}
+                Nama Acara: ${data.namaAcara}
+                ID Organisasi: ${data.idOrganisasi}
+                Nama Organisasi: ${data.namaOrganisasi}
+                Jadwal Tersedia: ${data.jadwalTersedia}
+                List Lapangan: ${data.listLapangan}
+                Pengguna Khusus: ${data.penggunaKhusus}
+                Tanggal Mulai: ${data.tanggalMulai}
+                Tanggal Selesai: ${data.tanggalSelesai}
+                Jam Mulai: ${data.jamMulai}
+                Jam Selesai: ${data.jamSelesai}
+                Lapangan Dipinjam: ${data.lapanganDipinjam}
+                PDF URI: ${data.pdfUri}
+                
+                === PAYMENT CALCULATION ===
+                Total Days: $totalDays
+                Base Price: $basePrice
+                Discount: $discountPercent%
+                Discount Amount: $discountAmount
+                Final Price: $finalPrice
+                ================================
             """.trimIndent())
-        }
+        } ?: Log.d("PembayaranFragment", "No data available to log")
     }
 
     // MODIFIKASI: Update setupUI untuk menggunakan currentData
@@ -776,18 +811,19 @@ class PembayaranFragment : Fragment() {
     // TAMBAHAN: Override onResume untuk memperbarui data jika ada perubahan
     override fun onResume() {
         super.onResume()
+        Log.d("PembayaranFragment", "Fragment resumed")
 
-        // Periksa apakah ada data baru dari SharedViewModel
         val latestData = sharedViewModel.getCurrentData()
         if (latestData != null && latestData != currentData) {
-            Log.d("PembayaranFragment", "Data updated from SharedViewModel")
+            Log.d("PembayaranFragment", "Data updated from SharedViewModel on resume")
             currentData = latestData
 
-            // Re-setup UI and recalculate payment with new data
             setupUI()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 calculatePayment()
             }
+
+            logAllData() // Log data setelah update
         }
     }
 }

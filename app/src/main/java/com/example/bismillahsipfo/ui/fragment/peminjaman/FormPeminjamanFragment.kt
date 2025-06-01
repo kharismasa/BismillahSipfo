@@ -113,6 +113,9 @@ class FormPeminjamanFragment : Fragment() {
         observeViewModel()
         setupFieldValidation()
 
+        // TAMBAHAN: Setup LiveData Observer untuk SharedViewModel
+        setupSharedViewModelObserver()
+
         // TAMBAHAN: Restore data dari SharedViewModel jika ada
         restoreDataFromSharedViewModel()
 
@@ -130,10 +133,21 @@ class FormPeminjamanFragment : Fragment() {
                 if (activity.viewPager.currentItem > 0) {
                     activity.viewPager.currentItem = activity.viewPager.currentItem - 1
                 } else {
+                    // TAMBAHAN: Clear data saat keluar dari form
+                    sharedViewModel.clearData()
                     activity.finish()
                 }
             }
         })
+    }
+
+    private fun setupSharedViewModelObserver() {
+        sharedViewModel.peminjamanData.observe(viewLifecycleOwner) { data ->
+            Log.d("FormPeminjamanFragment", "SharedViewModel data changed: $data")
+
+            // Optional: Bisa digunakan untuk sync data real-time antar fragment
+            // Tapi hati-hati jangan sampai infinite loop
+        }
     }
 
     // TAMBAHAN: Method untuk restore data dari SharedViewModel

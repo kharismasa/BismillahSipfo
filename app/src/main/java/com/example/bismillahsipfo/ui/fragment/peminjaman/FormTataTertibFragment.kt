@@ -61,6 +61,9 @@ class FormTataTertibFragment : Fragment() {
         checkboxTataTertib = view.findViewById(R.id.checkbox_tata_tertib)
         buttonNext = view.findViewById(R.id.button_next)
 
+        // TAMBAHAN: Setup LiveData Observer
+        setupSharedViewModelObserver()
+
         // MODIFIKASI: Ambil data dari SharedViewModel dulu, baru dari Bundle
         retrieveDataFromSharedViewModel()
 
@@ -68,6 +71,9 @@ class FormTataTertibFragment : Fragment() {
         if (currentData == null) {
             retrieveDataFromBundle()
         }
+
+        // TAMBAHAN: Log all data for debugging
+        logAllData()
 
         // Initialize views
         setupViews(view)
@@ -84,6 +90,44 @@ class FormTataTertibFragment : Fragment() {
         // Display data
         displayData()
     }
+
+    // TAMBAHAN: Setup Observer untuk SharedViewModel
+    private fun setupSharedViewModelObserver() {
+        sharedViewModel.peminjamanData.observe(viewLifecycleOwner) { data ->
+            Log.d("FormTataTertibFragment", "SharedViewModel data observed: $data")
+
+            if (data != null && data != currentData) {
+                Log.d("FormTataTertibFragment", "Data changed, updating UI")
+                currentData = data
+
+                // Update UI based on new data
+                setupUploadSectionVisibility()
+                displayData()
+            }
+        }
+    }
+
+    // TAMBAHAN: Method untuk log semua data
+    private fun logAllData() {
+        currentData?.let { data ->
+            Log.d("FormTataTertibFragment", """
+                === FORM TATA TERTIB DATA ===
+                ID Fasilitas: ${data.idFasilitas}
+                Nama Fasilitas: ${data.namaFasilitas}
+                Opsi Peminjaman: ${data.opsiPeminjaman}
+                Nama Acara: ${data.namaAcara}
+                Nama Organisasi: ${data.namaOrganisasi}
+                ID Organisasi: ${data.idOrganisasi}
+                Pengguna Khusus: ${data.penggunaKhusus}
+                Tanggal: ${data.tanggalMulai} - ${data.tanggalSelesai}
+                Jam: ${data.jamMulai} - ${data.jamSelesai}
+                Lapangan: ${data.lapanganDipinjam}
+                PDF URI: ${data.pdfUri}
+                ===============================
+            """.trimIndent())
+        } ?: Log.d("FormTataTertibFragment", "No data available to log")
+    }
+
 
     // TAMBAHAN: Method untuk mengambil data dari SharedViewModel
     private fun retrieveDataFromSharedViewModel() {
@@ -409,16 +453,15 @@ class FormTataTertibFragment : Fragment() {
     // TAMBAHAN: Override onResume untuk memperbarui data jika ada perubahan
     override fun onResume() {
         super.onResume()
+        Log.d("FormTataTertibFragment", "Fragment resumed")
 
-        // Periksa apakah ada data baru dari SharedViewModel
         val latestData = sharedViewModel.getCurrentData()
         if (latestData != null && latestData != currentData) {
-            Log.d("FormTataTertibFragment", "Data updated from SharedViewModel")
+            Log.d("FormTataTertibFragment", "Data updated from SharedViewModel on resume")
             currentData = latestData
-
-            // Update visibility based on new data
             setupUploadSectionVisibility()
             displayData()
+            logAllData() // Log data setelah update
         }
     }
 }
