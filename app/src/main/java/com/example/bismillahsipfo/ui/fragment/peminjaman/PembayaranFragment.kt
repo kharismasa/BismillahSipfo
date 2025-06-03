@@ -51,6 +51,10 @@ import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
 
 class PembayaranFragment : Fragment() {
 
+    companion object {
+        private const val TAG = "PembayaranFragment"
+    }
+
     // TAMBAHAN: SharedViewModel untuk data antar fragment
     private val sharedViewModel: SharedPeminjamanViewModel by activityViewModels()
 
@@ -652,14 +656,13 @@ class PembayaranFragment : Fragment() {
                     // Check if this is a free booking
                     val isFreeBooking = data.opsiPeminjaman == "Sesuai Jadwal Rutin" || finalPrice <= 0
 
+                    Log.d("PembayaranFragment", "Processing payment - OpsiPeminjaman: ${data.opsiPeminjaman}, FinalPrice: $finalPrice, IsFreeBooking: $isFreeBooking")
+
                     if (isFreeBooking) {
                         Toast.makeText(requireContext(), "Memproses peminjaman gratis...", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(requireContext(), "Memproses pembayaran...", Toast.LENGTH_SHORT).show()
                     }
-
-                    // Generate order ID
-                    val orderId = "ORDER-${System.currentTimeMillis()}"
 
                     // Get current user
                     val user = userRepository.getCurrentUser()
@@ -683,7 +686,7 @@ class PembayaranFragment : Fragment() {
                     // Create transaction data map
                     val requestMap = HashMap<String, Any>()
                     requestMap["transaction_details"] = mapOf(
-                        "order_id" to orderId,
+                        "order_id" to "TEMP-${System.currentTimeMillis()}", // Will be replaced by server
                         "gross_amount" to if (isFreeBooking) 0 else finalPrice.toInt()
                     )
                     requestMap["item_details"] = itemDetails
@@ -762,11 +765,6 @@ class PembayaranFragment : Fragment() {
                     requestMap["create_peminjaman"] = true
                     requestMap["peminjaman_data"] = peminjamanData
 
-                    // *** TAMBAHAN: Flag untuk mengirim data saja, tanpa memproses Midtrans ***
-                    if (!isFreeBooking) {
-                        requestMap["save_data_only"] = true
-                    }
-
                     // Convert to JSON string using Gson
                     val gson = Gson()
                     val jsonString = gson.toJson(requestMap)
@@ -775,13 +773,141 @@ class PembayaranFragment : Fragment() {
                     // Create request body
                     val requestBody = jsonString.toRequestBody("application/json".toMediaType())
 
-                    // Continue with same payment processing logic as before...
-                    // Sisa kode processPayment tetap sama
+                    // Send request to server
+                    val apiService = RetrofitClient.createService(ApiService::class.java)
+                    val response = withContext(Dispatchers.IO) {
+                        apiService.createTransaction(
+                            url = "midtrans-sipfo",
+                            authHeader = "Bearer ${BuildConfig.API_KEY}",
+                            requestBody = requestBody
+                        )
+                    }
+
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()?.string()
+                        Log.d("PembayaranFragment", "Response: $responseBody")
+
+                        if (responseBody != null) {
+                            val jsonResponse = JSONObject(responseBody)
+                            val success = jsonResponse.optBoolean("success", false)
+                            val message = jsonResponse.optString("message", "")
+                            val statusFromServer = jsonResponse.optString("status", "")
+                            paymentId = jsonResponse.optString("payment_id", "")
+
+                            Log.d("PembayaranFragment", "Success: $success, Status: $statusFromServer, IsFreeBooking: $isFreeBooking, PaymentId: $paymentId")
+
+                            if (success) {
+                                if (isFreeBooking || statusFromServer == "success") {
+                                    // Untuk peminjaman gratis, langsung navigasi ke hasil pembayaran
+                                    Toast.makeText(requireContext(), "Peminjaman gratis berhasil!", Toast.LENGTH_SHORT).show()
+                                    navigateToHasilPembayaran(true, paymentId)
+                                } else {
+                                    // Untuk peminjaman berbayar, cek apakah ada redirect_url
+                                    val redirectUrl = jsonResponse.optString("redirect_url", "")
+                                    val token = jsonResponse.optString("token", "")
+
+                                    Log.d("PembayaranFragment", "RedirectUrl: $redirectUrl, Token: $token")
+
+                                    if (redirectUrl.isNotEmpty() || token.isNotEmpty()) {
+                                        // Buka WebView untuk Midtrans
+                                        val intent = Intent(requireContext(), MidtransWebViewActivity::class.java).apply {
+                                            putExtra("MIDTRANS_URL", redirectUrl)
+                                            putExtra("PAYMENT_ID", paymentId)
+                                            putExtra("NAMA_FASILITAS", data.namaFasilitas)
+                                            putExtra("NAMA_ACARA", data.namaAcara)
+                                            putExtra("TANGGAL", data.tanggalMulai)
+                                        }
+                                        startActivity(intent)
+                                        requireActivity().finish()
+                                    } else {
+                                        // Jika tidak ada redirect_url, generate token dulu
+                                        generateMidtransToken(paymentId.toString(), requestMap)
+                                    }
+                                }
+                            } else {
+                                showPaymentError("Gagal memproses pembayaran: $message")
+                            }
+                        } else {
+                            showPaymentError("Respon server kosong")
+                        }
+                    } else {
+                        showPaymentError("Gagal terhubung ke server: ${response.code()}")
+                    }
 
                 } catch (e: Exception) {
                     Log.e(TAG, "Error processing payment: ${e.message}", e)
-                    showPaymentError(e.message ?: "Terjadi kesalahan")
+                    showPaymentError("Terjadi kesalahan: ${e.message}")
+                } finally {
+                    // Pastikan button enabled kembali jika ada error
+                    buttonBayar.isEnabled = true
                 }
+            }
+        }
+    }
+
+    private fun generateMidtransToken(paymentId: String, originalRequestMap: HashMap<String, Any>) {
+        lifecycleScope.launch {
+            try {
+                // Request untuk generate Midtrans token
+                val tokenRequestMap = HashMap<String, Any>()
+                tokenRequestMap["generate_midtrans_token"] = true
+                tokenRequestMap["payment_id"] = paymentId
+                tokenRequestMap["transaction_details"] = originalRequestMap["transaction_details"] as Map<String, Any>
+                tokenRequestMap["customer_details"] = originalRequestMap["customer_details"] as Map<String, Any>
+                tokenRequestMap["item_details"] = originalRequestMap["item_details"] as List<Map<String, Any>>
+
+                val gson = Gson()
+                val jsonString = gson.toJson(tokenRequestMap)
+                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
+
+                val apiService = RetrofitClient.createService(ApiService::class.java)
+                val response = withContext(Dispatchers.IO) {
+                    apiService.createTransaction(
+                        url = "midtrans-sipfo",
+                        authHeader = "Bearer ${BuildConfig.API_KEY}",
+                        requestBody = requestBody
+                    )
+                }
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()?.string()
+                    Log.d("PembayaranFragment", "Generate token response: $responseBody")
+
+                    if (responseBody != null) {
+                        val jsonResponse = JSONObject(responseBody)
+                        val success = jsonResponse.optBoolean("success", false)
+                        val redirectUrl = jsonResponse.optString("redirect_url", "")
+                        val token = jsonResponse.optString("token", "")
+
+                        Log.d("PembayaranFragment", "Token generation - Success: $success, RedirectUrl: $redirectUrl, Token: $token")
+
+                        if (success && (redirectUrl.isNotEmpty() || token.isNotEmpty())) {
+                            // Buka WebView untuk Midtrans
+                            currentData?.let { data ->
+                                val intent = Intent(requireContext(), MidtransWebViewActivity::class.java).apply {
+                                    putExtra("MIDTRANS_URL", redirectUrl)
+                                    putExtra("PAYMENT_ID", paymentId)
+                                    putExtra("NAMA_FASILITAS", data.namaFasilitas)
+                                    putExtra("NAMA_ACARA", data.namaAcara)
+                                    putExtra("TANGGAL", data.tanggalMulai)
+                                }
+                                startActivity(intent)
+                                requireActivity().finish()
+                            }
+                        } else {
+                            showPaymentError("Gagal mendapatkan link pembayaran")
+                        }
+                    } else {
+                        showPaymentError("Respon server kosong")
+                    }
+                } else {
+                    showPaymentError("Gagal terhubung ke server: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("PembayaranFragment", "Error generating Midtrans token: ${e.message}", e)
+                showPaymentError("Error: ${e.message}")
+            } finally {
+                buttonBayar.isEnabled = true
             }
         }
     }

@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.bismillahsipfo.R
@@ -29,6 +30,7 @@ import com.example.bismillahsipfo.ui.fragment.notification.NotificationActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 class HomeFragment : Fragment() {
@@ -42,7 +44,7 @@ class HomeFragment : Fragment() {
     private lateinit var peminjamanFasilitasRepository: DipinjamFasilitasRepository
     private lateinit var userRepository: UserRepository
 
-    private lateinit var allJadwalList: List<Pair<PeminjamanFasilitas, Fasilitas>>
+    private var allJadwalList: List<Pair<PeminjamanFasilitas, Fasilitas>> = emptyList()
     private var currentFilterType: FilterType = FilterType.ALL
 
     override fun onCreateView(
@@ -61,12 +63,10 @@ class HomeFragment : Fragment() {
         peminjamanFasilitasRepository = DipinjamFasilitasRepository()
         userRepository = UserRepository(requireContext())
 
-
         setupUI()
         loadUserData()
         setupImageSlider()
         setupFasilitasRecyclerView()
-
         setupFilterButtons()
         setupJadwalDipinjamRecyclerView()
     }
@@ -97,6 +97,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun updateButtonColors(selectedFilter: FilterType) {
+        // ✅ NULL CHECK - Pastikan binding masih ada
+        if (_binding == null) return
+
         val mediumBlue = ContextCompat.getColor(requireContext(), R.color.medium_blue)
         val defaultColor = ContextCompat.getColor(requireContext(), android.R.color.transparent)
 
@@ -104,7 +107,6 @@ class HomeFragment : Fragment() {
         binding.btnHariIni.setBackgroundColor(if (selectedFilter == FilterType.TODAY) mediumBlue else defaultColor)
         binding.btnBesok.setBackgroundColor(if (selectedFilter == FilterType.TOMORROW) mediumBlue else defaultColor)
     }
-
 
     private fun loadUserData() {
         val sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", AppCompatActivity.MODE_PRIVATE)
@@ -123,17 +125,26 @@ class HomeFragment : Fragment() {
         var currentImageIndex = 0
 
         fun loadNextImage() {
-            if (view == null || !isAdded) return  // Check if fragment is still attached
-            Glide.with(this)
-                .load(imageUrls[currentImageIndex])
-                .into(binding.imageHome)
-            currentImageIndex = (currentImageIndex + 1) % imageUrls.size
+            // ✅ LIFECYCLE CHECK - Pastikan fragment masih aktif
+            if (_binding == null || !isAdded || view == null) return
+
+            try {
+                Glide.with(this)
+                    .load(imageUrls[currentImageIndex])
+                    .into(binding.imageHome)
+                currentImageIndex = (currentImageIndex + 1) % imageUrls.size
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error loading image: ${e.message}")
+            }
         }
 
         val imageSliderRunnable = object : Runnable {
             override fun run() {
                 loadNextImage()
-                handler.postDelayed(this, 3000)
+                // ✅ LIFECYCLE CHECK - Pastikan fragment masih aktif sebelum schedule next
+                if (_binding != null && isAdded) {
+                    handler.postDelayed(this, 3000)
+                }
             }
         }
 
@@ -143,16 +154,26 @@ class HomeFragment : Fragment() {
     private fun setupFasilitasRecyclerView() {
         binding.rvFasilitas.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
-        CoroutineScope(Dispatchers.Main).launch {
+        // ✅ GUNAKAN viewLifecycleOwner.lifecycleScope - Lifecycle aware
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val fasilitasList = fasilitasRepository.getFasilitas()
-                fasilitasAdapter = FasilitasAdapter(fasilitasList) { fasilitas ->
-                    // Ini adalah handler untuk klik item
-                    openHalamanInformasi(fasilitas)
+                val fasilitasList = withContext(Dispatchers.IO) {
+                    fasilitasRepository.getFasilitas()
                 }
-                binding.rvFasilitas.adapter = fasilitasAdapter
+
+                // ✅ NULL CHECK - Pastikan fragment masih aktif
+                if (_binding != null && isAdded) {
+                    fasilitasAdapter = FasilitasAdapter(fasilitasList) { fasilitas ->
+                        openHalamanInformasi(fasilitas)
+                    }
+                    binding.rvFasilitas.adapter = fasilitasAdapter
+                }
             } catch (e: Exception) {
-                // Handle any errors that occur while loading data
+                Log.e("HomeFragment", "Error loading fasilitas: ${e.message}")
+                // ✅ NULL CHECK untuk error handling
+                if (_binding != null && isAdded) {
+                    // Handle error if needed
+                }
             }
         }
     }
@@ -160,7 +181,6 @@ class HomeFragment : Fragment() {
     private fun openHalamanInformasi(fasilitas: Fasilitas) {
         val intent = Intent(requireContext(), HalamanInformasiActivity::class.java).apply {
             putExtra("FASILITAS_ID", fasilitas.idFasilitas)
-            // Tambahkan data lain yang mungkin diperlukan oleh HalamanInformasiActivity
         }
         startActivity(intent)
     }
@@ -171,38 +191,62 @@ class HomeFragment : Fragment() {
         jadwalDipinjamAdapter = RowJadwalDipinjamAdapter()
         binding.rvJadwalFasilitas.adapter = jadwalDipinjamAdapter
 
-        CoroutineScope(Dispatchers.Main).launch {
+        // ✅ GUNAKAN viewLifecycleOwner.lifecycleScope - Lifecycle aware
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val userId = userRepository.getCurrentUserId()
-                val peminjamanList = peminjamanFasilitasRepository.getPeminjamanByUserAndDate(userId)
-                allJadwalList = mutableListOf()
+                val userId = withContext(Dispatchers.IO) {
+                    userRepository.getCurrentUserId()
+                }
+
+                val peminjamanList = withContext(Dispatchers.IO) {
+                    peminjamanFasilitasRepository.getPeminjamanByUserAndDate(userId)
+                }
+
+                val tempJadwalList = mutableListOf<Pair<PeminjamanFasilitas, Fasilitas>>()
                 val today = LocalDate.now()
 
                 for (peminjaman in peminjamanList) {
-                    val fasilitas = fasilitasRepository.getFasilitasById(peminjaman.idFasilitas)
+                    val fasilitas = withContext(Dispatchers.IO) {
+                        fasilitasRepository.getFasilitasById(peminjaman.idFasilitas)
+                    }
+
                     if (fasilitas != null) {
                         val startDate = maxOf(peminjaman.tanggalMulai, today)
                         val endDate = peminjaman.tanggalSelesai
                         var currentDate = startDate
                         while (!currentDate.isAfter(endDate)) {
-                            allJadwalList += Pair(peminjaman.copy(tanggalMulai = currentDate, tanggalSelesai = currentDate), fasilitas)
+                            tempJadwalList += Pair(
+                                peminjaman.copy(tanggalMulai = currentDate, tanggalSelesai = currentDate),
+                                fasilitas
+                            )
                             currentDate = currentDate.plusDays(1)
                         }
                     }
                 }
 
-                filterJadwal(FilterType.ALL)
+                // ✅ NULL CHECK - Pastikan fragment masih aktif sebelum update UI
+                if (_binding != null && isAdded) {
+                    allJadwalList = tempJadwalList
+                    filterJadwal(FilterType.ALL)
+                }
 
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Error loading jadwal: ${e.message}")
-                binding.imgEmpty.visibility = View.VISIBLE
-                binding.rvJadwalFasilitas.visibility = View.GONE
+
+                // ✅ NULL CHECK untuk error handling
+                if (_binding != null && isAdded) {
+                    binding.imgEmpty.visibility = View.VISIBLE
+                    binding.rvJadwalFasilitas.visibility = View.GONE
+                }
             }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun filterJadwal(filterType: FilterType) {
+        // ✅ NULL CHECK - Pastikan binding masih ada
+        if (_binding == null) return
+
         val today = LocalDate.now()
         val filteredList = when (filterType) {
             FilterType.ALL -> allJadwalList
@@ -227,7 +271,22 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        handler.removeCallbacksAndMessages(null) // Remove all callbacks to prevent memory leaks
-        _binding = null // Clear binding reference to avoid memory leaks
+
+        // ✅ CLEANUP - Remove all callbacks to prevent memory leaks
+        handler.removeCallbacksAndMessages(null)
+
+        // ✅ CLEANUP - Clear binding reference to avoid memory leaks
+        _binding = null
+    }
+
+    // ✅ TAMBAHAN: Override onResume untuk refresh data saat kembali ke fragment
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onResume() {
+        super.onResume()
+
+        // Refresh jadwal data when returning to home
+        if (_binding != null && ::jadwalDipinjamAdapter.isInitialized) {
+            setupJadwalDipinjamRecyclerView()
+        }
     }
 }

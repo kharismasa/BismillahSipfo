@@ -25,6 +25,9 @@ class MidtransWebViewActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private var paymentId: String? = null
+    private var namaFasilitas: String? = null
+    private var namaAcara: String? = null
+    private var tanggal: String? = null
     private var isCheckingStatus = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,9 +36,12 @@ class MidtransWebViewActivity : AppCompatActivity() {
 
         webView = findViewById(R.id.webView)
 
-        // Get URL and payment ID from intent
+        // Get data from intent
         val url = intent.getStringExtra("MIDTRANS_URL")
         paymentId = intent.getStringExtra("PAYMENT_ID")
+        namaFasilitas = intent.getStringExtra("NAMA_FASILITAS")
+        namaAcara = intent.getStringExtra("NAMA_ACARA")
+        tanggal = intent.getStringExtra("TANGGAL")
 
         if (url.isNullOrEmpty()) {
             Toast.makeText(this, "URL tidak valid", Toast.LENGTH_SHORT).show()
@@ -100,7 +106,7 @@ class MidtransWebViewActivity : AppCompatActivity() {
                 val apiService = RetrofitClient.createService(ApiService::class.java)
                 val response = withContext(Dispatchers.IO) {
                     apiService.createTransaction(
-                        url = "midtrans-sipfo", // PERBAIKAN: Gunakan endpoint yang benar
+                        url = "midtrans-sipfo",
                         authHeader = "Bearer ${BuildConfig.API_KEY}",
                         requestBody = requestBody
                     )
@@ -188,6 +194,10 @@ class MidtransWebViewActivity : AppCompatActivity() {
         val intent = Intent(this, HasilPembayaranActivity::class.java).apply {
             putExtra("IS_SUCCESS", success)
             putExtra("PAYMENT_ID", paymentId)
+            putExtra("NAMA_FASILITAS", namaFasilitas)
+            putExtra("NAMA_ACARA", namaAcara)
+            putExtra("TANGGAL", tanggal)
+            // Clear task untuk memastikan tidak ada back stack yang mengganggu
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         }
 
@@ -195,13 +205,13 @@ class MidtransWebViewActivity : AppCompatActivity() {
         finish()
     }
 
-
     override fun onBackPressed() {
+        super.onBackPressed()
         if (webView.canGoBack()) {
             webView.goBack()
         } else {
-            finishWithResult(true)
-            super.onBackPressed()
+            // Jika user menekan back, anggap sebagai pembatalan
+            finishWithResult(false)
         }
     }
 }

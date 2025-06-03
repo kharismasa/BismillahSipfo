@@ -1,5 +1,6 @@
 package com.example.bismillahsipfo.ui.fragment.peminjaman
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ImageView
@@ -12,6 +13,7 @@ import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.network.ApiService
 import com.example.bismillahsipfo.data.network.RetrofitClient
+import com.example.bismillahsipfo.ui.MainActivity
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,19 +67,32 @@ class HasilPembayaranActivity : AppCompatActivity() {
         tvTanggal.text = tanggal ?: "-"
         tvPaymentId.text = paymentId ?: "-"
 
-        // Handle button click
+        // Handle button click - Navigasi ke HomeFragment
         btnKembaliBeranda.setOnClickListener {
-            // Kembali ke beranda dan hapus seluruh history activity
-            finish()
+            navigateToHome()
         }
 
         // Panggil di onCreate() setelah menginisialisasi view
         if (paymentId != null) {
-            checkPaymentStatus(paymentId)
+            setupCheckStatusButton(paymentId)
         }
     }
 
-    private fun checkPaymentStatus(paymentId: String) {
+    private fun navigateToHome() {
+        // Buat intent ke MainActivity dengan flag untuk membuka HomeFragment
+        val intent = Intent(this, com.example.bismillahsipfo.ui.MainActivity::class.java).apply {
+            // Flag untuk clear task dan membuat task baru
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            // Extra untuk memastikan MainActivity membuka HomeFragment
+            putExtra("NAVIGATE_TO_HOME", true)
+        }
+
+        startActivity(intent)
+        finish()
+    }
+
+    private fun setupCheckStatusButton(paymentId: String) {
         val btnCheckStatus = findViewById<Button>(R.id.btnCheckStatus)
         btnCheckStatus.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
@@ -157,4 +172,9 @@ class HasilPembayaranActivity : AppCompatActivity() {
         tvMessage.text = "Terima kasih telah menggunakan layanan kami. Detail peminjaman telah dicatat dan dapat dilihat pada halaman Riwayat."
     }
 
+    // Override onBackPressed untuk memastikan navigasi yang benar
+    override fun onBackPressed() {
+        super.onBackPressed()
+        navigateToHome()
+    }
 }
