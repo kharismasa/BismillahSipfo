@@ -35,5 +35,6 @@ data class PeminjamanFasilitas(
     @SerialName("id_pembayaran") val idPembayaran: String,
     @SerialName("pengguna_khusus") val penggunaKhusus: PenggunaKhusus?, // Jadikan nullable
     @SerialName("id_pengguna") val idPengguna: Int,
-    @SerialName("created_at") @Serializable(with = InstantSerializer::class) val createdAtPeminjaman: Instant
+    @SerialName("created_at") @Serializable(with = InstantSerializer::class) val createdAtPeminjaman: Instant,
+    @SerialName("surat_peminjaman_url") val suratPeminjamanUrl: String? = null
 )

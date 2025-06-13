@@ -123,9 +123,26 @@ async function safeUpdatePeminjamanStatus(paymentId, status) {
       return true; // Not an error condition
     }
 
-    // ✅ STATUS PEMINJAMAN DI-TRACK LEWAT STATUS_PEMBAYARAN, BUKAN KOLOM TERPISAH
-    console.log(`✅ Found ${peminjaman.length} peminjaman(s) for payment ${paymentId}`);
-    console.log("✅ Status peminjaman di-track lewat status_pembayaran di tabel pembayaran");
+    // Update peminjaman status (now we actually update it)
+    for (const pem of peminjaman) {
+      const targetStatus = status === "success" ? "SUCCESS" : status === "failed" ? "FAILED" : "PENDING";
+      
+      const { error: updateError } = await Promise.race([
+        supabaseClient
+          .from('peminjaman_fasilitas')
+          .update({ status_peminjaman: targetStatus })
+          .eq('id_peminjaman', pem.id_peminjaman),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Update timeout")), 5000)
+        )
+      ]);
+      
+      if (updateError) {
+        console.error(`❌ Error updating peminjaman status for ID ${pem.id_peminjaman}:`, updateError);
+      } else {
+        console.log(`✅ Successfully updated peminjaman status to ${targetStatus} for ID: ${pem.id_peminjaman}`);
+      }
+    }
 
     return true;
   } catch (error) {
@@ -169,6 +186,8 @@ async function safeCreatePeminjamanRecord(peminjamanData) {
       throw new Error("Database client not available");
     }
 
+    console.log("📝 Creating peminjaman with data:", JSON.stringify(peminjamanData, null, 2));
+
     const { data, error } = await Promise.race([
       supabaseClient
         .from('peminjaman_fasilitas')
@@ -180,10 +199,11 @@ async function safeCreatePeminjamanRecord(peminjamanData) {
     ]);
 
     if (error) {
-      console.error("Error creating peminjaman record:", error);
+      console.error("❌ Error creating peminjaman record:", error);
       throw error;
     }
 
+    console.log("✅ Peminjaman record created successfully:", data);
     return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error("Error in safeCreatePeminjamanRecord:", error);
@@ -219,6 +239,38 @@ async function safeInsertLapanganDipinjam(peminjamanId, lapanganIds) {
     return true;
   } catch (error) {
     console.error("Error in safeInsertLapanganDipinjam:", error);
+    return false;
+  }
+}
+
+async function safeUpdateSuratUrl(peminjamanId, suratUrl) {
+  try {
+    if (!supabaseClient || !peminjamanId || !suratUrl) {
+      console.warn("Missing parameters for surat URL update");
+      return false;
+    }
+
+    console.log(`📄 Updating surat URL for peminjaman ${peminjamanId}: ${suratUrl}`);
+
+    const { error } = await Promise.race([
+      supabaseClient
+        .from('peminjaman_fasilitas')
+        .update({ surat_peminjaman_url: suratUrl })
+        .eq('id_peminjaman', peminjamanId),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Surat URL update timeout")), 5000)
+      )
+    ]);
+
+    if (error) {
+      console.error("❌ Error updating surat URL:", error);
+      return false;
+    }
+
+    console.log("✅ Surat URL updated successfully");
+    return true;
+  } catch (error) {
+    console.error("Error in safeUpdateSuratUrl:", error);
     return false;
   }
 }
@@ -793,6 +845,45 @@ serve(async (req) => {
         }
       }
 
+      // ===== UPDATE SURAT URL ENDPOINT =====
+      if (data.update_surat_url === true && data.id_peminjaman && data.surat_url) {
+        console.log(`📄 Updating surat URL for peminjaman ID: ${data.id_peminjaman}`);
+        
+        if (!supabaseClient) {
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Database service unavailable"
+          }), { status: 503, headers });
+        }
+
+        try {
+          const updateResult = await safeUpdateSuratUrl(data.id_peminjaman, data.surat_url);
+          
+          if (updateResult) {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: true,
+              message: "Surat URL updated successfully"
+            }), { headers, status: 200 });
+          } else {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: false,
+              message: "Failed to update surat URL"
+            }), { headers, status: 500 });
+          }
+        } catch (err) {
+          console.error("❌ Error in surat URL update process:", err);
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Error updating surat URL",
+            error: err.message
+          }), { headers, status: 500 });
+        }
+      }
+
       // ===== CREATE NEW PAYMENT =====
       console.log("💳 Creating new payment...");
       
@@ -868,7 +959,11 @@ serve(async (req) => {
             id_pembayaran: paymentId,
             pengguna_khusus: safeFormatPenggunaKhusus(peminjamanData.pengguna_khusus),
             id_pengguna: idPengguna,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            // PERBAIKAN: Pastikan field surat_peminjaman_url tersimpan dengan benar
+            surat_peminjaman_url: peminjamanData.surat_peminjaman_url || null,
+            // Set initial status
+            status_peminjaman: isFreeBooking ? 'SUCCESS' : 'PENDING'
           };
 
           console.log("📝 Creating peminjaman:", JSON.stringify(peminjamanInsertData, null, 2));
@@ -878,6 +973,11 @@ serve(async (req) => {
             peminjamanId = peminjaman.id_peminjaman;
             console.log("✅ Peminjaman created:", peminjamanId);
 
+            // Log surat URL if provided
+            if (peminjamanInsertData.surat_peminjaman_url) {
+              console.log("📄 Surat URL saved:", peminjamanInsertData.surat_peminjaman_url);
+            }
+
             // Process lapangan_ids
             if (peminjamanData.lapangan_ids && Array.isArray(peminjamanData.lapangan_ids)) {
               console.log("🏟️ Processing lapangan IDs:", peminjamanData.lapangan_ids);
@@ -886,7 +986,15 @@ serve(async (req) => {
           }
         } catch (peminjamanError) {
           console.error("❌ Peminjaman creation failed:", peminjamanError);
-          // Don't fail the entire request for peminjaman errors
+          // Don't fail the entire request for peminjaman errors in case of paid bookings
+          if (isFreeBooking) {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: false,
+              message: "Peminjaman creation failed for free booking",
+              error: peminjamanError.message
+            }), { status: 500, headers });
+          }
         }
       }
 
@@ -897,9 +1005,9 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           success: true,
           payment_id: paymentId,
-          status: "success", // 👈 TAMBAH INI
+          status: "success", 
           message: "Peminjaman gratis berhasil dibuat",
-          is_free_booking: true, // 👈 TAMBAH INI
+          is_free_booking: true, 
           peminjaman_id: peminjamanId
         }), { status: 200, headers });
       }
@@ -961,9 +1069,9 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           success: true,
           payment_id: paymentId,
-          token: midtransResult.token, // 👈 EKSPLISIT
-          redirect_url: midtransResult.redirect_url, // 👈 EKSPLISIT
-          status: "pending", // 👈 TAMBAH INI
+          token: midtransResult.token, 
+          redirect_url: midtransResult.redirect_url, 
+          status: "pending", 
           message: "Payment token generated successfully",
           peminjaman_id: peminjamanId
         }), { status: 200, headers });

@@ -241,7 +241,7 @@ class FormPeminjamanViewModel(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun submitForm(namaAcara: String, namaOrganisasi: String, penggunaKhusus: PenggunaKhusus?) {
+    fun submitForm(namaAcara: String, namaOrganisasi: String, penggunaKhusus: PenggunaKhusus?, suratPeminjamanUrl: String? = null) {
         viewModelScope.launch {
             try {
                 setLoading(true)
@@ -259,7 +259,9 @@ class FormPeminjamanViewModel(
                         idPembayaran = "", // ID pembayaran akan di-generate nanti
                         penggunaKhusus = penggunaKhusus,
                         idPengguna = idPengguna,
-                        createdAtPeminjaman = java.time.Instant.now()
+                        createdAtPeminjaman = java.time.Instant.now(),
+                        // TAMBAHAN BARU: URL surat peminjaman
+                        suratPeminjamanUrl = suratPeminjamanUrl
                     )
 
                     val idPeminjaman = fasilitasRepository.insertPeminjamanFasilitas(peminjamanFasilitas)

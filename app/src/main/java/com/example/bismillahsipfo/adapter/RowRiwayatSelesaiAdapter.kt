@@ -1,9 +1,12 @@
 package com.example.bismillahsipfo.adapter
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
@@ -40,6 +43,17 @@ class RowRiwayatSelesaiAdapter(
         holder.tvFasilitas.text = namaFasilitas
         holder.tvAcara.text = peminjaman.namaAcara
         holder.tvTimeStartEnd.text = "${peminjaman.jamMulai} - ${peminjaman.jamSelesai}"
+
+        if (!peminjaman.suratPeminjamanUrl.isNullOrEmpty()) {
+            holder.btnLihatSurat.visibility = View.VISIBLE
+            holder.btnLihatSurat.setOnClickListener {
+                // Open surat in browser or PDF viewer
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(peminjaman.suratPeminjamanUrl))
+                holder.itemView.context.startActivity(intent)
+            }
+        } else {
+            holder.btnLihatSurat.visibility = View.GONE
+        }
     }
 
     override fun getItemCount(): Int = peminjamanList.size
@@ -57,5 +71,6 @@ class RowRiwayatSelesaiAdapter(
         val tvFasilitas: TextView = itemView.findViewById(R.id.tvFasilitas)
         val tvAcara: TextView = itemView.findViewById(R.id.tvEvent)
         val tvTimeStartEnd: TextView = itemView.findViewById(R.id.tvTimeStartEnd)
+        val btnLihatSurat: Button = itemView.findViewById(R.id.btnLihatSurat)
     }
 }

@@ -105,11 +105,6 @@ class RiwayatFragment : Fragment() {
         viewModel.loadPendingRiwayat()
     }
 
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    private fun showSelesaiRiwayat() {
-//        viewModel.loadSelesaiRiwayat()
-//    }
-
     private fun observeViewModel() {
         viewModel.pendingRiwayat.observe(viewLifecycleOwner) { pendingList ->
             pendingAdapter = RowRiwayatPendingAdapter(pendingList)
@@ -177,7 +172,8 @@ class RiwayatFragment : Fragment() {
                             idPembayaran = pembayaran?.idPembayaran ?: "",
                             penggunaKhusus = null,
                             idPengguna = 0,
-                            createdAtPeminjaman = Instant.now()
+                            createdAtPeminjaman = Instant.now(),
+                            suratPeminjamanUrl = null
                         )
                     } else {
                         Log.d("RiwayatFragment", "Fasilitas tidak ditemukan untuk: ${riwayat.namaFasilitas}")
@@ -200,62 +196,6 @@ class RiwayatFragment : Fragment() {
             }
         }
     }
-
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    private fun showPendingRiwayat() {
-//        Log.d("RiwayatFragment", "showPendingRiwayat: Memulai pengambilan data pending...")
-//
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            try {
-//                val currentUserId = userRepository.getCurrentUserId()
-//                val pendingPembayaranList = fasilitasRepository.getPendingPembayaran(currentUserId)
-//                Log.d("RiwayatFragment", "Jumlah pembayaran pending: ${pendingPembayaranList.size}")
-//
-//                val riwayatPendingList = mutableListOf<RiwayatPending>()
-//
-//                for (pembayaran in pendingPembayaranList) {
-//                    Log.d("RiwayatFragment", "Memproses pembayaran: ${pembayaran.idPembayaran}")
-//                    val peminjaman = fasilitasRepository.getPeminjamanByIdPembayaran(pembayaran.idPembayaran)
-//                    if (peminjaman != null) {
-//                        Log.d("RiwayatFragment", "Peminjaman ditemukan untuk pembayaran: ${pembayaran.idPembayaran}")
-//                        val fasilitas = fasilitasRepository.getFasilitasById(peminjaman.idFasilitas)
-//                        if (fasilitas != null) {
-//                            Log.d("RiwayatFragment", "Fasilitas ditemukan: ${fasilitas.namaFasilitas}")
-//                            riwayatPendingList.add(
-//                                RiwayatPending(
-//                                    tanggalMulai = peminjaman.tanggalMulai,
-//                                    tanggalSelesai = peminjaman.tanggalSelesai,
-//                                    namaFasilitas = fasilitas.namaFasilitas,
-//                                    totalBiaya = pembayaran.totalBiaya,
-//                                    waktuKadaluwarsa = pembayaran.waktuKadaluwarsa
-//                                )
-//                            )
-//                            Log.d("RiwayatFragment", "RiwayatPending ditambahkan untuk: ${fasilitas.namaFasilitas}")
-//                        } else {
-//                            Log.e("RiwayatFragment", "Fasilitas tidak ditemukan untuk idFasilitas: ${peminjaman.idFasilitas}")
-//                        }
-//                    } else {
-//                        Log.e("RiwayatFragment", "Peminjaman tidak ditemukan untuk idPembayaran: ${pembayaran.idPembayaran}")
-//                    }
-//                }
-//
-//                Log.d("RiwayatFragment", "Total RiwayatPending: ${riwayatPendingList.size}")
-//
-//                pendingAdapter = RowRiwayatPendingAdapter(riwayatPendingList)
-//                binding.rvRiwayat.adapter = pendingAdapter
-//                Log.d("RiwayatFragment", "Adapter diset ke RecyclerView")
-//
-//                // Notify adapter
-//                pendingAdapter.notifyDataSetChanged()
-//                Log.d("RiwayatFragment", "Adapter dinotifikasi untuk perubahan data")
-//
-//            } catch (e: Exception) {
-//                Log.e("RiwayatFragment", "Terjadi kesalahan saat mengambil data pending: ${e.message}")
-//                Log.e("RiwayatFragment", "Stack trace: ${e.stackTraceToString()}")
-//                e.printStackTrace()
-//            }
-//        }
-//    }
 
     override fun onDestroyView() {
         super.onDestroyView()

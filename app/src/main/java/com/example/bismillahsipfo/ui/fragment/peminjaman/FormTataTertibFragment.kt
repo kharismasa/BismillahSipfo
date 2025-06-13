@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -20,13 +21,18 @@ import androidx.fragment.app.Fragment
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.model.JadwalTersedia
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import com.example.bismillahsipfo.data.repository.PeminjamanData
+import com.example.bismillahsipfo.data.repository.PeminjamanRepository
 import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
+import com.example.bismillahsipfo.data.repository.UserRepository
+import kotlinx.coroutines.launch
 
 class FormTataTertibFragment : Fragment() {
 
     private val PDF_REQUEST_CODE = 123
     private var selectedPdfUri: Uri? = null
+    private var uploadedFileUrl: String? = null
 
     // TAMBAHAN: SharedViewModel untuk data antar fragment
     private val sharedViewModel: SharedPeminjamanViewModel by activityViewModels()
@@ -34,13 +40,18 @@ class FormTataTertibFragment : Fragment() {
     // TAMBAHAN: Variable untuk menyimpan data saat ini
     private var currentData: PeminjamanData? = null
 
-    // UI components
+    // TAMBAHAN: Repository untuk upload file
+    private lateinit var peminjamanRepository: PeminjamanRepository
+    private lateinit var userRepository: UserRepository
+
+    // UI components - sesuai dengan XML yang sudah ada
     private lateinit var tvUploadSurat: TextView
     private lateinit var containerSurat: LinearLayout
     private lateinit var btnUpload: Button
     private lateinit var tvFileStatus: TextView
     private lateinit var checkboxTataTertib: CheckBox
     private lateinit var buttonNext: Button
+    private lateinit var progressBarUpload: ProgressBar
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,13 +64,18 @@ class FormTataTertibFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize UI components
+        // TAMBAHAN: Initialize repositories
+        peminjamanRepository = PeminjamanRepository(requireContext())
+        userRepository = UserRepository(requireContext())
+
+        // Initialize UI components - sesuai dengan ID di XML
         tvUploadSurat = view.findViewById(R.id.tvUploadSurat)
         containerSurat = view.findViewById(R.id.container_surat)
         btnUpload = view.findViewById(R.id.btnUpload)
         tvFileStatus = view.findViewById(R.id.tvFileStatus)
         checkboxTataTertib = view.findViewById(R.id.checkbox_tata_tertib)
         buttonNext = view.findViewById(R.id.button_next)
+        progressBarUpload = view.findViewById(R.id.progressBarUpload)
 
         // TAMBAHAN: Setup LiveData Observer
         setupSharedViewModelObserver()
@@ -123,17 +139,25 @@ class FormTataTertibFragment : Fragment() {
                 Jam: ${data.jamMulai} - ${data.jamSelesai}
                 Lapangan: ${data.lapanganDipinjam}
                 PDF URI: ${data.pdfUri}
+                Uploaded URL: ${data.uploadedFileUrl}
                 ===============================
             """.trimIndent())
         } ?: Log.d("FormTataTertibFragment", "No data available to log")
     }
-
 
     // TAMBAHAN: Method untuk mengambil data dari SharedViewModel
     private fun retrieveDataFromSharedViewModel() {
         currentData = sharedViewModel.getCurrentData()
         currentData?.let { data ->
             Log.d("FormTataTertibFragment", "Data retrieved from SharedViewModel: $data")
+
+            // Restore uploaded file URL if exists
+            uploadedFileUrl = data.uploadedFileUrl
+
+            // Update UI jika file sudah pernah diupload
+            if (!uploadedFileUrl.isNullOrEmpty()) {
+                updateFileUploadedUI(uploadedFileUrl!!)
+            }
         }
     }
 
@@ -258,9 +282,11 @@ class FormTataTertibFragment : Fragment() {
             tvUploadSurat.visibility = View.VISIBLE
             containerSurat.visibility = View.VISIBLE
 
-            // Default status for file
-            tvFileStatus.text = "Belum ada file yang dipilih"
-            tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray))
+            // Default status for file jika belum ada file yang diupload
+            if (uploadedFileUrl.isNullOrEmpty()) {
+                tvFileStatus.text = "Belum ada file yang dipilih"
+                tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray))
+            }
         }
     }
 
@@ -291,14 +317,17 @@ class FormTataTertibFragment : Fragment() {
             val opsi = currentData?.opsiPeminjaman
 
             // Check if we need to validate file upload for "Diluar Jadwal Rutin"
-            if (opsi == "Diluar Jadwal Rutin" && selectedPdfUri == null) {
+            if (opsi == "Diluar Jadwal Rutin" && uploadedFileUrl.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), "Mohon upload surat peminjaman terlebih dahulu", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // MODIFIKASI: Update data di SharedViewModel dengan PDF URI
+            // MODIFIKASI: Update data di SharedViewModel dengan uploaded file URL
             currentData?.let { data ->
-                val updatedData = data.copy(pdfUri = selectedPdfUri?.toString())
+                val updatedData = data.copy(
+                    pdfUri = selectedPdfUri?.toString(),
+                    uploadedFileUrl = uploadedFileUrl
+                )
                 sharedViewModel.updatePeminjamanData(updatedData)
                 currentData = updatedData
             }
@@ -355,6 +384,11 @@ class FormTataTertibFragment : Fragment() {
             data.pdfUri?.let { pdfUri ->
                 bundle.putString("EXTRA_PDF_URI", pdfUri)
             }
+
+            // TAMBAHAN: Add uploaded file URL
+            data.uploadedFileUrl?.let { fileUrl ->
+                bundle.putString("EXTRA_UPLOADED_FILE_URL", fileUrl)
+            }
         }
 
         return bundle
@@ -366,8 +400,8 @@ class FormTataTertibFragment : Fragment() {
         val needsFile = opsi == "Diluar Jadwal Rutin"
 
         // Button is enabled if checkbox is checked AND
-        // either no file is needed OR a file has been selected
-        val isEnabled = isChecked && (!needsFile || selectedPdfUri != null)
+        // either no file is needed OR a file has been uploaded to storage
+        val isEnabled = isChecked && (!needsFile || !uploadedFileUrl.isNullOrEmpty())
 
         buttonNext.isEnabled = isEnabled
 
@@ -378,37 +412,123 @@ class FormTataTertibFragment : Fragment() {
         )
     }
 
+    // TAMBAHAN: Method untuk upload file ke Supabase Storage
+    private fun uploadFileToStorage(fileUri: Uri) {
+        // Show loading state
+        showUploadLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                val userId = userRepository.getCurrentUserId()
+                val originalFileName = getFileName(fileUri)
+
+                // Generate unique filename
+                val fileName = peminjamanRepository.generateFileName(userId, originalFileName)
+
+                Log.d("FormTataTertibFragment", "Starting upload with filename: $fileName")
+
+                // Upload file
+                val uploadedUrl = peminjamanRepository.uploadPdfToStorage(fileUri, fileName)
+
+                if (uploadedUrl != null) {
+                    // Upload successful
+                    uploadedFileUrl = uploadedUrl
+                    Log.d("FormTataTertibFragment", "Upload successful. URL: $uploadedUrl")
+
+                    // Update UI
+                    updateFileUploadedUI(uploadedUrl)
+
+                    // Update SharedViewModel
+                    currentData?.let { data ->
+                        val updatedData = data.copy(uploadedFileUrl = uploadedUrl)
+                        sharedViewModel.updatePeminjamanData(updatedData)
+                        currentData = updatedData
+                    }
+
+                    Toast.makeText(requireContext(), "File berhasil diupload", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Upload failed
+                    Log.e("FormTataTertibFragment", "Upload failed")
+                    Toast.makeText(requireContext(), "Gagal mengupload file. Mohon coba lagi.", Toast.LENGTH_LONG).show()
+
+                    // Reset UI
+                    resetUploadUI()
+                }
+            } catch (e: Exception) {
+                Log.e("FormTataTertibFragment", "Error during upload: ${e.message}", e)
+                Toast.makeText(requireContext(), "Terjadi kesalahan saat mengupload file.", Toast.LENGTH_LONG).show()
+
+                // Reset UI
+                resetUploadUI()
+            } finally {
+                showUploadLoading(false)
+            }
+        }
+    }
+
+    // TAMBAHAN: Method untuk menampilkan UI loading
+    private fun showUploadLoading(isLoading: Boolean) {
+        if (isLoading) {
+            progressBarUpload.visibility = View.VISIBLE
+            btnUpload.isEnabled = false
+            btnUpload.text = "Mengupload..."
+            tvFileStatus.text = "Sedang mengupload file..."
+            tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_orange_light))
+        } else {
+            progressBarUpload.visibility = View.GONE
+            btnUpload.isEnabled = true
+        }
+    }
+
+    // TAMBAHAN: Method untuk update UI setelah file berhasil diupload
+    private fun updateFileUploadedUI(uploadedUrl: String) {
+        btnUpload.text = "Ganti File"
+
+        // Extract filename from URL for display
+        val displayName = uploadedUrl.substringAfterLast('/')
+        tvFileStatus.text = "File berhasil diupload: $displayName"
+        tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark))
+
+        updateNextButtonState()
+    }
+
+    // TAMBAHAN: Method untuk reset UI upload
+    private fun resetUploadUI() {
+        selectedPdfUri = null
+        uploadedFileUrl = null
+        btnUpload.text = "Pilih File PDF"
+        tvFileStatus.text = "Belum ada file yang dipilih"
+        tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.gray))
+        updateNextButtonState()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == PDF_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             data?.data?.also { uri ->
-                // Check file size (max 1MB)
+                // Check file size (max 1000KB sesuai dengan storage limit)
                 val fileSize = getFileSize(uri)
-                val maxSize = 1 * 1024 * 1024 // 1MB in bytes
+                val maxSize = 1000 * 1024 // 1000KB in bytes
 
                 if (fileSize <= maxSize) {
                     selectedPdfUri = uri
 
-                    // Update button text to show file name
-                    btnUpload.text = "Ganti File"
-
-                    // Update status text with file info
+                    // Show file selected status
                     val fileName = getFileName(uri)
                     val fileSizeFormatted = formatFileSize(fileSize)
                     tvFileStatus.text = "File dipilih: $fileName ($fileSizeFormatted)"
                     tvFileStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_blue))
 
-                    // Update button state
-                    updateNextButtonState()
+                    Toast.makeText(requireContext(), "File dipilih. Sedang mengupload...", Toast.LENGTH_SHORT).show()
 
-                    Toast.makeText(requireContext(),
-                        "File berhasil dipilih",
-                        Toast.LENGTH_SHORT).show()
+                    // TAMBAHAN: Langsung upload ke storage
+                    uploadFileToStorage(uri)
+
                 } else {
                     // File is too large
                     Toast.makeText(requireContext(),
-                        "Ukuran file melebihi batas 1MB. Mohon pilih file yang lebih kecil.",
+                        "Ukuran file melebihi batas 1000KB. Mohon pilih file yang lebih kecil.",
                         Toast.LENGTH_LONG).show()
                 }
             }
@@ -459,6 +579,7 @@ class FormTataTertibFragment : Fragment() {
         if (latestData != null && latestData != currentData) {
             Log.d("FormTataTertibFragment", "Data updated from SharedViewModel on resume")
             currentData = latestData
+            uploadedFileUrl = latestData.uploadedFileUrl
             setupUploadSectionVisibility()
             displayData()
             logAllData() // Log data setelah update

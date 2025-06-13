@@ -1,7 +1,6 @@
 package com.example.bismillahsipfo.ui.fragment.peminjaman
 
 import android.app.Activity
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -47,6 +46,7 @@ import java.util.Locale
 import kotlin.jvm.java
 import androidx.fragment.app.activityViewModels
 import com.example.bismillahsipfo.data.repository.PeminjamanData
+import com.example.bismillahsipfo.data.repository.PeminjamanRepository
 import com.example.bismillahsipfo.data.repository.SharedPeminjamanViewModel
 
 class PembayaranFragment : Fragment() {
@@ -55,10 +55,10 @@ class PembayaranFragment : Fragment() {
         private const val TAG = "PembayaranFragment"
     }
 
-    // TAMBAHAN: SharedViewModel untuk data antar fragment
+    // SharedViewModel untuk data antar fragment
     private val sharedViewModel: SharedPeminjamanViewModel by activityViewModels()
 
-    // TAMBAHAN: Variable untuk menyimpan data saat ini
+    // Variable untuk menyimpan data saat ini
     private var currentData: PeminjamanData? = null
 
     // UI components
@@ -83,6 +83,7 @@ class PembayaranFragment : Fragment() {
     private lateinit var userRepository: UserRepository
     private lateinit var fasilitasRepository: FasilitasRepository
     private lateinit var gamifikasiRepository: GamifikasiRepository
+    private lateinit var peminjamanRepository: PeminjamanRepository
 
     // Payment calculation variables
     private var totalDays: Long = 1
@@ -95,47 +96,7 @@ class PembayaranFragment : Fragment() {
     private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
 
     private var paymentId: String? = null
-    private val midtransLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        buttonBayar.isEnabled = true
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data = result.data
-            val transactionResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                data?.getParcelableExtra(UiKitConstants.KEY_TRANSACTION_RESULT, TransactionResult::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                data?.getParcelableExtra(UiKitConstants.KEY_TRANSACTION_RESULT) as? TransactionResult
-            }
-
-            if (transactionResult != null) {
-                when (transactionResult.status) {
-                    // Successful status
-                    UiKitConstants.STATUS_SUCCESS -> {
-                        // Navigasi ke activity hasil pembayaran
-                        navigateToHasilPembayaran(true, paymentId)
-                    }
-                    // Pending status
-                    UiKitConstants.STATUS_PENDING -> {
-                        Toast.makeText(requireContext(),
-                            "Pembayaran masih dalam proses",
-                            Toast.LENGTH_SHORT).show()
-                        requireActivity().finish()
-                    }
-                    // Other status
-                    else -> {
-                        Toast.makeText(requireContext(),
-                            "Pembayaran: ${transactionResult.status}",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
-                Toast.makeText(requireContext(),
-                    "Tidak ada hasil transaksi",
-                    Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    private var peminjamanId: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -153,17 +114,18 @@ class PembayaranFragment : Fragment() {
         userRepository = UserRepository(requireContext())
         fasilitasRepository = FasilitasRepository()
         gamifikasiRepository = GamifikasiRepository(requireContext())
+        peminjamanRepository = PeminjamanRepository(requireContext())
 
-        // TAMBAHKAN: Inisialisasi Midtrans jika belum diinisialisasi
+        // Inisialisasi Midtrans jika belum diinisialisasi
         initMidtrans()
 
         // Initialize UI components
         initializeViews(view)
 
-        // TAMBAHAN: Setup LiveData Observer
+        // Setup LiveData Observer
         setupSharedViewModelObserver()
 
-        // MODIFIKASI: Retrieve data dari SharedViewModel dulu, baru dari Bundle
+        // Retrieve data dari SharedViewModel dulu, baru dari Bundle
         retrieveDataFromSharedViewModel()
 
         // Fallback: Jika SharedViewModel kosong, ambil dari Bundle
@@ -171,7 +133,7 @@ class PembayaranFragment : Fragment() {
             retrieveAllDataFromBundle()
         }
 
-        // TAMBAHAN: Log all data for debugging
+        // Log all data for debugging
         logAllData()
 
         // Setup UI with data
@@ -184,7 +146,7 @@ class PembayaranFragment : Fragment() {
         calculatePayment()
     }
 
-    // TAMBAHAN: Setup Observer untuk SharedViewModel
+    // Setup Observer untuk SharedViewModel
     private fun setupSharedViewModelObserver() {
         sharedViewModel.peminjamanData.observe(viewLifecycleOwner) { data ->
             Log.d("PembayaranFragment", "SharedViewModel data observed: $data")
@@ -224,7 +186,7 @@ class PembayaranFragment : Fragment() {
         buttonBayar = view.findViewById(R.id.button_bayar)
     }
 
-    // TAMBAHAN: Method untuk mengambil data dari SharedViewModel
+    // Method untuk mengambil data dari SharedViewModel
     private fun retrieveDataFromSharedViewModel() {
         currentData = sharedViewModel.getCurrentData()
         currentData?.let { data ->
@@ -232,7 +194,7 @@ class PembayaranFragment : Fragment() {
         }
     }
 
-    // MODIFIKASI: Method untuk mengambil data dari Bundle sebagai fallback
+    // Method untuk mengambil data dari Bundle sebagai fallback
     private fun retrieveAllDataFromBundle() {
         arguments?.let { bundle ->
             val idFasilitas = bundle.getInt(FormPeminjamanFragment.EXTRA_ID_FASILITAS, -1)
@@ -240,8 +202,9 @@ class PembayaranFragment : Fragment() {
             val opsiPeminjaman = bundle.getString(FormPeminjamanFragment.EXTRA_OPSI_PEMINJAMAN)
             val namaAcara = bundle.getString(FormPeminjamanFragment.EXTRA_NAMA_ACARA)
             val pdfUri = bundle.getString("EXTRA_PDF_URI")
+            val selectedFileName = bundle.getString("EXTRA_SELECTED_FILE_NAME")
 
-            // Create PeminjamanData from Bundle similar to FormTataTertibFragment
+            // Create PeminjamanData from Bundle
             val bundleData = when (opsiPeminjaman) {
                 "Sesuai Jadwal Rutin" -> {
                     val idOrganisasi = bundle.getInt(FormPeminjamanFragment.EXTRA_ID_ORGANISASI, -1)
@@ -272,7 +235,8 @@ class PembayaranFragment : Fragment() {
                         jamMulai = jamMulai,
                         jamSelesai = jamSelesai,
                         lapanganDipinjam = lapanganDipinjam,
-                        pdfUri = pdfUri
+                        pdfUri = pdfUri,
+                        selectedFileName = selectedFileName
                     )
                 }
 
@@ -301,7 +265,8 @@ class PembayaranFragment : Fragment() {
                             jamMulai = jamMulai,
                             jamSelesai = jamSelesai,
                             lapanganDipinjam = lapanganDipinjam,
-                            pdfUri = pdfUri
+                            pdfUri = pdfUri,
+                            selectedFileName = selectedFileName
                         )
                     } else {
                         val tanggalMulai = bundle.getString(FormPeminjamanFragment.EXTRA_TANGGAL_MULAI)
@@ -321,7 +286,8 @@ class PembayaranFragment : Fragment() {
                             jamMulai = jamMulai,
                             jamSelesai = jamSelesai,
                             lapanganDipinjam = lapanganDipinjam,
-                            pdfUri = pdfUri
+                            pdfUri = pdfUri,
+                            selectedFileName = selectedFileName
                         )
                     }
                 }
@@ -331,7 +297,8 @@ class PembayaranFragment : Fragment() {
                     namaFasilitas = namaFasilitas,
                     opsiPeminjaman = opsiPeminjaman,
                     namaAcara = namaAcara,
-                    pdfUri = pdfUri
+                    pdfUri = pdfUri,
+                    selectedFileName = selectedFileName
                 )
             }
 
@@ -363,6 +330,8 @@ class PembayaranFragment : Fragment() {
                 Jam Selesai: ${data.jamSelesai}
                 Lapangan Dipinjam: ${data.lapanganDipinjam}
                 PDF URI: ${data.pdfUri}
+                Selected File Name: ${data.selectedFileName}
+                Uploaded File URL: ${data.uploadedFileUrl}
                 
                 === PAYMENT CALCULATION ===
                 Total Days: $totalDays
@@ -375,7 +344,7 @@ class PembayaranFragment : Fragment() {
         } ?: Log.d("PembayaranFragment", "No data available to log")
     }
 
-    // MODIFIKASI: Update setupUI untuk menggunakan currentData
+    // Update setupUI untuk menggunakan currentData
     private fun setupUI() {
         currentData?.let { data ->
             // Set facility name
@@ -422,7 +391,7 @@ class PembayaranFragment : Fragment() {
         }
     }
 
-    // MODIFIKASI: Update setupLapanganList untuk menggunakan currentData
+    // Update setupLapanganList untuk menggunakan currentData
     private fun setupLapanganList() {
         currentData?.let { data ->
             lifecycleScope.launch {
@@ -645,6 +614,91 @@ class PembayaranFragment : Fragment() {
         }
     }
 
+    // Method untuk upload file ke storage - HANYA DIPANGGIL SAAT TOMBOL BAYAR
+    private suspend fun uploadFileToStorage(): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                currentData?.pdfUri?.let { uriString ->
+                    val uri = Uri.parse(uriString)
+                    val userId = userRepository.getCurrentUserId()
+
+                    // Generate filename dari nama file yang dipilih
+                    val originalFileName = currentData?.selectedFileName ?: "surat_peminjaman.pdf"
+                    val extension = originalFileName.substringAfterLast('.', "pdf")
+                    val timestamp = System.currentTimeMillis()
+                    val fileName = "surat_user_${userId}_${timestamp}.${extension}"
+
+                    Log.d("PembayaranFragment", "Uploading file: $fileName (Original: $originalFileName)")
+
+                    // Upload to Supabase storage
+                    val uploadedUrl = peminjamanRepository.uploadPdfToStorage(uri, fileName)
+
+                    if (uploadedUrl != null) {
+                        Log.d("PembayaranFragment", "File uploaded successfully: $uploadedUrl")
+
+                        // Update data di SharedViewModel
+                        currentData?.let { data ->
+                            val updatedData = data.copy(uploadedFileUrl = uploadedUrl)
+                            sharedViewModel.updatePeminjamanData(updatedData)
+                            currentData = updatedData
+                        }
+                    }
+
+                    uploadedUrl
+                } ?: run {
+                    Log.d("PembayaranFragment", "No file to upload")
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("PembayaranFragment", "Error uploading file: ${e.message}", e)
+                null
+            }
+        }
+    }
+
+    // Method untuk update surat URL di database setelah peminjaman dibuat
+    private suspend fun updateSuratUrlInDatabase(peminjamanId: String, suratUrl: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val requestMap = HashMap<String, Any>()
+                requestMap["update_surat_url"] = true
+                requestMap["id_peminjaman"] = peminjamanId
+                requestMap["surat_url"] = suratUrl
+
+                val gson = Gson()
+                val jsonString = gson.toJson(requestMap)
+                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
+
+                val apiService = RetrofitClient.createService(ApiService::class.java)
+                val response = apiService.createTransaction(
+                    url = "midtrans-sipfo",
+                    authHeader = "Bearer ${BuildConfig.API_KEY}",
+                    requestBody = requestBody
+                )
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()?.string()
+                    val jsonResponse = JSONObject(responseBody ?: "{}")
+                    val success = jsonResponse.optBoolean("success", false)
+
+                    if (success) {
+                        Log.d("PembayaranFragment", "Surat URL updated successfully in database")
+                        true
+                    } else {
+                        Log.e("PembayaranFragment", "Failed to update surat URL: ${jsonResponse.optString("message")}")
+                        false
+                    }
+                } else {
+                    Log.e("PembayaranFragment", "HTTP error updating surat URL: ${response.code()}")
+                    false
+                }
+            } catch (e: Exception) {
+                Log.e("PembayaranFragment", "Error updating surat URL in database: ${e.message}", e)
+                false
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun processPayment() {
         currentData?.let { data ->
@@ -655,8 +709,25 @@ class PembayaranFragment : Fragment() {
 
                     // Check if this is a free booking
                     val isFreeBooking = data.opsiPeminjaman == "Sesuai Jadwal Rutin" || finalPrice <= 0
+                    val needsFileUpload = data.opsiPeminjaman == "Diluar Jadwal Rutin" && !data.pdfUri.isNullOrEmpty()
 
-                    Log.d("PembayaranFragment", "Processing payment - OpsiPeminjaman: ${data.opsiPeminjaman}, FinalPrice: $finalPrice, IsFreeBooking: $isFreeBooking")
+                    Log.d("PembayaranFragment", "Processing payment - OpsiPeminjaman: ${data.opsiPeminjaman}, FinalPrice: $finalPrice, IsFreeBooking: $isFreeBooking, NeedsFileUpload: $needsFileUpload")
+
+                    // LANGKAH 1: Upload file jika diperlukan
+                    var uploadedFileUrl: String? = null
+                    if (needsFileUpload) {
+                        Toast.makeText(requireContext(), "Mengupload surat peminjaman...", Toast.LENGTH_SHORT).show()
+
+                        uploadedFileUrl = uploadFileToStorage()
+
+                        if (uploadedFileUrl == null) {
+                            Toast.makeText(requireContext(), "Gagal mengupload surat peminjaman", Toast.LENGTH_LONG).show()
+                            buttonBayar.isEnabled = true
+                            return@launch
+                        }
+
+                        Toast.makeText(requireContext(), "Surat berhasil diupload!", Toast.LENGTH_SHORT).show()
+                    }
 
                     if (isFreeBooking) {
                         Toast.makeText(requireContext(), "Memproses peminjaman gratis...", Toast.LENGTH_SHORT).show()
@@ -709,7 +780,7 @@ class PembayaranFragment : Fragment() {
                         requestMap["id_voucher"] = userGamifikasi.idVoucher
                     }
 
-                    // *** PERBAIKAN: Konversi format tanggal dari DD/MM/YYYY ke YYYY-MM-DD ***
+                    // Konversi format tanggal dari DD/MM/YYYY ke YYYY-MM-DD
                     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                     val outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
@@ -742,7 +813,6 @@ class PembayaranFragment : Fragment() {
 
                     // Format pengguna khusus sesuai dengan yang diharapkan database
                     if (!data.penggunaKhusus.isNullOrEmpty()) {
-                        // Konversi ke format yang digunakan database
                         val formattedPenggunaKhusus = when (data.penggunaKhusus) {
                             PenggunaKhusus.INTERNAL_UII.name -> "Internal UII"
                             PenggunaKhusus.INTERNAL_VS_EKSTERNAL.name -> "Internal UII vs Team Eksternal"
@@ -760,7 +830,9 @@ class PembayaranFragment : Fragment() {
                     }
 
                     peminjamanData["opsi_peminjaman"] = data.opsiPeminjaman
-                    peminjamanData["status_peminjaman"] = "PENDING"
+
+                    // PENTING: Jangan kirim surat_peminjaman_url lewat request utama
+                    // Nanti akan diupdate via endpoint terpisah setelah peminjaman dibuat
 
                     requestMap["create_peminjaman"] = true
                     requestMap["peminjaman_data"] = peminjamanData
@@ -773,7 +845,7 @@ class PembayaranFragment : Fragment() {
                     // Create request body
                     val requestBody = jsonString.toRequestBody("application/json".toMediaType())
 
-                    // Send request to server
+                    // LANGKAH 2: Send request to server untuk buat payment + peminjaman
                     val apiService = RetrofitClient.createService(ApiService::class.java)
                     val response = withContext(Dispatchers.IO) {
                         apiService.createTransaction(
@@ -793,10 +865,23 @@ class PembayaranFragment : Fragment() {
                             val message = jsonResponse.optString("message", "")
                             val statusFromServer = jsonResponse.optString("status", "")
                             paymentId = jsonResponse.optString("payment_id", "")
+                            peminjamanId = jsonResponse.optString("peminjaman_id", "")
 
-                            Log.d("PembayaranFragment", "Success: $success, Status: $statusFromServer, IsFreeBooking: $isFreeBooking, PaymentId: $paymentId")
+                            Log.d("PembayaranFragment", "Success: $success, Status: $statusFromServer, PaymentId: $paymentId, PeminjamanId: $peminjamanId")
 
                             if (success) {
+                                // LANGKAH 3: Update surat URL jika ada file yang diupload dan peminjaman berhasil dibuat
+                                if (!uploadedFileUrl.isNullOrEmpty() && !peminjamanId.isNullOrEmpty()) {
+                                    Log.d("PembayaranFragment", "Updating surat URL in database...")
+                                    val suratUpdateSuccess = updateSuratUrlInDatabase(peminjamanId!!, uploadedFileUrl)
+
+                                    if (suratUpdateSuccess) {
+                                        Log.d("PembayaranFragment", "Surat URL updated successfully")
+                                    } else {
+                                        Log.w("PembayaranFragment", "Failed to update surat URL, but continuing...")
+                                    }
+                                }
+
                                 if (isFreeBooking || statusFromServer == "success") {
                                     // Untuk peminjaman gratis, langsung navigasi ke hasil pembayaran
                                     Toast.makeText(requireContext(), "Peminjaman gratis berhasil!", Toast.LENGTH_SHORT).show()
@@ -820,8 +905,7 @@ class PembayaranFragment : Fragment() {
                                         startActivity(intent)
                                         requireActivity().finish()
                                     } else {
-                                        // Jika tidak ada redirect_url, generate token dulu
-                                        generateMidtransToken(paymentId.toString(), requestMap)
+                                        showPaymentError("Tidak ada redirect URL dari server")
                                     }
                                 }
                             } else {
@@ -841,73 +925,6 @@ class PembayaranFragment : Fragment() {
                     // Pastikan button enabled kembali jika ada error
                     buttonBayar.isEnabled = true
                 }
-            }
-        }
-    }
-
-    private fun generateMidtransToken(paymentId: String, originalRequestMap: HashMap<String, Any>) {
-        lifecycleScope.launch {
-            try {
-                // Request untuk generate Midtrans token
-                val tokenRequestMap = HashMap<String, Any>()
-                tokenRequestMap["generate_midtrans_token"] = true
-                tokenRequestMap["payment_id"] = paymentId
-                tokenRequestMap["transaction_details"] = originalRequestMap["transaction_details"] as Map<String, Any>
-                tokenRequestMap["customer_details"] = originalRequestMap["customer_details"] as Map<String, Any>
-                tokenRequestMap["item_details"] = originalRequestMap["item_details"] as List<Map<String, Any>>
-
-                val gson = Gson()
-                val jsonString = gson.toJson(tokenRequestMap)
-                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
-
-                val apiService = RetrofitClient.createService(ApiService::class.java)
-                val response = withContext(Dispatchers.IO) {
-                    apiService.createTransaction(
-                        url = "midtrans-sipfo",
-                        authHeader = "Bearer ${BuildConfig.API_KEY}",
-                        requestBody = requestBody
-                    )
-                }
-
-                if (response.isSuccessful) {
-                    val responseBody = response.body()?.string()
-                    Log.d("PembayaranFragment", "Generate token response: $responseBody")
-
-                    if (responseBody != null) {
-                        val jsonResponse = JSONObject(responseBody)
-                        val success = jsonResponse.optBoolean("success", false)
-                        val redirectUrl = jsonResponse.optString("redirect_url", "")
-                        val token = jsonResponse.optString("token", "")
-
-                        Log.d("PembayaranFragment", "Token generation - Success: $success, RedirectUrl: $redirectUrl, Token: $token")
-
-                        if (success && (redirectUrl.isNotEmpty() || token.isNotEmpty())) {
-                            // Buka WebView untuk Midtrans
-                            currentData?.let { data ->
-                                val intent = Intent(requireContext(), MidtransWebViewActivity::class.java).apply {
-                                    putExtra("MIDTRANS_URL", redirectUrl)
-                                    putExtra("PAYMENT_ID", paymentId)
-                                    putExtra("NAMA_FASILITAS", data.namaFasilitas)
-                                    putExtra("NAMA_ACARA", data.namaAcara)
-                                    putExtra("TANGGAL", data.tanggalMulai)
-                                }
-                                startActivity(intent)
-                                requireActivity().finish()
-                            }
-                        } else {
-                            showPaymentError("Gagal mendapatkan link pembayaran")
-                        }
-                    } else {
-                        showPaymentError("Respon server kosong")
-                    }
-                } else {
-                    showPaymentError("Gagal terhubung ke server: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("PembayaranFragment", "Error generating Midtrans token: ${e.message}", e)
-                showPaymentError("Error: ${e.message}")
-            } finally {
-                buttonBayar.isEnabled = true
             }
         }
     }
@@ -934,7 +951,7 @@ class PembayaranFragment : Fragment() {
         Log.e(TAG, "Payment error: $message")
     }
 
-    // TAMBAHAN: Override onResume untuk memperbarui data jika ada perubahan
+    // Override onResume untuk memperbarui data jika ada perubahan
     override fun onResume() {
         super.onResume()
         Log.d("PembayaranFragment", "Fragment resumed")
