@@ -17,7 +17,7 @@ class SharedPeminjamanViewModel : ViewModel() {
 
     fun updatePeminjamanData(data: PeminjamanData) {
         Log.d(TAG, "Updating peminjaman data: $data")
-        _peminjamanData.value = data
+        _peminjamanData.postValue(data) // GANTI setValue dengan postValue - INI YANG PENTING!
     }
 
     fun getCurrentData(): PeminjamanData? {
@@ -26,24 +26,7 @@ class SharedPeminjamanViewModel : ViewModel() {
 
     fun clearData() {
         Log.d(TAG, "Clearing peminjaman data")
-        _peminjamanData.value = null
-    }
-
-    // Method untuk update specific fields tanpa mengubah seluruh data
-    fun updatePdfUri(pdfUri: String?) {
-        _peminjamanData.value?.let { currentData ->
-            val updatedData = currentData.copy(pdfUri = pdfUri)
-            Log.d(TAG, "Updating PDF URI: $pdfUri")
-            _peminjamanData.value = updatedData
-        }
-    }
-
-    fun updateUploadedFileUrl(uploadedFileUrl: String?) {
-        _peminjamanData.value?.let { currentData ->
-            val updatedData = currentData.copy(uploadedFileUrl = uploadedFileUrl)
-            Log.d(TAG, "Updating uploaded file URL: $uploadedFileUrl")
-            _peminjamanData.value = updatedData
-        }
+        _peminjamanData.postValue(null) // GANTI setValue dengan postValue
     }
 
     override fun onCleared() {

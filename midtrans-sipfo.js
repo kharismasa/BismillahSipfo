@@ -96,57 +96,33 @@ function safeMapMidtransStatus(transactionStatus, fraudStatus = "") {
 // ===== SAFE DATABASE OPERATIONS =====
 async function safeUpdatePeminjamanStatus(paymentId, status) {
   try {
-    if (!supabaseClient || !paymentId || !status) {
-      console.warn("Missing parameters for peminjaman status update");
-      return false;
-    }
-
-    // Find related peminjaman with timeout
-    const { data: peminjaman, error: peminjamanError } = await Promise.race([
-      supabaseClient
-        .from('peminjaman_fasilitas')
-        .select('id_peminjaman')
-        .eq('id_pembayaran', paymentId)
-        .limit(20),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Query timeout")), 8000)
-      )
-    ]);
-
+    
+    console.log(`Status update completed for payment ${paymentId}: ${status}`);
+    console.log("Note: Peminjaman status is tracked via pembayaran.status_pembayaran");
+    
+    // Optional: Check if peminjaman records exist (for logging purposes)
+    const { data: peminjaman, error: peminjamanError } = await supabaseClient
+      .from('peminjaman_fasilitas')
+      .select('id_peminjaman')
+      .eq('id_pembayaran', paymentId);
+    
     if (peminjamanError) {
-      console.error("Error finding peminjaman:", peminjamanError);
+      console.error("Error checking peminjaman:", peminjamanError);
       return false;
     }
-
-    if (!peminjaman || peminjaman.length === 0) {
-      console.log("No peminjaman found for payment:", paymentId);
-      return true; // Not an error condition
+    
+    if (peminjaman && peminjaman.length > 0) {
+      console.log(`Found ${peminjaman.length} peminjaman record(s) linked to payment ${paymentId}`);
+      peminjaman.forEach(pem => {
+        console.log(`- Peminjaman ID: ${pem.id_peminjaman} (status tracked via payment)`);
+      });
+    } else {
+      console.log(`No peminjaman found for payment_id: ${paymentId}`);
     }
-
-    // Update peminjaman status (now we actually update it)
-    for (const pem of peminjaman) {
-      const targetStatus = status === "success" ? "SUCCESS" : status === "failed" ? "FAILED" : "PENDING";
-      
-      const { error: updateError } = await Promise.race([
-        supabaseClient
-          .from('peminjaman_fasilitas')
-          .update({ status_peminjaman: targetStatus })
-          .eq('id_peminjaman', pem.id_peminjaman),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Update timeout")), 5000)
-        )
-      ]);
-      
-      if (updateError) {
-        console.error(`❌ Error updating peminjaman status for ID ${pem.id_peminjaman}:`, updateError);
-      } else {
-        console.log(`✅ Successfully updated peminjaman status to ${targetStatus} for ID: ${pem.id_peminjaman}`);
-      }
-    }
-
+    
     return true;
-  } catch (error) {
-    console.error("Error in safeUpdatePeminjamanStatus:", error);
+  } catch (err) {
+    console.error("Error in safeUpdatePeminjamanStatus:", err);
     return false;
   }
 }
@@ -960,10 +936,7 @@ serve(async (req) => {
             pengguna_khusus: safeFormatPenggunaKhusus(peminjamanData.pengguna_khusus),
             id_pengguna: idPengguna,
             created_at: new Date().toISOString(),
-            // PERBAIKAN: Pastikan field surat_peminjaman_url tersimpan dengan benar
-            surat_peminjaman_url: peminjamanData.surat_peminjaman_url || null,
-            // Set initial status
-            status_peminjaman: isFreeBooking ? 'SUCCESS' : 'PENDING'
+            surat_peminjaman_url: peminjamanData.surat_peminjaman_url || null
           };
 
           console.log("📝 Creating peminjaman:", JSON.stringify(peminjamanInsertData, null, 2));

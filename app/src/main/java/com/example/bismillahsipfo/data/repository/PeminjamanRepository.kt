@@ -77,14 +77,4 @@ class PeminjamanRepository(private val context: Context) {
             }
         }
     }
-
-    /**
-     * Generate filename berdasarkan user ID dan timestamp
-     * Berguna untuk membuat filename unik untuk setiap user
-     */
-    fun generateFileName(userId: Int, originalFileName: String?): String {
-        val timestamp = System.currentTimeMillis()
-        val extension = originalFileName?.substringAfterLast('.', "pdf") ?: "pdf"
-        return "surat_user_${userId}_${timestamp}.${extension}"
-    }
 }
