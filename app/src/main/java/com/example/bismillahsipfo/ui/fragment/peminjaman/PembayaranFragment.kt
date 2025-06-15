@@ -614,64 +614,24 @@ class PembayaranFragment : Fragment() {
         }
     }
 
-    // Method untuk upload file ke storage - HANYA DIPANGGIL SAAT TOMBOL BAYAR
-//    private suspend fun uploadFileToStorage(): String? {
-//        return withContext(Dispatchers.IO) {
-//            try {
-//                currentData?.pdfUri?.let { uriString ->
-//                    val uri = Uri.parse(uriString)
-//                    val userId = userRepository.getCurrentUserId()
-//
-//                    // Generate filename dari nama file yang dipilih
-//                    val originalFileName = currentData?.selectedFileName ?: "surat_peminjaman.pdf"
-//                    val extension = originalFileName.substringAfterLast('.', "pdf")
-//                    val timestamp = System.currentTimeMillis()
-//                    val fileName = "surat_user_${userId}_${timestamp}.${extension}"
-//
-//                    Log.d("PembayaranFragment", "Uploading file: $fileName (Original: $originalFileName)")
-//
-//                    // Upload to Supabase storage
-//                    val uploadedUrl = peminjamanRepository.uploadPdfToStorage(uri, fileName)
-//
-//                    if (uploadedUrl != null) {
-//                        Log.d("PembayaranFragment", "File uploaded successfully: $uploadedUrl")
-//
-//                        // Update data di SharedViewModel
-//                        currentData?.let { data ->
-//                            val updatedData = data.copy(uploadedFileUrl = uploadedUrl)
-//                            sharedViewModel.updatePeminjamanData(updatedData)
-//                            currentData = updatedData
-//                        }
-//                    }
-//
-//                    uploadedUrl
-//                } ?: run {
-//                    Log.d("PembayaranFragment", "No file to upload")
-//                    null
-//                }
-//            } catch (e: Exception) {
-//                Log.e("PembayaranFragment", "Error uploading file: ${e.message}", e)
-//                null
-//            }
-//        }
-//    }
-
     // Method untuk upload file ke storage - DIPANGGIL SAAT TOMBOL BAYAR
     private suspend fun uploadFileToStorage(): String? {
         return withContext(Dispatchers.IO) {
             try {
                 currentData?.pdfUri?.let { uriString ->
                     val uri = Uri.parse(uriString)
-                    val userId = userRepository.getCurrentUserId()
                     val originalFileName = currentData?.selectedFileName ?: "surat_peminjaman.pdf"
 
-                    Log.d("PembayaranFragment", "Uploading file: $originalFileName dari URI: $uriString")
+                    Log.d("PembayaranFragment", "Starting file upload...")
+                    Log.d("PembayaranFragment", "Original filename: $originalFileName")
+                    Log.d("PembayaranFragment", "File URI: $uriString")
 
-                    // Upload to Supabase storage
+                    // Upload ke Supabase storage - nama file akan dibuat unik secara otomatis
                     val uploadedUrl = peminjamanRepository.uploadPdfToStorage(uri, originalFileName)
 
                     if (uploadedUrl != null) {
-                        Log.d("PembayaranFragment", "File uploaded successfully: $uploadedUrl")
+                        Log.d("PembayaranFragment", "✅ File uploaded successfully!")
+                        Log.d("PembayaranFragment", "📎 Upload URL: $uploadedUrl")
 
                         // Update SharedViewModel dengan uploaded URL
                         currentData?.let { data ->
@@ -679,15 +639,35 @@ class PembayaranFragment : Fragment() {
                             sharedViewModel.updatePeminjamanData(updatedData)
                             currentData = updatedData
                         }
-                    }
 
-                    uploadedUrl
+                        uploadedUrl
+                    } else {
+                        Log.e("PembayaranFragment", "❌ Upload returned null URL")
+                        null
+                    }
                 } ?: run {
-                    Log.d("PembayaranFragment", "No file URI to upload")
+                    Log.d("PembayaranFragment", "⚠️ No file URI to upload")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("PembayaranFragment", "Error uploading file: ${e.message}", e)
+                Log.e("PembayaranFragment", "💥 Exception during file upload: ${e.message}", e)
+
+                // Log detail error untuk debugging
+                when {
+                    e.message?.contains("already exists") == true -> {
+                        Log.e("PembayaranFragment", "🔄 File conflict - this should not happen with unique naming")
+                    }
+                    e.message?.contains("size") == true -> {
+                        Log.e("PembayaranFragment", "📏 File size issue")
+                    }
+                    e.message?.contains("network") == true -> {
+                        Log.e("PembayaranFragment", "🌐 Network issue")
+                    }
+                    else -> {
+                        Log.e("PembayaranFragment", "❓ Unknown upload error")
+                    }
+                }
+
                 null
             }
         }

@@ -301,5 +301,5 @@ sealed class JadwalAvailabilityStatus {
     object AVAILABLE : JadwalAvailabilityStatus()
     object UNAVAILABLE : JadwalAvailabilityStatus()
     data class HOLIDAY(val namaHariLibur: String, val tanggal: String) : JadwalAvailabilityStatus()
-    object CONFLICT_WITH_JADWAL_RUTIN : JadwalAvailabilityStatus()
+    data class CONFLICT_WITH_JADWAL_RUTIN(val namaOrganisasi: String, val tanggal: String) : JadwalAvailabilityStatus()
 }

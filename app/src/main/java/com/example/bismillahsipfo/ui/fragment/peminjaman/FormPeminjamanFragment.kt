@@ -121,7 +121,7 @@ class FormPeminjamanFragment : Fragment() {
 
         // Set tombol Next disabled secara default dan atur warnanya
         buttonNext.isEnabled = false
-        buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray))
+          buttonNext.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray))
 
         // Tambahkan callback untuk tombol back
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
@@ -399,7 +399,7 @@ class FormPeminjamanFragment : Fragment() {
                         return false
                     }
                     is JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
-                        showDateWarning("Terdapat jadwal rutin, tolong hubungi pemilik jadwal terlebih dahulu")
+                        showDateWarning("Terdapat jadwal rutin organisasi ${currentAvailabilityStatus.namaOrganisasi} pada ${currentAvailabilityStatus.tanggal}, tolong hubungi pemilik jadwal terlebih dahulu")
                         return true
                     }
                     else -> {
@@ -1112,7 +1112,7 @@ class FormPeminjamanFragment : Fragment() {
                         showDateWarning("Jadwal tidak tersedia - Hari Libur: ${status.namaHariLibur} (${status.tanggal})")
                     }
                     is JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN -> {
-                        showDateWarning("Terdapat jadwal rutin, tolong hubungi pemilik jadwal terlebih dahulu")
+                        showDateWarning("Terdapat jadwal rutin organisasi ${status.namaOrganisasi} pada ${status.tanggal}, tolong hubungi pemilik jadwal terlebih dahulu")
                     }
                 }
                 checkFormValidity()

@@ -692,7 +692,7 @@ class FasilitasRepository {
             return JadwalAvailabilityStatus.UNAVAILABLE
         }
 
-        // Check for jadwal rutin
+        // Check for jadwal rutin - UBAH BAGIAN INI
         val jadwalRutin = supabaseClient.from("jadwal_rutin")
             .select() {
                 filter {
@@ -701,12 +701,37 @@ class FasilitasRepository {
             }
             .decodeList<JadwalRutin>()
 
-        if (jadwalRutin.any { jadwal ->
-                startDate.dayOfWeek.getIndonesianName() == jadwal.hari &&
-                        ((startTime <= jadwal.waktuMulai && jadwal.waktuMulai < endTime) ||
-                                (startTime < jadwal.waktuSelesai && jadwal.waktuSelesai <= endTime))
-            }) {
-            return JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN
+        // LANGKAH 1: Cari jadwal rutin yang konflik (gunakan find() bukan any())
+        val conflictingJadwal = jadwalRutin.find { jadwal ->
+            startDate.dayOfWeek.getIndonesianName() == jadwal.hari &&
+                    ((startTime <= jadwal.waktuMulai && jadwal.waktuMulai < endTime) ||
+                            (startTime < jadwal.waktuSelesai && jadwal.waktuSelesai <= endTime))
+        }
+
+        // LANGKAH 2: Jika ada konflik, ambil data organisasi
+        if (conflictingJadwal != null) {
+            // LANGKAH 3: Ambil data organisasi berdasarkan idOrganisasi
+            val organisasi = try {
+                supabaseClient.from("organisasi")
+                    .select() {
+                        filter {
+                            eq("id_organisasi", conflictingJadwal.idOrganisasi)
+                        }
+                    }
+                    .decodeSingle<Organisasi>()
+            } catch (e: Exception) {
+                Log.e("FasilitasRepository", "Error fetching organisasi: ${e.message}")
+                null
+            }
+
+            // LANGKAH 4: Format tanggal konflik
+            val formattedDate = startDate.format(DateTimeFormatter.ofPattern("dd/MM/yy"))
+
+            // LANGKAH 5: Return dengan data organisasi dan tanggal
+            return JadwalAvailabilityStatus.CONFLICT_WITH_JADWAL_RUTIN(
+                namaOrganisasi = organisasi?.namaOrganisasi ?: "Organisasi tidak diketahui",
+                tanggal = formattedDate
+            )
         }
 
         return JadwalAvailabilityStatus.AVAILABLE

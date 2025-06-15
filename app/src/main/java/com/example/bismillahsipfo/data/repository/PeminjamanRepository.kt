@@ -11,6 +11,9 @@ import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class PeminjamanRepository(private val context: Context) {
@@ -30,13 +33,26 @@ class PeminjamanRepository(private val context: Context) {
      * @param fileName nama file (opsional, akan generate UUID jika null)
      * @return URL public file yang sudah diupload atau null jika gagal
      */
-    suspend fun uploadPdfToStorage(fileUri: Uri, fileName: String? = null): String? {
+    suspend fun uploadPdfToStorage(fileUri: Uri, originalFileName: String? = null): String? {
         return withContext(Dispatchers.IO) {
             try {
-                // Generate unique filename jika tidak disediakan
-                val uniqueFileName = fileName ?: "${UUID.randomUUID()}.pdf"
+                // PERBAIKAN: Selalu generate nama file yang unik
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val uuid = UUID.randomUUID().toString().substring(0, 8) // Ambil 8 karakter pertama dari UUID
 
-                Log.d("PeminjamanRepository", "Starting upload for file: $uniqueFileName")
+                // Ekstrak ekstensi dari nama file asli
+                val extension = if (!originalFileName.isNullOrEmpty()) {
+                    val lastDot = originalFileName.lastIndexOf('.')
+                    if (lastDot != -1) originalFileName.substring(lastDot) else ".pdf"
+                } else {
+                    ".pdf"
+                }
+
+                // Format: surat_YYYYMMDD_HHMMSS_UUID8CHAR.extension
+                val uniqueFileName = "surat_${timestamp}_${uuid}${extension}"
+
+                Log.d("PeminjamanRepository", "Original filename: $originalFileName")
+                Log.d("PeminjamanRepository", "Generated unique filename: $uniqueFileName")
 
                 // Baca file dari URI
                 val inputStream = context.contentResolver.openInputStream(fileUri)
@@ -60,7 +76,7 @@ class PeminjamanRepository(private val context: Context) {
                 // Upload ke storage bucket "surat"
                 val bucket = supabase.storage["surat"]
 
-                // Upload file (akan overwrite jika file dengan nama sama sudah ada)
+                // Upload file dengan nama yang unik (tidak akan pernah conflict)
                 bucket.upload(uniqueFileName, bytes)
 
                 Log.d("PeminjamanRepository", "File uploaded successfully: $uniqueFileName")
@@ -77,4 +93,5 @@ class PeminjamanRepository(private val context: Context) {
             }
         }
     }
+
 }
