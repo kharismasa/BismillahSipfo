@@ -550,8 +550,8 @@ serve(async (req) => {
       }), { status: 405, headers });
     }
 
+    // ===== PARSE REQUEST BODY =====
     try {
-      // Read and parse request body
       const body = await Promise.race([
         req.text(),
         new Promise((_, reject) => 
@@ -561,6 +561,482 @@ serve(async (req) => {
 
       const data = JSON.parse(body);
       console.log("📨 Request data:", JSON.stringify(data, null, 2));
+
+      // ===== ACTIVE STATUS POLLING ENDPOINT =====
+      if (data.active_status_polling === true && data.payment_id) {
+        const paymentId = data.payment_id;
+        const pollCount = data.poll_count || 1;
+        const maxPolls = 5;
+        
+        console.log(`🔄 Active status polling for ${paymentId} (attempt ${pollCount})`);
+
+        if (!supabaseClient) {
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Database service unavailable"
+          }), { status: 503, headers });
+        }
+
+        try {
+          // STEP 1: Check current database status
+          const { data: currentPayment, error: paymentError } = await Promise.race([
+            supabaseClient
+              .from('pembayaran')
+              .select('id_pembayaran, status_pembayaran, created_at')
+              .eq('id_pembayaran', paymentId)
+              .single(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Payment lookup timeout")), 5000)
+            )
+          ]);
+
+          if (paymentError || !currentPayment) {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: false,
+              message: "Payment not found",
+              payment_id: paymentId
+            }), { headers, status: 404 });
+          }
+
+          console.log(`💰 Current payment status: ${currentPayment.status_pembayaran}`);
+
+          // If already success or failed, return immediately
+          if (currentPayment.status_pembayaran === 'success') {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: true,
+              status: 'success',
+              message: "Payment already successful",
+              final: true
+            }), { headers, status: 200 });
+          }
+
+          if (currentPayment.status_pembayaran === 'failed') {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: true,
+              status: 'failed',
+              message: "Payment failed",
+              final: true
+            }), { headers, status: 200 });
+          }
+
+          // STEP 2: For pending payments, check Midtrans status
+          console.log(`🌐 Checking Midtrans status for pending payment: ${paymentId}`);
+          
+          const statusCheckUrl = IS_PRODUCTION 
+            ? `https://api.midtrans.com/v2/${paymentId}/status`
+            : `https://api.sandbox.midtrans.com/v2/${paymentId}/status`;
+
+          const midtransRes = await Promise.race([
+            fetch(statusCheckUrl, {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+                Authorization: "Basic " + btoa(MIDTRANS_SERVER_KEY + ":")
+              }
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Midtrans API timeout")), 10000)
+            )
+          ]);
+
+          if (!midtransRes.ok) {
+            console.warn(`⚠️ Midtrans API error: ${midtransRes.status}`);
+            
+            // Return current status if Midtrans error
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: true,
+              status: currentPayment.status_pembayaran,
+              message: "Midtrans API error, returning current status",
+              final: false,
+              should_retry: pollCount < maxPolls
+            }), { headers, status: 200 });
+          }
+
+          const midtransResult = await midtransRes.json();
+          console.log("📊 Midtrans polling response:", JSON.stringify(midtransResult, null, 2));
+
+          // STEP 3: Enhanced status mapping
+          const transactionStatus = midtransResult.transaction_status;
+          const fraudStatus = midtransResult.fraud_status || "";
+          const statusCode = midtransResult.status_code;
+
+          console.log("🔍 Status details:");
+          console.log(`  - Transaction Status: ${transactionStatus}`);
+          console.log(`  - Fraud Status: ${fraudStatus}`);
+          console.log(`  - Status Code: ${statusCode}`);
+
+          let newStatus = "pending";
+          let isFinal = false;
+
+          // Enhanced mapping untuk polling
+          if (transactionStatus === "settlement" || transactionStatus === "capture") {
+            newStatus = fraudStatus === "challenge" ? "pending" : "success";
+            isFinal = newStatus === "success";
+            console.log("✅ Payment successful based on settlement/capture");
+          } else if (transactionStatus === "pending") {
+            // Untuk e-wallet dan VA, cek status_code juga
+            if (statusCode === "200" || statusCode === 200) {
+              newStatus = "success";
+              isFinal = true;
+              console.log("✅ Payment successful based on status_code 200");
+            } else {
+              newStatus = "pending";
+              isFinal = false;
+              console.log("⏳ Payment still pending");
+            }
+          } else if (["cancel", "deny", "expire", "failure", "refund"].includes(transactionStatus)) {
+            newStatus = "failed";
+            isFinal = true;
+            console.log("❌ Payment failed");
+          } else {
+            newStatus = "pending";
+            isFinal = false;
+            console.log("❓ Unknown status, keeping as pending");
+          }
+
+          // STEP 4: Update database if status changed
+          if (currentPayment.status_pembayaran !== newStatus) {
+            console.log(`🔄 Updating payment status: ${currentPayment.status_pembayaran} → ${newStatus}`);
+            
+            const { error: updateError } = await Promise.race([
+              supabaseClient
+                .from('pembayaran')
+                .update({ status_pembayaran: newStatus })
+                .eq('id_pembayaran', paymentId),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Payment update timeout")), 8000)
+              )
+            ]);
+
+            if (updateError) {
+              console.error("❌ Payment update failed:", updateError);
+            } else {
+              console.log("✅ Payment status updated successfully");
+            }
+          }
+
+          // STEP 5: Return polling result
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: true,
+            status: newStatus,
+            message: `Polling result: ${newStatus}`,
+            final: isFinal,
+            should_retry: !isFinal && pollCount < maxPolls,
+            poll_count: pollCount,
+            midtrans_data: {
+              transaction_status: transactionStatus,
+              fraud_status: fraudStatus,
+              status_code: statusCode,
+              payment_type: midtransResult.payment_type
+            },
+            previous_status: currentPayment.status_pembayaran
+          }), { headers, status: 200 });
+
+        } catch (error) {
+          console.error("❌ Active polling error:", error);
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Active polling failed",
+            error: error.message,
+            should_retry: pollCount < maxPolls
+          }), { headers, status: 500 });
+        }
+      }
+
+      // ===== FORCE UPDATE STATUS ENDPOINT (untuk debugging) =====
+      if (data.force_update_status === true && data.payment_id) {
+        const paymentId = data.payment_id;
+        const forceStatus = data.force_status || "success";
+        
+        console.log(`🔧 Force updating status for ${paymentId} to ${forceStatus}`);
+
+        if (!supabaseClient) {
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Database service unavailable"
+          }), { status: 503, headers });
+        }
+
+        try {
+          const { error } = await supabaseClient
+            .from('pembayaran')
+            .update({ status_pembayaran: forceStatus })
+            .eq('id_pembayaran', paymentId);
+
+          if (error) {
+            console.error("❌ Force update failed:", error);
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: false,
+              message: "Force update failed",
+              error: error.message
+            }), { headers, status: 500 });
+          }
+
+          console.log("✅ Force update successful");
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: true,
+            message: `Status force updated to ${forceStatus}`,
+            payment_id: paymentId,
+            new_status: forceStatus
+          }), { headers, status: 200 });
+
+        } catch (error) {
+          console.error("❌ Force update error:", error);
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Force update error",
+            error: error.message
+          }), { headers, status: 500 });
+        }
+      }
+
+      // ===== BATCH STATUS UPDATE ENDPOINT =====
+      if (data.batch_status_update === true && data.payment_ids) {
+        console.log("📦 Batch status update requested");
+        
+        const paymentIds = data.payment_ids;
+        const results = [];
+        
+        if (!Array.isArray(paymentIds) || paymentIds.length === 0) {
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "payment_ids array required"
+          }), { headers, status: 400 });
+        }
+
+        // Limit batch size untuk performance
+        const batchPaymentIds = paymentIds.slice(0, 10);
+        
+        for (const paymentId of batchPaymentIds) {
+          try {
+            console.log(`🔄 Checking payment: ${paymentId}`);
+            
+            // Get current payment
+            const { data: payment, error: paymentError } = await supabaseClient
+              .from('pembayaran')
+              .select('*')
+              .eq('id_pembayaran', paymentId)
+              .single();
+
+            if (paymentError || !payment) {
+              results.push({
+                payment_id: paymentId,
+                status: "not_found",
+                error: paymentError?.message || "Payment not found"
+              });
+              continue;
+            }
+
+            // Skip if already final status
+            if (payment.status_pembayaran === 'success' || payment.status_pembayaran === 'failed') {
+              results.push({
+                payment_id: paymentId,
+                status: payment.status_pembayaran,
+                action: "no_update_needed"
+              });
+              continue;
+            }
+
+            // Check Midtrans for pending payments
+            try {
+              const statusUrl = IS_PRODUCTION 
+                ? `https://api.midtrans.com/v2/${paymentId}/status`
+                : `https://api.sandbox.midtrans.com/v2/${paymentId}/status`;
+
+              const midtransRes = await fetch(statusUrl, {
+                headers: {
+                  Accept: "application/json",
+                  Authorization: "Basic " + btoa(MIDTRANS_SERVER_KEY + ":")
+                }
+              });
+
+              if (midtransRes.ok) {
+                const midtransData = await midtransRes.json();
+                const newStatus = safeMapMidtransStatus(
+                  midtransData.transaction_status, 
+                  midtransData.fraud_status
+                );
+
+                if (payment.status_pembayaran !== newStatus) {
+                  // Update status
+                  const { error: updateError } = await supabaseClient
+                    .from('pembayaran')
+                    .update({ status_pembayaran: newStatus })
+                    .eq('id_pembayaran', paymentId);
+
+                  if (updateError) {
+                    results.push({
+                      payment_id: paymentId,
+                      status: "update_failed",
+                      error: updateError.message
+                    });
+                  } else {
+                    results.push({
+                      payment_id: paymentId,
+                      status: newStatus,
+                      action: "updated",
+                      previous_status: payment.status_pembayaran
+                    });
+                  }
+                } else {
+                  results.push({
+                    payment_id: paymentId,
+                    status: newStatus,
+                    action: "no_change"
+                  });
+                }
+              } else {
+                results.push({
+                  payment_id: paymentId,
+                  status: "midtrans_error",
+                  error: `HTTP ${midtransRes.status}`
+                });
+              }
+            } catch (midtransError) {
+              results.push({
+                payment_id: paymentId,
+                status: "midtrans_error",
+                error: midtransError.message
+              });
+            }
+          } catch (error) {
+            results.push({
+              payment_id: paymentId,
+              status: "error",
+              error: error.message
+            });
+          }
+        }
+
+        clearTimeout(requestTimeout);
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Batch update completed",
+          results: results,
+          processed_count: results.length,
+          timestamp: new Date().toISOString()
+        }), { headers, status: 200 });
+      }
+
+      // ===== PAYMENT LIFECYCLE TRACKER =====
+      if (data.track_payment_lifecycle === true && data.payment_id) {
+        const paymentId = data.payment_id;
+        
+        console.log(`📈 Tracking payment lifecycle: ${paymentId}`);
+        
+        try {
+          // Get payment history and current status
+          const { data: payment, error: paymentError } = await supabaseClient
+            .from('pembayaran')
+            .select('*')
+            .eq('id_pembayaran', paymentId)
+            .single();
+
+          if (paymentError || !payment) {
+            clearTimeout(requestTimeout);
+            return new Response(JSON.stringify({
+              success: false,
+              message: "Payment not found"
+            }), { headers, status: 404 });
+          }
+
+          // Get related peminjaman
+          const { data: peminjaman, error: peminjamanError } = await supabaseClient
+            .from('peminjaman_fasilitas')
+            .select('*')
+            .eq('id_pembayaran', paymentId);
+
+          // Calculate lifecycle info
+          const createdAt = new Date(payment.created_at);
+          const now = new Date();
+          const ageMinutes = Math.floor((now - createdAt) / (1000 * 60));
+          const expiryTime = new Date(payment.waktu_kadaluwarsa);
+          const timeToExpiry = Math.floor((expiryTime - now) / (1000 * 60));
+
+          // Check Midtrans status
+          let midtransStatus = null;
+          try {
+            const statusUrl = IS_PRODUCTION 
+              ? `https://api.midtrans.com/v2/${paymentId}/status`
+              : `https://api.sandbox.midtrans.com/v2/${paymentId}/status`;
+
+            const midtransRes = await fetch(statusUrl, {
+              headers: {
+                Accept: "application/json",
+                Authorization: "Basic " + btoa(MIDTRANS_SERVER_KEY + ":")
+              }
+            });
+
+            if (midtransRes.ok) {
+              midtransStatus = await midtransRes.json();
+            }
+          } catch (midtransError) {
+            console.warn("Midtrans status check failed:", midtransError.message);
+          }
+
+          const lifecycle = {
+            payment_id: paymentId,
+            database_status: payment.status_pembayaran,
+            payment_method: payment.metode_pembayaran,
+            amount: payment.total_biaya,
+            created_at: payment.created_at,
+            age_minutes: ageMinutes,
+            expiry_time: payment.waktu_kadaluwarsa,
+            time_to_expiry_minutes: timeToExpiry,
+            is_expired: timeToExpiry <= 0,
+            has_peminjaman: peminjaman && peminjaman.length > 0,
+            midtrans_status: midtransStatus,
+            status_sync: midtransStatus ? 
+              (safeMapMidtransStatus(midtransStatus.transaction_status, midtransStatus.fraud_status) === payment.status_pembayaran) : 
+              null,
+            recommendations: []
+          };
+
+          // Add recommendations
+          if (lifecycle.database_status === 'pending' && ageMinutes > 30) {
+            lifecycle.recommendations.push("Consider checking Midtrans status - payment pending for > 30 minutes");
+          }
+          
+          if (lifecycle.time_to_expiry_minutes <= 60 && lifecycle.time_to_expiry_minutes > 0) {
+            lifecycle.recommendations.push("Payment will expire soon - consider extending or following up");
+          }
+          
+          if (lifecycle.is_expired && lifecycle.database_status === 'pending') {
+            lifecycle.recommendations.push("Payment is expired but still pending - should be marked as failed");
+          }
+
+          if (lifecycle.status_sync === false) {
+            lifecycle.recommendations.push("Database status doesn't match Midtrans - needs sync");
+          }
+
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: true,
+            lifecycle: lifecycle,
+            timestamp: new Date().toISOString()
+          }), { headers, status: 200 });
+
+        } catch (error) {
+          clearTimeout(requestTimeout);
+          return new Response(JSON.stringify({
+            success: false,
+            message: "Lifecycle tracking failed",
+            error: error.message
+          }), { headers, status: 500 });
+        }
+      }
 
       // ===== DIRECT PROCESS REQUEST =====
       if (data.direct_process === true && data.payment_id) {
@@ -860,7 +1336,7 @@ serve(async (req) => {
         }
       }
 
-      // ===== CREATE NEW PAYMENT =====
+      // ===== CREATE NEW PAYMENT (DEFAULT CASE) =====
       console.log("💳 Creating new payment...");
       
       if (!supabaseClient) {
