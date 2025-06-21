@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="item_jadwal_margin">4dp</dimen>
+
+    <!-- Header Dimensions -->
+    <dimen name="header_padding_horizontal">24dp</dimen>
+    <dimen name="header_padding_vertical_top">32dp</dimen>
+    <dimen name="header_padding_vertical_bottom">24dp</dimen>
+    <dimen name="progress_container_margin_top">24dp</dimen>
+    <dimen name="progress_container_padding">20dp</dimen>
+    <dimen name="progress_container_radius">16dp</dimen>
+
+    <!-- Step Circle Dimensions -->
+    <dimen name="step_circle_size">32dp</dimen>
+    <dimen name="step_text_margin_top">8dp</dimen>
+    <dimen name="step_line_margin">16dp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="header_title_size">20sp</dimen>
+    <dimen name="header_subtitle_size">14sp</dimen>
+    <dimen name="step_number_size">14sp</dimen>
+    <dimen name="step_label_size">11sp</dimen>
+
+    <!-- Form Dimensions -->
+    <dimen name="form_padding">16dp</dimen>
+    <dimen name="form_element_margin">16dp</dimen>
+    <dimen name="input_height">48dp</dimen>
+    <dimen name="button_height">56dp</dimen>
 </resources>

@@ -53,6 +53,45 @@
     <string name="jargon_peminjaman">Pinjam fasilitas olahraga UII mudah dan cepat, langsung dari genggaman Anda!</string>
     <string name="form_pengajuan">Pengajuan Pinjam Fasilitas Olahraga</string>
 
+    <!-- Progress Steps -->
+    <string name="step_1_title">Mengisi Form Pengajuan</string>
+    <string name="step_2_title">Mengisi Form tata tertib</string>
+    <string name="step_3_title">Melakukan Pembayaran</string>
+
+    <!-- Form Labels -->
+    <string name="fasilitas_label">Fasilitas</string>
+    <string name="opsi_peminjaman_label">Opsi Peminjaman</string>
+    <string name="kalender_label">Kalender</string>
+    <string name="nama_acara_label">Nama Acara</string>
+    <string name="nama_organisasi_label">Nama Organisasi/UKM</string>
+    <string name="tanggal_mulai_label">Tanggal Mulai</string>
+    <string name="tanggal_selesai_label">Tanggal Selesai</string>
+    <string name="jam_mulai_label">Jam Mulai</string>
+    <string name="jam_selesai_label">Jam Selesai</string>
+    <string name="jadwal_tersedia_label">Jadwal Tersedia</string>
+    <string name="lapangan_label">Lapangan yang dipinjam</string>
+
+    <!-- Button Text -->
+    <string name="next_button">Next</string>
+    <string name="back_button">Back</string>
+    <string name="submit_button">Submit</string>
+
+    <!-- Validation Messages -->
+    <string name="error_nama_acara_empty">Nama acara harus diisi</string>
+    <string name="error_organisasi_empty">Nama organisasi harus diisi</string>
+    <string name="error_tanggal_empty">Tanggal harus diisi</string>
+    <string name="error_jam_empty">Jam harus diisi</string>
+    <string name="error_jadwal_not_selected">Pilih jadwal yang tersedia</string>
+    <string name="error_lapangan_not_selected">Pilih minimal satu lapangan</string>
+
+    <!-- Options -->
+    <string name="opsi_diluar_jadwal">Diluar Jadwal Rutin</string>
+    <string name="opsi_sesuai_jadwal">Sesuai Jadwal Rutin</string>
+
+    <!-- Status -->
+    <string name="jadwal_tidak_tersedia">Jadwal Rutin Tidak Tersedia</string>
+    <string name="loading_text">Memuat data...</string>
+
     <string-array name="opsi_pinjam_array">
         <item>Sesuai Jadwal Rutin</item>
         <item>Diluar Jadwal Rutin</item>

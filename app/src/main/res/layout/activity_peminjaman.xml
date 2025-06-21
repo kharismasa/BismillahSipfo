@@ -1,41 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/light_blue"
     tools:context=".ui.fragment.peminjaman.PeminjamanActivity">
 
+    <!-- Blue Header Background -->
     <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+        android:id="@+id/header_background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/header_background"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="60dp">
 
-        <!-- Header -->
+        <!-- Header Title -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/form_pengajuan"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
+            android:textColor="@android:color/white"
             android:gravity="center"
-            android:padding="8dp" />
+            android:lineSpacingExtra="4dp" />
 
+        <!-- Header Subtitle -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/jargon_peminjaman"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
             android:gravity="center"
-            android:padding="8dp" />
+            android:layout_marginTop="8dp"
+            android:alpha="0.9"
+            android:lineSpacingExtra="2dp" />
+
+    </LinearLayout>
+
+    <!-- White Progress Container - Overlapping -->
+    <LinearLayout
+        android:id="@+id/progress_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/progress_container_background"
+        android:layout_below="@id/header_background"
+        android:layout_marginTop="-40dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:elevation="8dp">
 
         <!-- Progress Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="8dp">
+            android:gravity="center">
 
             <!-- Step 1 -->
             <LinearLayout
@@ -46,12 +77,13 @@
 
                 <TextView
                     android:id="@+id/step1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:background="@drawable/circle_active"
                     android:text="1"
                     android:textColor="@android:color/white"
-                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
                     android:gravity="center" />
 
                 <TextView
@@ -59,25 +91,32 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mengisi Form"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
-                    android:gravity="center" />
+                    android:textSize="11sp"
+                    android:textColor="@color/dark_blue"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp" />
+
                 <TextView
                     android:id="@+id/tvStep1b"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Pengajuan"
-                    android:textSize="12sp"
-                    android:textColor="@color/blue"
+                    android:textSize="11sp"
+                    android:textColor="@color/dark_blue"
+                    android:textStyle="bold"
                     android:gravity="center" />
             </LinearLayout>
 
             <!-- Line between steps -->
             <View
+                android:id="@+id/line_step_1_2"
                 android:layout_width="0dp"
                 android:layout_height="2dp"
                 android:layout_weight="1"
-                android:background="@color/gray" />
+                android:background="@color/light_gray"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp" />
 
             <!-- Step 2 -->
             <LinearLayout
@@ -88,12 +127,13 @@
 
                 <TextView
                     android:id="@+id/step2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:background="@drawable/circle_inactive"
                     android:text="2"
                     android:textColor="@color/gray"
-                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
                     android:gravity="center" />
 
                 <TextView
@@ -101,26 +141,30 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mengisi Form"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:gravity="center"
-                    android:textColor="@color/gray"/>
+                    android:textColor="@color/gray"
+                    android:layout_marginTop="8dp"/>
 
                 <TextView
                     android:id="@+id/tvStep2b"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="tata tertib"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:gravity="center"
                     android:textColor="@color/gray"/>
             </LinearLayout>
 
             <!-- Line between steps -->
             <View
+                android:id="@+id/line_step_2_3"
                 android:layout_width="0dp"
                 android:layout_height="2dp"
                 android:layout_weight="1"
-                android:background="@color/gray" />
+                android:background="@color/light_gray"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp" />
 
             <!-- Step 3 -->
             <LinearLayout
@@ -131,12 +175,13 @@
 
                 <TextView
                     android:id="@+id/step3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:background="@drawable/circle_inactive"
                     android:text="3"
                     android:textColor="@color/gray"
-                    android:padding="6dp"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
                     android:gravity="center" />
 
                 <TextView
@@ -144,23 +189,30 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Melakukan"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:gravity="center"
-                    android:textColor="@color/gray"/>
+                    android:textColor="@color/gray"
+                    android:layout_marginTop="8dp"/>
+
                 <TextView
                     android:id="@+id/tvStep3b"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Pembayaran"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:gravity="center"
                     android:textColor="@color/gray"/>
             </LinearLayout>
         </LinearLayout>
+    </LinearLayout>
 
-        <androidx.viewpager2.widget.ViewPager2
+    <!-- Content Area -->
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    </LinearLayout>
-</FrameLayout>
+        android:layout_height="match_parent"
+        android:layout_below="@id/progress_container"
+        android:layout_marginTop="16dp"
+        android:background="@color/light_blue" />
+
+</RelativeLayout>

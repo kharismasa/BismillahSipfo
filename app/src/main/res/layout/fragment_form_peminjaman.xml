@@ -3,11 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     tools:context=".ui.fragment.peminjaman.FormPeminjamanFragment">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -21,95 +23,173 @@
                 android:layout_height="wrap_content"
                 android:text="Form Pengajuan Pinjam Fasilitas"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:paddingTop="16dp" />
+                android:fontFamily="@font/poppins_bold"
+                android:textColor="@android:color/black"
+                android:gravity="center_horizontal"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp" />
 
             <!-- Spinner for Fasilitas -->
             <TextView
                 android:layout_marginTop="8dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Fasilitas"/>
+                android:text="Fasilitas"
+                android:fontFamily="@font/poppins"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"/>
+
             <Spinner
                 android:id="@+id/spinner_fasilitas"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"/>
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingHorizontal="12dp"/>
 
+            <!-- Spinner for Opsi Peminjaman -->
             <TextView
-                android:layout_marginTop="8dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Opsi Peminjaman"/>
+                android:text="Opsi Peminjaman"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"/>
+
             <Spinner
                 android:id="@+id/spinner_opsi_pinjam"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"/>
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingHorizontal="12dp"/>
 
-            <!-- Spinner for Kalender -->
+            <!-- Spinner for Kalender (hanya untuk jadwal rutin) -->
             <TextView
-                android:layout_marginTop="8dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kalender"/>
+                android:text="Kalender"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"
+                android:visibility="gone"/>
+
             <Spinner
                 android:id="@+id/spinner_kalender"
                 android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingHorizontal="12dp"
+                android:visibility="gone"/>
+
+            <!-- Nama Acara -->
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"/>
+                android:text="Nama Acara"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"/>
 
             <EditText
                 android:id="@+id/edittext_nama_acara"
-                android:visibility="visible"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp"
+                android:hint="Acara"
+                android:fontFamily="@font/poppins"
+                android:background="@drawable/edittext_background"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp" />
+
+            <!-- Nama Organisasi - Spinner (untuk jadwal rutin) -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Nama Acara" />
+                android:text="Nama Organisasi/UKM"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"
+                android:visibility="gone"/>
 
             <Spinner
                 android:id="@+id/spinner_nama_organisasi"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingHorizontal="12dp"
                 android:visibility="gone" />
 
-            <!-- OPSI DILUAR JADWAL RUTIN -->
-            <EditText
-                android:id="@+id/edittext_nama_organisasi"
-                android:visibility="visible"
+            <!-- Nama Organisasi - EditText (untuk diluar jadwal rutin) -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Nama Organisasi/UKM" />
+                android:text="Nama Organisasi/UKM"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins"
+                android:textColor="@android:color/black"
+                android:paddingBottom="4dp"
+                android:visibility="visible"/>
 
+            <EditText
+                android:id="@+id/edittext_nama_organisasi"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp"
+                android:hint="Organisasi"
+                android:fontFamily="@font/poppins"
+                android:background="@drawable/edittext_background"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp" />
+
+            <!-- SECTION: DILUAR JADWAL RUTIN -->
+            <!-- Tanggal Section -->
             <LinearLayout
                 android:id="@+id/tvTanggal"
-                android:visibility="visible"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:weightSum="2"
-                android:layout_marginTop="16dp">
+                android:layout_marginBottom="16dp"
+                android:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tanggal Mulai" />
+                        android:text="Tanggal Mulai"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins"
+                        android:textColor="@android:color/black"
+                        android:paddingBottom="4dp" />
 
                     <EditText
                         android:id="@+id/edittext_tanggal_mulai"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
                         android:drawableStart="@drawable/ic_date"
                         android:drawablePadding="8dp"
                         android:hint="DD/MM/YY"
-                        android:inputType="date" />
+                        android:background="@drawable/edittext_background"
+                        android:paddingHorizontal="12dp"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins"
+                        android:inputType="none"
+                        android:focusable="false" />
 
                 </LinearLayout>
 
@@ -123,47 +203,67 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tanggal Selesai" />
+                        android:text="Tanggal Selesai"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins"
+                        android:textColor="@android:color/black"
+                        android:paddingBottom="4dp" />
 
                     <EditText
                         android:id="@+id/edittext_tanggal_selesai"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="48dp"
+                        android:background="@drawable/edittext_background"
                         android:drawableStart="@drawable/ic_date"
                         android:drawablePadding="8dp"
+                        android:focusable="false"
                         android:hint="DD/MM/YY"
-                        android:inputType="date" />
+                        android:fontFamily="@font/poppins"
+                        android:inputType="none"
+                        android:paddingHorizontal="12dp"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Jam Section -->
             <LinearLayout
                 android:id="@+id/tvJam"
-                android:visibility="visible"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:weightSum="2"
-                android:layout_marginTop="16dp">
+                android:layout_marginBottom="16dp"
+                android:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Jam Mulai" />
+                        android:text="Jam Mulai"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins"
+                        android:textColor="@android:color/black"
+                        android:paddingBottom="4dp" />
 
                     <EditText
                         android:id="@+id/edittext_jam_mulai"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="07.00"
+                        android:layout_height="48dp"
+                        android:hint="07:00"
+                        android:fontFamily="@font/poppins"
                         android:drawableStart="@drawable/ic_time"
                         android:drawablePadding="8dp"
-                        android:inputType="time" />
+                        android:background="@drawable/edittext_background"
+                        android:paddingHorizontal="12dp"
+                        android:textSize="14sp"
+                        android:inputType="none"
+                        android:focusable="false" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -176,33 +276,45 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Jam Selesai" />
+                        android:text="Jam Selesai"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins"
+                        android:textColor="@android:color/black"
+                        android:paddingBottom="4dp" />
 
                     <EditText
                         android:id="@+id/edittext_jam_selesai"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="08.00"
+                        android:layout_height="48dp"
+                        android:hint="08:00"
+                        android:fontFamily="@font/poppins"
                         android:drawableStart="@drawable/ic_time"
                         android:drawablePadding="8dp"
-                        android:inputType="time" />
+                        android:background="@drawable/edittext_background"
+                        android:paddingHorizontal="12dp"
+                        android:textSize="14sp"
+                        android:inputType="none"
+                        android:focusable="false" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- TAMBAHAN: TextView untuk warning message -->
+            <!-- Warning Message -->
             <LinearLayout
                 android:id="@+id/tv_date_warning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:visibility="gone"
-                android:layout_marginTop="8dp">
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/warning_background"
+                android:padding="12dp">
 
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_error"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="8dp" />
 
                 <TextView
                     android:id="@+id/warning_text"
@@ -210,48 +322,32 @@
                     android:layout_height="wrap_content"
                     android:textColor="@android:color/holo_red_dark"
                     android:textSize="12sp"
-                    android:text="Warning message"
-                    android:padding="8dp" />
+                    android:text="Warning message" />
             </LinearLayout>
 
-            <!-- Lapangan yang dipinjam -->
-            <TextView
-                android:id="@+id/tvLapangan"
-                android:visibility="visible"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Lapangan yang dipinjam"
-                android:layout_marginTop="16dp" />
-
-            <!-- Container untuk checkbox lapangan -->
-            <LinearLayout
-                android:id="@+id/container_jenis_lapangan"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:visibility="visible">
-                <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
-            </LinearLayout>
-
-            <!-- Jadwal Tersedia -->
+            <!-- SECTION: JADWAL TERSEDIA (untuk jadwal rutin) -->
             <TextView
                 android:id="@+id/tvJadwalTersedia"
-                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Jadwal Tersedia"
-                android:layout_marginTop="16dp" />
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="8dp"
+                android:visibility="gone" />
 
+            <!-- Grid Layout untuk Jadwal Cards -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/container_jadwal_tersedia"
-                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-            </androidx.recyclerview.widget.RecyclerView>
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false"
+                android:overScrollMode="never" />
 
+            <!-- Message ketika jadwal tidak tersedia -->
             <TextView
                 android:id="@+id/tv_jadwal_tidak_tersedia"
                 android:layout_width="match_parent"
@@ -262,9 +358,33 @@
                 android:textColor="@color/dark_blue"
                 android:padding="16dp"
                 android:visibility="gone"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/info_background" />
 
+            <!-- SECTION: LAPANGAN (untuk diluar jadwal rutin) -->
+            <TextView
+                android:id="@+id/tvLapangan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nama Organisasi/UKM"
+                android:fontFamily="@font/poppins"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:paddingBottom="8dp"
+                android:visibility="visible" />
+
+            <!-- Container untuk checkbox lapangan -->
+            <LinearLayout
+                android:id="@+id/container_jenis_lapangan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="visible">
+                <!-- CheckBox akan ditambahkan secara dinamis dari kode Kotlin -->
+            </LinearLayout>
+
+            <!-- SECTION: PENGGUNA KHUSUS -->
             <RadioGroup
                 android:id="@+id/container_pengguna_khusus"
                 android:layout_width="match_parent"
@@ -276,25 +396,31 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Pengguna Khusus UII Training Ground"/>
+                    android:text="Pengguna Khusus UII Training Ground"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="8dp"/>
 
                 <RadioButton
                     android:id="@+id/radio_internal_uii"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Internal UII" />
+                    android:text="Internal UII"
+                    android:textSize="14sp" />
 
                 <RadioButton
                     android:id="@+id/radio_internal_vs_eksternal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Internal UII vs Team Eksternal" />
+                    android:text="Internal UII vs Team Eksternal"
+                    android:textSize="14sp" />
 
                 <RadioButton
                     android:id="@+id/radio_eksternal_uii"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Team Eksternal" />
+                    android:text="Team Eksternal"
+                    android:textSize="14sp" />
 
             </RadioGroup>
 
@@ -302,14 +428,17 @@
             <Button
                 android:id="@+id/button_next"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:text="Next"
+                android:fontFamily="@font/poppins"
                 android:backgroundTint="@color/dark_blue"
                 android:textColor="@android:color/white"
-                android:layout_marginTop="16dp" />
+                android:textSize="16sp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Loading Overlay -->
     <FrameLayout

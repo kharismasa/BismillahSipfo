@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
@@ -623,20 +624,35 @@ class FormPeminjamanFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupJadwalTersediaRecyclerView() {
-        Log.d("FormPeminjamanFragment", "Setting up JadwalTersediaRecyclerView")
         jadwalTersediaAdapter = JadwalTersediaAdapter(emptyList()) { jadwal ->
-            Log.d("FormPeminjamanFragment", "Jadwal selected: $jadwal")
             selectedJadwalTersedia = jadwal
             viewModel.onJadwalTersediaSelected(jadwal)
             updateSelectedJadwal(jadwal)
             checkFormValidity()
-
         }
 
-        val layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
-        containerJadwalTersedia.layoutManager = layoutManager
-        containerJadwalTersedia.adapter = jadwalTersediaAdapter
+        val layoutManager = GridLayoutManager(requireContext(), 3)
 
+        containerJadwalTersedia.apply {
+            this.layoutManager = layoutManager
+            adapter = jadwalTersediaAdapter
+
+            // KUNCI UTAMA: Settings ini
+            isNestedScrollingEnabled = false
+            setHasFixedSize(false) // PENTING!
+
+            // Force layout setelah data berubah
+            viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (visibility == View.VISIBLE && adapter?.itemCount ?: 0 > 0) {
+                        post { requestLayout() }
+                        viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    }
+                }
+            })
+        }
+
+        // Item decoration
         val itemDecoration = object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
                 val spacing = 8
@@ -644,8 +660,28 @@ class FormPeminjamanFragment : Fragment() {
             }
         }
         containerJadwalTersedia.addItemDecoration(itemDecoration)
+    }
 
-        Log.d("FormPeminjamanFragment", "JadwalTersediaRecyclerView setup complete")
+    // Tambahkan method untuk fix height setelah data update
+    private fun fixRecyclerViewHeight() {
+        containerJadwalTersedia.post {
+            val adapter = containerJadwalTersedia.adapter
+            val layoutManager = containerJadwalTersedia.layoutManager as? GridLayoutManager
+
+            if (adapter != null && layoutManager != null && adapter.itemCount > 0) {
+                val itemCount = adapter.itemCount
+                val spanCount = layoutManager.spanCount
+                val rowCount = Math.ceil(itemCount.toDouble() / spanCount).toInt()
+
+                // Set minimum height berdasarkan jumlah rows
+                val estimatedItemHeight = (100 * resources.displayMetrics.density).toInt() // 100dp to px
+                val spacing = (8 * resources.displayMetrics.density * (rowCount - 1)).toInt()
+                val totalHeight = (estimatedItemHeight * rowCount) + spacing
+
+                containerJadwalTersedia.minimumHeight = totalHeight
+                containerJadwalTersedia.requestLayout()
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -1144,6 +1180,19 @@ class FormPeminjamanFragment : Fragment() {
             } else {
                 hideLoading()
             }
+        }
+
+        viewModel.jadwalTersedia.observe(viewLifecycleOwner) { jadwalList ->
+            if (jadwalList.isNotEmpty()) {
+                containerJadwalTersedia.visibility = View.VISIBLE
+                jadwalTersediaAdapter.updateJadwalList(jadwalList)
+
+                // PENTING: Panggil fix setelah data berubah
+                fixRecyclerViewHeight()
+            } else {
+                containerJadwalTersedia.visibility = View.GONE
+            }
+            hideLoading()
         }
     }
 
