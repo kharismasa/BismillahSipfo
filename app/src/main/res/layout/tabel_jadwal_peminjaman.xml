@@ -1,70 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="1dp"
-    app:cardCornerRadius="4dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
     <LinearLayout
-        android:id="@+id/cardJadwal"
-        android:background="@color/white"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvTanggal"
-            android:layout_width="wrap_content"
+        <!-- Header Row with Date and Day -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="01/11/2023"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/tvHari"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rabu"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/date_background"
+                android:padding="8dp"
+                android:gravity="center">
 
-        <TextView
-            android:id="@+id/tvWaktu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="08:00 - 11:00"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+                <TextView
+                    android:id="@+id/tvTanggal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="01/11/2023"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textSize="12sp"
+                    android:textColor="@color/blue"
+                    android:gravity="center" />
 
-        <TextView
-            android:id="@+id/tvOrganisasi"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="UKM A"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+                <TextView
+                    android:id="@+id/tvHari"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rabu"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textSize="10sp"
+                    android:textColor="@color/blue"
+                    android:gravity="center" />
 
-        <TextView
-            android:id="@+id/tvLapangan"
-            android:layout_width="0dp"
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Time Chip -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/time_chip_background"
+                android:padding="8dp"
+                android:layout_gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_time"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical"
+                    app:tint="@color/blue" />
+
+                <TextView
+                    android:id="@+id/tvWaktu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="08:00 - 11:00"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textSize="11sp"
+                    android:textColor="@color/blue" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Organization Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Lapangan Indoor GOR, Lapangan Outdoor GOR, Panjat Dinding GOR"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_organization"
+                android:layout_marginEnd="8dp"
+                android:layout_gravity="center_vertical"
+                app:tint="@color/text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Organisasi:"
+                android:fontFamily="@font/poppins_medium"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/tvOrganisasi"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="UKM A"
+                android:fontFamily="@font/poppins_medium"
+                android:textSize="12sp"
+                android:textColor="@color/dark_blue" />
+
+        </LinearLayout>
+
+        <!-- Field Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_field"
+                android:layout_marginEnd="8dp"
+                android:layout_gravity="top"
+                android:layout_marginTop="2dp"
+                app:tint="@color/text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lapangan:"
+                android:fontFamily="@font/poppins_medium"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/tvLapangan"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Lapangan Indoor GOR, Lapangan Outdoor GOR"
+                android:fontFamily="@font/poppins"
+                android:textSize="12sp"
+                android:textColor="@color/dark_blue" />
+
+        </LinearLayout>
 
     </LinearLayout>
+
 </androidx.cardview.widget.CardView>

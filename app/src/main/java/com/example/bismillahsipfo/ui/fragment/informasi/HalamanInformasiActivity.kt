@@ -7,12 +7,15 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
+import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
@@ -53,13 +56,10 @@ class HalamanInformasiActivity : AppCompatActivity() {
         }
 
         setupClickListeners()
-
         setupJadwalRutinRecyclerView()
         observeJadwalRutin()
-
         setupJadwalPeminjamanRecyclerView()
         observeJadwalPeminjaman()
-
     }
 
     private fun loadFasilitasInfo(fasilitasId: Int) {
@@ -83,10 +83,18 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     private fun displayFasilitasInfo(fasilitas: Fasilitas) {
         with(binding) {
+            // Set nama fasilitas
             tvNamaFasilitas.text = fasilitas.namaFasilitas
+
+            // Load image dengan error handling yang lebih baik
             Glide.with(this@HalamanInformasiActivity)
                 .load(fasilitas.photo)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .centerCrop()
                 .into(ivFasilitas)
+
+            // Set content
             tvDeskripsi.text = fasilitas.deskripsi
             tvIsiFasilitasTambahan.text = fasilitas.fasilitasPlus
             tvIsiProsedur.text = fasilitas.prosedurPeminjaman
@@ -95,22 +103,27 @@ class HalamanInformasiActivity : AppCompatActivity() {
             tvIsiAlamat.text = fasilitas.alamat
             tvIsiKontakInfo.text = fasilitas.kontak
 
+            // Handle address click
             tvIsiAlamat.setOnClickListener {
-                try {
-                    // Coba buka dengan URI Google Maps
-                    val gmmIntentUri = Uri.parse(fasilitas.maps)
-                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                    mapIntent.setPackage("com.google.android.apps.maps")
-                    startActivity(mapIntent)
-                } catch (e: ActivityNotFoundException) {
-                    // Jika Google Maps tidak tersedia, buka dengan browser
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(fasilitas.maps))
-                    startActivity(browserIntent)
-                } catch (e: Exception) {
-                    // Tangani kesalahan lainnya
-                    showErrorMessage("Tidak dapat membuka peta: ${e.message}")
-                }
+                openMapsLocation(fasilitas.maps)
             }
+        }
+    }
+
+    private fun openMapsLocation(mapsUrl: String) {
+        try {
+            // Coba buka dengan URI Google Maps
+            val gmmIntentUri = Uri.parse(mapsUrl)
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            startActivity(mapIntent)
+        } catch (e: ActivityNotFoundException) {
+            // Jika Google Maps tidak tersedia, buka dengan browser
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl))
+            startActivity(browserIntent)
+        } catch (e: Exception) {
+            // Tangani kesalahan lainnya
+            showErrorMessage("Tidak dapat membuka peta: ${e.message}")
         }
     }
 
@@ -119,6 +132,8 @@ class HalamanInformasiActivity : AppCompatActivity() {
         binding.recyclerViewJadwalRutin.apply {
             layoutManager = LinearLayoutManager(this@HalamanInformasiActivity)
             adapter = jadwalRutinAdapter
+            // Disable nested scrolling for smoother scrolling
+            isNestedScrollingEnabled = false
         }
     }
 
@@ -143,8 +158,12 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     private fun setupJadwalPeminjamanRecyclerView() {
         peminjamanAdapter = TabelJadwalPeminjamanAdapter(emptyList())
-        binding.recyclerViewJadwalPeminjaman.layoutManager = LinearLayoutManager(this)
-        binding.recyclerViewJadwalPeminjaman.adapter = peminjamanAdapter
+        binding.recyclerViewJadwalPeminjaman.apply {
+            layoutManager = LinearLayoutManager(this@HalamanInformasiActivity)
+            adapter = peminjamanAdapter
+            // Disable nested scrolling for smoother scrolling
+            isNestedScrollingEnabled = false
+        }
     }
 
     private fun observeJadwalPeminjaman() {
@@ -166,13 +185,11 @@ class HalamanInformasiActivity : AppCompatActivity() {
     }
 
     private fun showErrorMessage(message: String) {
-        // Implement this method to show error message to user
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
-        binding.tvNamaFasilitas.setOnClickListener { finish() }
+        // Remove the old click listener for tvNamaFasilitas since it's now in toolbar
     }
-
 }

@@ -3,59 +3,182 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="1dp"
-    app:cardCornerRadius="4dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
     <LinearLayout
-        android:id="@+id/cardJadwal"
-        android:background="@color/white"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvHari"
-            android:layout_width="wrap_content"
+        <!-- Header Row with Day and Time -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Rabu"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/tvWaktu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="08:00 - 11:00"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            <!-- Day Badge -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/day_badge_background"
+                android:padding="8dp"
+                android:gravity="center">
 
-        <TextView
-            android:id="@+id/tvOrganisasi"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="UKM A"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+                <TextView
+                    android:id="@+id/tvHari"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rabu"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textSize="12sp"
+                    android:textColor="@color/green"
+                    android:gravity="center" />
 
-        <TextView
-            android:id="@+id/tvLapangan"
-            android:layout_width="0dp"
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Time Chip -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/time_chip_background_green"
+                android:padding="8dp"
+                android:layout_gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_time"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical"
+                    app:tint="@color/green" />
+
+                <TextView
+                    android:id="@+id/tvWaktu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="08:00 - 11:00"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textSize="11sp"
+                    android:textColor="@color/green" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Content Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Outdoor"
-            android:gravity="center_horizontal"
-            android:fontFamily="@font/montserrat_medium"
-            android:padding="6dp"
-            android:textSize="11sp"/>
+            android:orientation="horizontal">
+
+            <!-- Left Column - Organization -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_organization"
+                        android:layout_marginEnd="6dp"
+                        android:layout_gravity="center_vertical"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Organisasi"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="10sp"
+                        android:textColor="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvOrganisasi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="UKM A"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textSize="13sp"
+                    android:textColor="@color/dark_blue"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="40dp"
+                android:background="@color/light_gray"
+                android:layout_marginHorizontal="8dp" />
+
+            <!-- Right Column - Field -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_field"
+                        android:layout_marginEnd="6dp"
+                        android:layout_gravity="center_vertical"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lapangan"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="10sp"
+                        android:textColor="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvLapangan"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Indoor, Outdoor"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textSize="13sp"
+                    android:textColor="@color/dark_blue"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
+
 </androidx.cardview.widget.CardView>
