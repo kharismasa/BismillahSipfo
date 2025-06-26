@@ -27,9 +27,6 @@
             android:exported="false"
             android:configChanges="orientation|screenSize" />
         <activity
-            android:name=".ui.fragment.riwayat.DetailPeminjamanActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.fragment.peminjaman.HasilPembayaranActivity"
             android:exported="false" />
         <activity

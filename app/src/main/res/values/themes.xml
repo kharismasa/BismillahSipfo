@@ -6,4 +6,11 @@
     </style>
 
     <style name="Theme.BismillahSipfo" parent="Base.Theme.BismillahSipfo" />
+
+    <style name="ToggleButtonStyle" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:backgroundTintMode">@null</item>
+    </style>
 </resources>
