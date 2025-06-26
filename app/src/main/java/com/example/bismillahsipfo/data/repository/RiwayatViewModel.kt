@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bismillahsipfo.adapter.RowRiwayatSelesaiAdapter
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.RiwayatPending
+import com.example.bismillahsipfo.data.model.StatusPembayaran
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -24,12 +25,22 @@ class RiwayatViewModel(
     private val _selesaiRiwayat = MutableLiveData<List<PeminjamanFasilitas>>()
     val selesaiRiwayat: LiveData<List<PeminjamanFasilitas>> = _selesaiRiwayat
 
-    fun loadPendingRiwayat() {
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    private val _errorMessage = MutableLiveData<String>()
+    val errorMessage: LiveData<String> = _errorMessage
+
+    fun loadPendingAndFailedRiwayat() {
         viewModelScope.launch {
             try {
+                _isLoading.postValue(true)
                 val currentUserId = userRepository.getCurrentUserId()
-                val pendingPembayaranList = fasilitasRepository.getPendingPembayaran(currentUserId)
-                val riwayatPendingList = pendingPembayaranList.mapNotNull { pembayaran ->
+
+                // Ambil pembayaran pending dan failed
+                val pendingAndFailedPembayaranList = fasilitasRepository.getPendingAndFailedPembayaran(currentUserId)
+
+                val riwayatPendingList = pendingAndFailedPembayaranList.mapNotNull { pembayaran ->
                     val peminjaman = fasilitasRepository.getPeminjamanByIdPembayaran(pembayaran.idPembayaran)
                     peminjaman?.let {
                         val fasilitas = fasilitasRepository.getFasilitasById(it.idFasilitas)
@@ -39,15 +50,42 @@ class RiwayatViewModel(
                                 tanggalSelesai = it.tanggalSelesai,
                                 namaFasilitas = f.namaFasilitas,
                                 totalBiaya = pembayaran.totalBiaya,
-                                waktuKadaluwarsa = pembayaran.waktuKadaluwarsa
+                                waktuKadaluwarsa = pembayaran.waktuKadaluwarsa,
+                                statusPembayaran = pembayaran.statusPembayaran,
+                                idPembayaran = pembayaran.idPembayaran,
+                                midtransToken = pembayaran.midtransToken,
+                                midtransRedirectUrl = pembayaran.midtransRedirectUrl
                             )
                         }
                     }
                 }
+
                 _pendingRiwayat.postValue(riwayatPendingList)
+                _isLoading.postValue(false)
+
             } catch (e: Exception) {
-                // Handle error
+                Log.e("RiwayatViewModel", "Error loading pending/failed riwayat: ${e.message}")
+                _errorMessage.postValue("Gagal memuat data riwayat")
+                _isLoading.postValue(false)
             }
         }
+    }
+
+    // Fungsi untuk regenerate token midtrans
+    fun regenerateMidtransToken(paymentId: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val result = fasilitasRepository.regenerateMidtransToken(paymentId)
+                callback(result.first, result.second)
+            } catch (e: Exception) {
+                Log.e("RiwayatViewModel", "Error regenerating token: ${e.message}")
+                callback(false, null)
+            }
+        }
+    }
+
+    // Untuk backward compatibility
+    fun loadPendingRiwayat() {
+        loadPendingAndFailedRiwayat()
     }
 }

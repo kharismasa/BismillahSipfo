@@ -7,9 +7,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.animation.ValueAnimator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -69,7 +71,7 @@ class RiwayatFragment : Fragment() {
         setupModernToggleButtons()
         observeViewModel()
 
-        // Menampilkan riwayat pending secara default
+        // Menampilkan riwayat pending/failed secara default
         showPendingRiwayat()
         setModernButtonStyles(isPendingActive = true)
     }
@@ -153,21 +155,48 @@ class RiwayatFragment : Fragment() {
 
     private fun showPendingRiwayat() {
         showLoadingState()
-        viewModel.loadPendingRiwayat()
+        viewModel.loadPendingAndFailedRiwayat() // Updated method call
     }
 
     private fun observeViewModel() {
+        // Observe loading state
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading) {
+                showLoadingState()
+            } else {
+                hideLoadingState()
+            }
+        }
+
+        // Observe error messages
+        viewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
+            if (!errorMessage.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                showEmptyState("Gagal memuat data")
+            }
+        }
+
+        // Observe pending/failed riwayat
         viewModel.pendingRiwayat.observe(viewLifecycleOwner) { pendingList ->
             hideLoadingState()
             if (pendingList.isEmpty()) {
-                showEmptyState("Belum ada riwayat pending")
+                showEmptyState("Belum ada riwayat pending/gagal")
             } else {
                 hideEmptyState()
-                pendingAdapter = RowRiwayatPendingAdapter(pendingList)
+
+                // Create adapter with regenerate token callback
+                pendingAdapter = RowRiwayatPendingAdapter(
+                    riwayatList = pendingList,
+                    onRegenerateToken = { paymentId, callback ->
+                        // Use ViewModel to regenerate token
+                        viewModel.regenerateMidtransToken(paymentId, callback)
+                    }
+                )
                 binding.rvRiwayat.adapter = pendingAdapter
             }
         }
 
+        // Observe selesai riwayat
         viewModel.selesaiRiwayat.observe(viewLifecycleOwner) { selesaiList ->
             hideLoadingState()
             if (selesaiList.isEmpty()) {
@@ -253,6 +282,19 @@ class RiwayatFragment : Fragment() {
     private fun showEmptyState(message: String) {
         binding.rvRiwayat.visibility = View.GONE
         binding.emptyView.visibility = View.VISIBLE
+
+        // Safely update empty message text
+        try {
+            val emptyLinearLayout = binding.emptyView as? LinearLayout
+            val textViews = emptyLinearLayout?.let { layout ->
+                (0 until layout.childCount).mapNotNull { index ->
+                    layout.getChildAt(index) as? TextView
+                }
+            }
+            textViews?.lastOrNull()?.text = message
+        } catch (e: Exception) {
+            Log.d("RiwayatFragment", "Could not update empty state message: ${e.message}")
+        }
     }
 
     private fun hideEmptyState() {
@@ -263,5 +305,13 @@ class RiwayatFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh data when fragment resumes (in case payment status changed)
+        if (isPendingActive) {
+            showPendingRiwayat()
+        }
     }
 }

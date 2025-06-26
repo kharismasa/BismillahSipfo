@@ -17,12 +17,18 @@ import com.example.bismillahsipfo.data.model.Pembayaran
 import com.example.bismillahsipfo.data.model.PeminjamanFasilitas
 import com.example.bismillahsipfo.data.model.RiwayatSelesai
 import com.example.bismillahsipfo.data.model.StatusPembayaran
+import com.example.bismillahsipfo.data.network.ApiService
+import com.example.bismillahsipfo.data.network.RetrofitClient
+import com.google.gson.Gson
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -284,6 +290,81 @@ class FasilitasRepository {
             Log.e("FasilitasRepository", "Error in getPendingPembayaran: ${e.message}")
             Log.e("FasilitasRepository", "Stack trace: ${e.stackTraceToString()}")
             emptyList()
+        }
+    }
+
+    suspend fun getPendingAndFailedPembayaran(idPengguna: Int): List<Pembayaran> {
+        Log.d("FasilitasRepository", "Memulai getPendingAndFailedPembayaran untuk idPengguna: $idPengguna")
+        return try {
+            val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
+                .select(){
+                    filter {
+                        eq("id_pengguna", idPengguna)
+                    }
+                }
+                .decodeList<PeminjamanFasilitas>()
+
+            val idPembayaranList = peminjamanList.map { it.idPembayaran }
+
+            val allPendingAndFailedPembayaran = supabaseClient.from("pembayaran")
+                .select(){
+                    filter {
+                        or {
+                            eq("status_pembayaran", "pending")
+                            eq("status_pembayaran", "failed")
+                        }
+                    }
+                }
+                .decodeList<Pembayaran>()
+
+            // Filter pembayaran berdasarkan idPembayaran yang ada dalam idPembayaranList
+            val result = allPendingAndFailedPembayaran.filter { pembayaran ->
+                idPembayaranList.contains(pembayaran.idPembayaran)
+            }
+
+            Log.d("FasilitasRepository", "getPendingAndFailedPembayaran berhasil. Jumlah data: ${result.size}")
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error in getPendingAndFailedPembayaran: ${e.message}")
+            Log.e("FasilitasRepository", "Stack trace: ${e.stackTraceToString()}")
+            emptyList()
+        }
+    }
+
+    // Method untuk regenerate Midtrans token untuk pembayaran ulang
+    suspend fun regenerateMidtransToken(paymentId: String): Pair<Boolean, String?> {
+        return try {
+            val requestMap = HashMap<String, Any>()
+            requestMap["generate_midtrans_token"] = true
+            requestMap["payment_id"] = paymentId
+
+            val gson = Gson()
+            val jsonString = gson.toJson(requestMap)
+            val requestBody = jsonString.toRequestBody("application/json".toMediaType())
+
+            val apiService = RetrofitClient.createService(ApiService::class.java)
+            val response = apiService.createTransaction(
+                url = "midtrans-sipfo",
+                authHeader = "Bearer ${BuildConfig.API_KEY}",
+                requestBody = requestBody
+            )
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()?.string()
+                if (responseBody != null) {
+                    val jsonResponse = JSONObject(responseBody)
+                    val success = jsonResponse.optBoolean("success", false)
+                    if (success) {
+                        val redirectUrl = jsonResponse.optString("redirect_url", null)
+                        return Pair(true, redirectUrl)
+                    }
+                }
+            }
+
+            Pair(false, null)
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "Error regenerating midtrans token: ${e.message}")
+            Pair(false, null)
         }
     }
 
