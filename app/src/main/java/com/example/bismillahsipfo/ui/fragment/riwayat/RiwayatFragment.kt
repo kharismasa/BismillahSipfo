@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.adapter.RowRiwayatPendingAdapter
 import com.example.bismillahsipfo.adapter.RowRiwayatSelesaiAdapter
@@ -28,6 +29,7 @@ import com.example.bismillahsipfo.data.repository.RiwayatViewModel
 import com.example.bismillahsipfo.data.repository.RiwayatViewModelFactory
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentRiwayatBinding
+import com.example.bismillahsipfo.utils.UserDebugHelper
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -71,9 +73,85 @@ class RiwayatFragment : Fragment() {
         setupModernToggleButtons()
         observeViewModel()
 
+        // Debug user session di fragment ini
+        debugRiwayatData()
+
         // Menampilkan riwayat pending/failed secara default
         showPendingRiwayat()
         setModernButtonStyles(isPendingActive = true)
+    }
+
+    // Method untuk debug riwayat data
+    private fun debugRiwayatData() {
+        Log.d("RiwayatFragment", "🧪 Starting RiwayatFragment debug...")
+
+        // Debug user session
+        UserDebugHelper.debugUserSession(requireContext())
+
+        // Test specific queries yang digunakan di RiwayatFragment
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val userRepository = UserRepository(requireContext())
+                val fasilitasRepository = FasilitasRepository()
+                val currentUserId = userRepository.getCurrentUserId()
+
+                Log.d("RiwayatFragment", "👤 Current User ID: $currentUserId")
+
+                if (currentUserId == -1) {
+                    Log.e("RiwayatFragment", "❌ User ID is -1! Cannot load riwayat data.")
+
+                    if (BuildConfig.DEBUG) {
+                        Toast.makeText(requireContext(),
+                            "⚠️ User not logged in properly!",
+                            Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+
+                // Test 1: Check all user's peminjaman
+                Log.d("RiwayatFragment", "🧪 Test 1: Getting all peminjaman for user $currentUserId")
+                val allUserPeminjaman = fasilitasRepository.getAllPeminjamanForUser(currentUserId)
+                Log.d("RiwayatFragment", "📊 Found ${allUserPeminjaman.size} peminjaman for user")
+
+                // Test 2: Check pending/failed pembayaran
+                Log.d("RiwayatFragment", "🧪 Test 2: Getting pending/failed pembayaran")
+                val pendingPembayaran = fasilitasRepository.getPendingAndFailedPembayaran(currentUserId)
+                Log.d("RiwayatFragment", "📊 Found ${pendingPembayaran.size} pending/failed pembayaran")
+
+                // Test 3: Check success riwayat
+                Log.d("RiwayatFragment", "🧪 Test 3: Getting success riwayat")
+                val successRiwayat = fasilitasRepository.getRiwayatPeminjamanSelesai(currentUserId)
+                Log.d("RiwayatFragment", "📊 Found ${successRiwayat.size} success riwayat")
+
+                // Test 4: Raw queries
+                Log.d("RiwayatFragment", "🧪 Test 4: Running debug user queries")
+                val debugResults = fasilitasRepository.debugUserQueries(currentUserId)
+
+                // Show results in debug mode
+                if (BuildConfig.DEBUG) {
+                    val summary = "Peminjaman: ${allUserPeminjaman.size}, Pending: ${pendingPembayaran.size}, Success: ${successRiwayat.size}"
+                    Toast.makeText(requireContext(), summary, Toast.LENGTH_LONG).show()
+                }
+
+                // Log specific data for analysis
+                allUserPeminjaman.forEach { peminjaman ->
+                    Log.d("RiwayatFragment", "🔍 Peminjaman: ID=${peminjaman.idPeminjaman}, PaymentID=${peminjaman.idPembayaran}, Fasilitas=${peminjaman.idFasilitas}")
+                }
+
+                pendingPembayaran.forEach { pembayaran ->
+                    Log.d("RiwayatFragment", "🔍 Pending Payment: ID=${pembayaran.idPembayaran}, Status=${pembayaran.statusPembayaran}, Amount=${pembayaran.totalBiaya}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("RiwayatFragment", "❌ Error in riwayat debug: ${e.message}", e)
+
+                if (BuildConfig.DEBUG) {
+                    Toast.makeText(requireContext(),
+                        "Debug Error: ${e.message}",
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -154,13 +232,21 @@ class RiwayatFragment : Fragment() {
     }
 
     private fun showPendingRiwayat() {
+        Log.d("RiwayatFragment", "📱 showPendingRiwayat called")
         showLoadingState()
-        viewModel.loadPendingAndFailedRiwayat() // Updated method call
+
+        // Debug log sebelum load
+        if (BuildConfig.DEBUG) {
+            Log.d("RiwayatFragment", "🔄 Loading pending riwayat via ViewModel...")
+        }
+
+        viewModel.loadPendingAndFailedRiwayat()
     }
 
     private fun observeViewModel() {
         // Observe loading state
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            Log.d("RiwayatFragment", "📱 Loading state: $isLoading")
             if (isLoading) {
                 showLoadingState()
             } else {
@@ -170,6 +256,7 @@ class RiwayatFragment : Fragment() {
 
         // Observe error messages
         viewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
+            Log.d("RiwayatFragment", "📱 Error message: $errorMessage")
             if (!errorMessage.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                 showEmptyState("Gagal memuat data")
@@ -178,11 +265,20 @@ class RiwayatFragment : Fragment() {
 
         // Observe pending/failed riwayat
         viewModel.pendingRiwayat.observe(viewLifecycleOwner) { pendingList ->
+            Log.d("RiwayatFragment", "📱 Pending riwayat observed: ${pendingList?.size ?: "null"} items")
+
             hideLoadingState()
-            if (pendingList.isEmpty()) {
+            if (pendingList.isNullOrEmpty()) {
+                Log.d("RiwayatFragment", "📱 Pending list is empty, showing empty state")
                 showEmptyState("Belum ada riwayat pending/gagal")
             } else {
+                Log.d("RiwayatFragment", "📱 Setting up pending adapter with ${pendingList.size} items")
                 hideEmptyState()
+
+                // Log each item for debugging
+                pendingList.forEachIndexed { index, riwayat ->
+                    Log.d("RiwayatFragment", "  [$index] Payment: ${riwayat.idPembayaran}, Fasilitas: ${riwayat.namaFasilitas}, Status: ${riwayat.statusPembayaran}")
+                }
 
                 // Create adapter with regenerate token callback
                 pendingAdapter = RowRiwayatPendingAdapter(
@@ -193,18 +289,32 @@ class RiwayatFragment : Fragment() {
                     }
                 )
                 binding.rvRiwayat.adapter = pendingAdapter
+
+                if (BuildConfig.DEBUG) {
+                    Toast.makeText(requireContext(),
+                        "✅ Loaded ${pendingList.size} pending items",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
         // Observe selesai riwayat
         viewModel.selesaiRiwayat.observe(viewLifecycleOwner) { selesaiList ->
+            Log.d("RiwayatFragment", "📱 Selesai riwayat observed: ${selesaiList?.size ?: "null"} items")
+
             hideLoadingState()
-            if (selesaiList.isEmpty()) {
+            if (selesaiList.isNullOrEmpty()) {
                 showEmptyState("Belum ada riwayat selesai")
             } else {
                 hideEmptyState()
                 selesaiAdapter = RowRiwayatSelesaiAdapter(selesaiList, emptyList())
                 binding.rvRiwayat.adapter = selesaiAdapter
+
+                if (BuildConfig.DEBUG) {
+                    Toast.makeText(requireContext(),
+                        "✅ Loaded ${selesaiList.size} completed items",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

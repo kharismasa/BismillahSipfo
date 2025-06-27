@@ -119,16 +119,6 @@
                 android:paddingBottom="4dp"
                 android:visibility="gone"/>
 
-            <Spinner
-                android:id="@+id/spinner_nama_organisasi"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/spinner_background"
-                android:paddingHorizontal="12dp"
-                android:visibility="gone" />
-
-            <!-- Nama Organisasi - EditText (untuk diluar jadwal rutin) -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -139,6 +129,16 @@
                 android:paddingBottom="4dp"
                 android:visibility="visible"/>
 
+            <Spinner
+                android:id="@+id/spinner_nama_organisasi"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/spinner_background"
+                android:paddingHorizontal="12dp"
+                android:visibility="gone" />
+
+            <!-- Nama Organisasi - EditText (untuk diluar jadwal rutin) -->
             <EditText
                 android:id="@+id/edittext_nama_organisasi"
                 android:layout_width="match_parent"

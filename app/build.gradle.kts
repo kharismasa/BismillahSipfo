@@ -23,12 +23,25 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            buildConfigField("String", "BASE_URL", "\"https://ulxdrgkjbvalhxesibpr.supabase.co\"")
+            buildConfigField("String", "API_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVseGRyZ2tqYnZhbGh4ZXNpYnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTgwOTUsImV4cCI6MjA1NTI5NDA5NX0.r7cDt4eJHFHELtNneP6_Q8SNl_Eg8Vj3GzVOIr9Pmr8\"")
+        }
+
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            // PENTING: Pastikan BuildConfig values sama dengan debug
+            buildConfigField("String", "BASE_URL", "\"https://ulxdrgkjbvalhxesibpr.supabase.co\"")
+            buildConfigField("String", "API_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVseGRyZ2tqYnZhbGh4ZXNpYnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTgwOTUsImV4cCI6MjA1NTI5NDA5NX0.r7cDt4eJHFHELtNneP6_Q8SNl_Eg8Vj3GzVOIr9Pmr8\"")
+
+            // Debugging untuk release build (hapus setelah selesai debugging)
+            isDebuggable = true
         }
     }
     compileOptions {

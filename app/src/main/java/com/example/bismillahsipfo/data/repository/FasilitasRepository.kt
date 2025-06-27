@@ -1,5 +1,6 @@
 package com.example.bismillahsipfo.data.repository
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -19,10 +20,12 @@ import com.example.bismillahsipfo.data.model.RiwayatSelesai
 import com.example.bismillahsipfo.data.model.StatusPembayaran
 import com.example.bismillahsipfo.data.network.ApiService
 import com.example.bismillahsipfo.data.network.RetrofitClient
+import com.example.bismillahsipfo.utils.DebugHelper
 import com.google.gson.Gson
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -45,20 +48,33 @@ class FasilitasRepository {
         install(Storage)
     }
 
+    // Update method getFasilitas dengan logging
     suspend fun getFasilitas(): List<Fasilitas> {
         return try {
+            DebugHelper.logDatabaseQuery("FasilitasRepository", "SELECT", "fasilitas", "Starting query...")
+            DebugHelper.logNetworkRequest("FasilitasRepository", "${BuildConfig.BASE_URL}/rest/v1/fasilitas")
+
             val response = supabaseClient.from("fasilitas")
                 .select()
                 .decodeList<Fasilitas>()
+
+            DebugHelper.logDatabaseQuery("FasilitasRepository", "SELECT", "fasilitas", "Found ${response?.size ?: 0} items")
+            DebugHelper.logNetworkResponse("FasilitasRepository", "fasilitas", true, 200, "Success")
+
             response ?: emptyList()
         } catch (e: Exception) {
+            Log.e("FasilitasRepository", "❌ Error fetching fasilitas: ${e.message}", e)
+            DebugHelper.logNetworkResponse("FasilitasRepository", "fasilitas", false, -1, e.message ?: "Unknown error")
             emptyList()
         }
     }
 
+    // Update method getFasilitasById dengan logging
     suspend fun getFasilitasById(id: Int): Fasilitas? {
         return withContext(Dispatchers.IO) {
             try {
+                DebugHelper.logDatabaseQuery("FasilitasRepository", "SELECT", "fasilitas", "Getting ID: $id")
+
                 val response = supabaseClient.from("fasilitas")
                     .select {
                         filter {
@@ -68,11 +84,18 @@ class FasilitasRepository {
                     }
                     .decodeSingle<Fasilitas>()
 
+                DebugHelper.logDatabaseQuery("FasilitasRepository", "SELECT", "fasilitas", "Found: ${response?.namaFasilitas ?: "null"}")
                 response
             } catch (e: Exception) {
+                Log.e("FasilitasRepository", "❌ Error fetching fasilitas by ID $id: ${e.message}", e)
                 null
             }
         }
+    }
+
+    // Tambahkan method test connectivity
+    fun testConnection(context: Context): Boolean {
+        return DebugHelper.testNetworkConnectivity(context)
     }
 
     suspend fun getJadwalRutinByFasilitasId(fasilitasId: Int): List<JadwalRutinWithOrganisasi> {
@@ -872,4 +895,153 @@ class FasilitasRepository {
             null
         }
     }
+
+    // Method untuk debug - mendapatkan semua peminjaman untuk user tertentu
+    suspend fun getAllPeminjamanForUser(userId: Int): List<PeminjamanFasilitas> {
+        return try {
+            Log.d("FasilitasRepository", "🔍 Getting all peminjaman for user $userId")
+
+            val result = supabaseClient.from("peminjaman_fasilitas")
+                .select() {
+                    filter {
+                        eq("id_pengguna", userId)
+                    }
+                }
+                .decodeList<PeminjamanFasilitas>()
+
+            Log.d("FasilitasRepository", "✅ Found ${result.size} peminjaman for user $userId")
+            result.forEachIndexed { index, peminjaman ->
+                Log.d("FasilitasRepository", "  [$index] ID: ${peminjaman.idPeminjaman}, Payment: ${peminjaman.idPembayaran}, Fasilitas: ${peminjaman.idFasilitas}")
+            }
+
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "❌ Error getting peminjaman for user $userId: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    // Method untuk debug - mendapatkan total count peminjaman
+    suspend fun getTotalPeminjamanCount(): Int {
+        return try {
+            Log.d("FasilitasRepository", "🔍 Getting total peminjaman count")
+
+            val result = supabaseClient.from("peminjaman_fasilitas")
+                .select(columns = Columns.raw("count()"))
+
+            // Untuk count query, kita perlu parsing yang berbeda
+            // Alternatif: ambil semua data dan hitung
+            val allData = supabaseClient.from("peminjaman_fasilitas")
+                .select()
+                .decodeList<PeminjamanFasilitas>()
+
+            Log.d("FasilitasRepository", "✅ Total peminjaman count: ${allData.size}")
+            allData.size
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "❌ Error getting total peminjaman count: ${e.message}", e)
+            0
+        }
+    }
+
+    // Method untuk debug - mendapatkan total count pembayaran
+    suspend fun getTotalPembayaranCount(): Int {
+        return try {
+            Log.d("FasilitasRepository", "🔍 Getting total pembayaran count")
+
+            val allData = supabaseClient.from("pembayaran")
+                .select()
+                .decodeList<Pembayaran>()
+
+            Log.d("FasilitasRepository", "✅ Total pembayaran count: ${allData.size}")
+            allData.forEachIndexed { index, pembayaran ->
+                Log.d("FasilitasRepository", "  [$index] ID: ${pembayaran.idPembayaran}, Status: ${pembayaran.statusPembayaran}, Amount: ${pembayaran.totalBiaya}")
+            }
+
+            allData.size
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "❌ Error getting total pembayaran count: ${e.message}", e)
+            0
+        }
+    }
+
+    // Method untuk debug - mendapatkan semua pembayaran
+    suspend fun getAllPembayaran(): List<Pembayaran> {
+        return try {
+            Log.d("FasilitasRepository", "🔍 Getting all pembayaran")
+
+            val result = supabaseClient.from("pembayaran")
+                .select()
+                .decodeList<Pembayaran>()
+
+            Log.d("FasilitasRepository", "✅ Found ${result.size} pembayaran total")
+            result
+        } catch (e: Exception) {
+            Log.e("FasilitasRepository", "❌ Error getting all pembayaran: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    // Method untuk debug - test query dengan berbagai filter
+    suspend fun debugUserQueries(userId: Int): String {
+        val results = StringBuilder()
+
+        try {
+            // Test 1: Direct peminjaman query
+            val peminjaman = supabaseClient.from("peminjaman_fasilitas")
+                .select() {
+                    filter {
+                        eq("id_pengguna", userId)
+                    }
+                }
+                .decodeList<PeminjamanFasilitas>()
+            results.append("Peminjaman for user $userId: ${peminjaman.size}\n")
+
+            // Test 2: Get payment IDs from peminjaman
+            val paymentIds = peminjaman.map { it.idPembayaran }
+            results.append("Payment IDs from peminjaman: $paymentIds\n")
+
+            // Test 3: Get pembayaran by those IDs
+            if (paymentIds.isNotEmpty()) {
+                val pembayaran = supabaseClient.from("pembayaran")
+                    .select() {
+                        filter {
+                            isIn("id_pembayaran", paymentIds)
+                        }
+                    }
+                    .decodeList<Pembayaran>()
+                results.append("Pembayaran by payment IDs: ${pembayaran.size}\n")
+
+                pembayaran.forEach { p ->
+                    results.append("  - ${p.idPembayaran}: ${p.statusPembayaran}\n")
+                }
+            }
+
+            // Test 4: Check specific status filters
+            val pendingPembayaran = supabaseClient.from("pembayaran")
+                .select() {
+                    filter {
+                        or {
+                            eq("status_pembayaran", "pending")
+                            eq("status_pembayaran", "failed")
+                        }
+                    }
+                }
+                .decodeList<Pembayaran>()
+            results.append("All pending/failed pembayaran: ${pendingPembayaran.size}\n")
+
+            // Test 5: Filter intersection
+            val userPendingPembayaran = pendingPembayaran.filter { pembayaran ->
+                paymentIds.contains(pembayaran.idPembayaran)
+            }
+            results.append("User's pending/failed pembayaran: ${userPendingPembayaran.size}\n")
+
+        } catch (e: Exception) {
+            results.append("Error in debug queries: ${e.message}\n")
+        }
+
+        val resultString = results.toString()
+        Log.d("FasilitasRepository", "🧪 Debug Query Results:\n$resultString")
+        return resultString
+    }
+
 }
