@@ -27,7 +27,6 @@ import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentHomeBinding
 import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
 import com.example.bismillahsipfo.ui.fragment.notification.NotificationActivity
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -152,7 +151,14 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupFasilitasRecyclerView() {
-        binding.rvFasilitas.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        // ✅ PERBAIKAN: Setup horizontal RecyclerView dengan optimasi
+        binding.rvFasilitas.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            // Nonaktifkan nested scrolling untuk performa yang lebih baik
+            isNestedScrollingEnabled = false
+            // Optimalkan untuk item yang memiliki ukuran tetap
+            setHasFixedSize(true)
+        }
 
         // ✅ GUNAKAN viewLifecycleOwner.lifecycleScope - Lifecycle aware
         viewLifecycleOwner.lifecycleScope.launch {
@@ -187,7 +193,17 @@ class HomeFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupJadwalDipinjamRecyclerView() {
-        binding.rvJadwalFasilitas.layoutManager = LinearLayoutManager(requireContext())
+        // ✅ PERBAIKAN: Setup vertical RecyclerView dengan optimasi untuk NestedScrollView
+        binding.rvJadwalFasilitas.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            // PENTING: Nonaktifkan nested scrolling karena parent sudah scrollable
+            isNestedScrollingEnabled = false
+            // Optimalkan untuk item yang memiliki ukuran tidak tetap
+            setHasFixedSize(false)
+            // Nonaktifkan overscroll untuk mencegah konflik dengan parent scroll
+            overScrollMode = View.OVER_SCROLL_NEVER
+        }
+
         jadwalDipinjamAdapter = RowJadwalDipinjamAdapter()
         binding.rvJadwalFasilitas.adapter = jadwalDipinjamAdapter
 
@@ -254,6 +270,9 @@ class HomeFragment : Fragment() {
             FilterType.TOMORROW -> allJadwalList.filter { it.first.tanggalMulai == today.plusDays(1) }
         }
 
+        // ✅ PERBAIKAN: Update current filter type
+        currentFilterType = filterType
+
         jadwalDipinjamAdapter.submitList(filteredList.sortedBy { it.first.tanggalMulai })
 
         if (filteredList.isEmpty()) {
@@ -263,6 +282,9 @@ class HomeFragment : Fragment() {
             binding.imgEmpty.visibility = View.GONE
             binding.rvJadwalFasilitas.visibility = View.VISIBLE
         }
+
+        // ✅ OPTIONAL: Log untuk debugging
+        Log.d("HomeFragment", "Filtered jadwal: ${filteredList.size} items for filter: $filterType")
     }
 
     enum class FilterType {

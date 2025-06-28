@@ -101,9 +101,9 @@ class RiwayatFragment : Fragment() {
                     Log.e("RiwayatFragment", "❌ User ID is -1! Cannot load riwayat data.")
 
                     if (BuildConfig.DEBUG) {
-                        Toast.makeText(requireContext(),
-                            "⚠️ User not logged in properly!",
-                            Toast.LENGTH_LONG).show()
+//                        Toast.makeText(requireContext(),
+//                            "⚠️ User not logged in properly!",
+//                            Toast.LENGTH_LONG).show()
                     }
                     return@launch
                 }
@@ -130,7 +130,7 @@ class RiwayatFragment : Fragment() {
                 // Show results in debug mode
                 if (BuildConfig.DEBUG) {
                     val summary = "Peminjaman: ${allUserPeminjaman.size}, Pending: ${pendingPembayaran.size}, Success: ${successRiwayat.size}"
-                    Toast.makeText(requireContext(), summary, Toast.LENGTH_LONG).show()
+//                    Toast.makeText(requireContext(), summary, Toast.LENGTH_LONG).show()
                 }
 
                 // Log specific data for analysis
@@ -146,9 +146,9 @@ class RiwayatFragment : Fragment() {
                 Log.e("RiwayatFragment", "❌ Error in riwayat debug: ${e.message}", e)
 
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(requireContext(),
-                        "Debug Error: ${e.message}",
-                        Toast.LENGTH_LONG).show()
+//                    Toast.makeText(requireContext(),
+//                        "Debug Error: ${e.message}",
+//                        Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -291,9 +291,9 @@ class RiwayatFragment : Fragment() {
                 binding.rvRiwayat.adapter = pendingAdapter
 
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(requireContext(),
-                        "✅ Loaded ${pendingList.size} pending items",
-                        Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(),
+//                        "✅ Loaded ${pendingList.size} pending items",
+//                        Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -311,9 +311,9 @@ class RiwayatFragment : Fragment() {
                 binding.rvRiwayat.adapter = selesaiAdapter
 
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(requireContext(),
-                        "✅ Loaded ${selesaiList.size} completed items",
-                        Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(requireContext(),
+//                        "✅ Loaded ${selesaiList.size} completed items",
+//                        Toast.LENGTH_SHORT).show()
                 }
             }
         }

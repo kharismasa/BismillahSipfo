@@ -6,14 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".ui.fragment.home.HomeFragment">
 
+    <!-- ✅ TAMBAHKAN NestedScrollView untuk membuat halaman scrollable -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomCoverView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
         <LinearLayout
             android:id="@+id/mainContent"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@color/blue">
 
-            <!-- Image Slider -->
+            <!-- Header Section with User Info and Notification -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -46,6 +57,7 @@
                     android:src="@drawable/ic_notification" />
             </RelativeLayout>
 
+            <!-- Image Slider -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -63,21 +75,23 @@
                     android:src="@drawable/placeholder" />
             </androidx.cardview.widget.CardView>
 
-            <!-- Fasilitas Olahraga UII -->
+            <!-- Main Content Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardFasilitas"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
+                android:layout_marginBottom="20dp"
                 app:cardCornerRadius="30dp"
                 app:cardElevation="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="20dp">
 
+                    <!-- Section: Fasilitas Olahraga -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -86,34 +100,39 @@
                         android:text="Fasilitas Olahraga UII"
                         android:textSize="14sp" />
 
+                    <!-- ✅ RecyclerView Fasilitas - tetap horizontal dengan tinggi fixed -->
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvFasilitas"
                         android:layout_width="match_parent"
                         android:layout_height="158dp"
                         android:orientation="horizontal"
+                        android:nestedScrollingEnabled="false"
                         tools:listitem="@layout/card_fasilitas" />
 
+                    <!-- Section: Jadwal Fasilitas -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"
                         android:fontFamily="@font/poppins_bold"
                         android:text="Jadwal Fasilitas yang Dipinjam"
                         android:textSize="14sp" />
 
+                    <!-- Filter Buttons -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginVertical="5dp"
+                        android:layout_marginVertical="8dp"
                         android:orientation="horizontal">
 
                         <Button
                             android:id="@+id/btnAll"
                             android:layout_width="wrap_content"
                             android:layout_height="35dp"
-                            android:layout_marginRight="5dp"
+                            android:layout_marginEnd="5dp"
                             android:text="All"
-                            android:textSize="9dp"
+                            android:textSize="9sp"
                             android:textColor="@color/blue"
                             app:strokeColor="@color/blue"
                             app:strokeWidth="1dp"
@@ -124,9 +143,9 @@
                             android:id="@+id/btnHariIni"
                             android:layout_width="wrap_content"
                             android:layout_height="35dp"
-                            android:layout_marginRight="5dp"
+                            android:layout_marginEnd="5dp"
                             android:text="Hari ini"
-                            android:textSize="9dp"
+                            android:textSize="9sp"
                             android:textColor="@color/blue"
                             app:strokeColor="@color/blue"
                             app:strokeWidth="1dp"
@@ -138,7 +157,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="35dp"
                             android:text="Besok"
-                            android:textSize="9dp"
+                            android:textSize="9sp"
                             android:textColor="@color/blue"
                             app:strokeColor="@color/blue"
                             app:strokeWidth="1dp"
@@ -146,27 +165,37 @@
                             style="@style/Widget.MaterialComponents.Button"/>
                     </LinearLayout>
 
+                    <!-- Empty State Image -->
                     <ImageView
                         android:id="@+id/imgEmpty"
                         android:visibility="gone"
-                        android:layout_marginTop="30dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="20dp"
                         android:layout_gravity="center"
-                        android:layout_width="150dp"
-                        android:layout_height="150dp"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
                         android:src="@drawable/empty"/>
 
+                    <!-- ✅ RecyclerView Jadwal - PERBAIKAN UTAMA -->
+                    <!-- Menggunakan wrap_content dan minHeight untuk fleksibilitas -->
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvJadwalFasilitas"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginBottom="15dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="200dp"
+                        android:nestedScrollingEnabled="false"
+                        android:overScrollMode="never"
                         tools:listitem="@layout/row_jadwal_dipinjam" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
-        </LinearLayout>
 
-    <!-- Bottom Cover View -->
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Cover View - tetap di bawah -->
     <View
         android:id="@+id/bottomCoverView"
         android:layout_width="match_parent"
@@ -174,4 +203,5 @@
         android:background="@color/white"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

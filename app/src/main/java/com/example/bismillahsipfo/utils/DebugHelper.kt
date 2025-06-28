@@ -27,7 +27,7 @@ object DebugHelper {
 
         // Show toast in debug builds or when debugging is enabled
         if (BuildConfig.DEBUG) {
-            Toast.makeText(context, "Check logs for API info", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "Check logs for API info", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -56,7 +56,7 @@ object DebugHelper {
             Log.d(TAG, "📱 Network connected (API ${Build.VERSION.SDK_INT}): $isConnected")
 
             if (BuildConfig.DEBUG && !isConnected) {
-                Toast.makeText(context, "No network connection!", Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, "No network connection!", Toast.LENGTH_LONG).show()
             }
 
             isConnected
@@ -68,7 +68,7 @@ object DebugHelper {
             Log.d(TAG, "📱 Network connected (Legacy API): $isConnected")
 
             if (BuildConfig.DEBUG && !isConnected) {
-                Toast.makeText(context, "No network connection!", Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, "No network connection!", Toast.LENGTH_LONG).show()
             }
 
             isConnected
@@ -81,7 +81,7 @@ object DebugHelper {
         if (BuildConfig.BASE_URL.isEmpty()) {
             Log.e(TAG, "❌ BASE_URL is empty!")
             if (BuildConfig.DEBUG) {
-                Toast.makeText(context, "BASE_URL is empty!", Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, "BASE_URL is empty!", Toast.LENGTH_LONG).show()
             }
             return
         }
@@ -89,7 +89,7 @@ object DebugHelper {
         if (BuildConfig.API_KEY.isEmpty()) {
             Log.e(TAG, "❌ API_KEY is empty!")
             if (BuildConfig.DEBUG) {
-                Toast.makeText(context, "API_KEY is empty!", Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, "API_KEY is empty!", Toast.LENGTH_LONG).show()
             }
             return
         }
@@ -97,7 +97,7 @@ object DebugHelper {
         Log.d(TAG, "✅ API configuration looks good")
 
         if (BuildConfig.DEBUG) {
-            Toast.makeText(context, "API config OK - Check logs", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "API config OK - Check logs", Toast.LENGTH_SHORT).show()
         }
     }
 }

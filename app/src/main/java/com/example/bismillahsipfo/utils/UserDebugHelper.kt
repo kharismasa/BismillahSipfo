@@ -57,7 +57,7 @@ object UserDebugHelper {
             } else {
                 "✅ User ID: $userId ($userName)"
             }
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+//            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -98,13 +98,13 @@ object UserDebugHelper {
 
             if (BuildConfig.DEBUG) {
                 val summary = "Pending: ${pendingPembayaran.size}, Selesai: ${riwayatSelesai.size}"
-                Toast.makeText(context, summary, Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, summary, Toast.LENGTH_LONG).show()
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error testing user queries: ${e.message}", e)
             if (BuildConfig.DEBUG) {
-                Toast.makeText(context, "Query Error: ${e.message}", Toast.LENGTH_LONG).show()
+//                Toast.makeText(context, "Query Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -122,7 +122,7 @@ object UserDebugHelper {
         }
 
         if (BuildConfig.DEBUG) {
-            Toast.makeText(context, "✅ Simulated login as User $testUserId", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "✅ Simulated login as User $testUserId", Toast.LENGTH_SHORT).show()
         }
 
         // Re-test after simulation
@@ -148,9 +148,9 @@ object UserDebugHelper {
                 Log.d(TAG, "📊 Total Pembayaran in DB: $totalPembayaran")
 
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(context,
-                        "DB: ${allFasilitas.size} fasilitas, $totalPeminjaman peminjaman, $totalPembayaran pembayaran",
-                        Toast.LENGTH_LONG).show()
+//                    Toast.makeText(context,
+//                        "DB: ${allFasilitas.size} fasilitas, $totalPeminjaman peminjaman, $totalPembayaran pembayaran",
+//                        Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {

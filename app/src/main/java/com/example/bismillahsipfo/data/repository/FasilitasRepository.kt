@@ -93,11 +93,6 @@ class FasilitasRepository {
         }
     }
 
-    // Tambahkan method test connectivity
-    fun testConnection(context: Context): Boolean {
-        return DebugHelper.testNetworkConnectivity(context)
-    }
-
     suspend fun getJadwalRutinByFasilitasId(fasilitasId: Int): List<JadwalRutinWithOrganisasi> {
         return try {
             val jadwalRutinList = supabaseClient.from("jadwal_rutin")
@@ -150,7 +145,7 @@ class FasilitasRepository {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getJadwalPeminjaman(fasilitasId: Int): List<JadwalPeminjamanItem> {
         try {
             val peminjamanList = supabaseClient.from("peminjaman_fasilitas")
@@ -160,17 +155,16 @@ class FasilitasRepository {
                     }
                 }
                 .decodeList<PeminjamanFasilitas>()
-    
+
             val pembayaranList = supabaseClient.from("pembayaran")
                 .select()
                 .decodeList<Pembayaran>()
-    
+
             val lapanganDipinjam = supabaseClient.from("lapangan_dipinjam").select().decodeList<LapanganDipinjam>()
             val lapanganList = supabaseClient.from("lapangan").select().decodeList<Lapangan>()
 
             val today = LocalDate.now()
             val resultList = mutableListOf<JadwalPeminjamanItem>()
-
 
             for (peminjaman in peminjamanList) {
                 val pembayaran = pembayaranList.find { it.idPembayaran == peminjaman.idPembayaran }
@@ -179,7 +173,8 @@ class FasilitasRepository {
                     val tanggalSelesai = peminjaman.tanggalSelesai
 
                     if (tanggalSelesai >= today) {
-                        val tanggalRange = tanggalMulai.datesUntil(tanggalSelesai.plusDays(1)).toList()
+                        // ✅ SOLUSI: Manual loop instead of datesUntil()
+                        val tanggalRange = generateDateRange(tanggalMulai, tanggalSelesai)
 
                         val lapanganIds = lapanganDipinjam.filter { it.idPeminjaman == peminjaman.idPeminjaman }.map { it.idLapangan }
                         val namaLapangan = lapanganList.filter { it.idLapangan in lapanganIds }.map { it.namaLapangan }
@@ -205,6 +200,20 @@ class FasilitasRepository {
             e.printStackTrace()
             return emptyList()
         }
+    }
+
+    // ✅ TAMBAHKAN helper function ini di FasilitasRepository
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun generateDateRange(startDate: LocalDate, endDate: LocalDate): List<LocalDate> {
+        val dateList = mutableListOf<LocalDate>()
+        var currentDate = startDate
+
+        while (!currentDate.isAfter(endDate)) {
+            dateList.add(currentDate)
+            currentDate = currentDate.plusDays(1)
+        }
+
+        return dateList
     }
 
     // Get Peminjaman data filtered by status 'SUCCESS' or 'FAILED'
