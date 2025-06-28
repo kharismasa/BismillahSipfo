@@ -3,13 +3,14 @@ package com.example.bismillahsipfo.ui
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
 import com.example.bismillahsipfo.BuildConfig
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.data.repository.FasilitasRepository
@@ -19,7 +20,7 @@ import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
 import com.example.bismillahsipfo.ui.fragment.peminjaman.PeminjamanActivity
 import com.example.bismillahsipfo.utils.DebugHelper
 import com.example.bismillahsipfo.utils.UserDebugHelper
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,6 +28,14 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var currentSelectedItem = R.id.navigation_home
+
+    // Navigation items
+    private lateinit var navHome: LinearLayout
+    private lateinit var navRiwayat: LinearLayout
+    private lateinit var navGamifikasi: LinearLayout
+    private lateinit var navProfile: LinearLayout
+    private lateinit var fabPeminjaman: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,23 +59,116 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Set Toolbar sebagai ActionBar
-        setSupportActionBar(binding.toolbar)
-        val navView: BottomNavigationView = binding.navView
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_riwayat, R.id.navigation_peminjaman, R.id.navigation_gamifikasi, R.id.navigation_profil
-            )
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
-
-        // Setup custom navigation untuk peminjaman
-        setupCustomNavigation(navView)
+        // Setup custom navigation (TANPA TOOLBAR)
+        setupCustomNavigation()
 
         // Check apakah ada intent untuk navigasi ke home
         handleNavigateToHome()
+    }
+
+    private fun setupCustomNavigation() {
+        // Initialize navigation items
+        navHome = findViewById(R.id.nav_home)
+        navRiwayat = findViewById(R.id.nav_riwayat)
+        navGamifikasi = findViewById(R.id.nav_gamifikasi)
+        navProfile = findViewById(R.id.nav_profile)
+        fabPeminjaman = findViewById(R.id.fab_peminjaman)
+
+        // Set default selection (Home)
+        selectNavItem(R.id.navigation_home)
+
+        // Set click listeners
+        navHome.setOnClickListener {
+            navigateToFragment(R.id.navigation_home)
+        }
+
+        navRiwayat.setOnClickListener {
+            navigateToFragment(R.id.navigation_riwayat)
+        }
+
+        navGamifikasi.setOnClickListener {
+            navigateToFragment(R.id.navigation_gamifikasi)
+        }
+
+        navProfile.setOnClickListener {
+            navigateToFragment(R.id.navigation_profil)
+        }
+
+        fabPeminjaman.setOnClickListener {
+            // Navigate to PeminjamanActivity
+            startActivity(Intent(this, PeminjamanActivity::class.java))
+        }
+    }
+
+    private fun navigateToFragment(fragmentId: Int) {
+        if (currentSelectedItem == fragmentId) return
+
+        try {
+            val navController = findNavController(R.id.nav_host_fragment_activity_main)
+            navController.navigate(fragmentId)
+            selectNavItem(fragmentId)
+            currentSelectedItem = fragmentId
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Navigation error: ${e.message}")
+        }
+    }
+
+    private fun selectNavItem(itemId: Int) {
+        // Reset all items to default state
+        resetAllNavItems()
+
+        // Set selected item dengan state management yang proper
+        when (itemId) {
+            R.id.navigation_home -> {
+                setNavItemSelected(navHome, R.id.icon_home, R.id.text_home)
+                navHome.isSelected = true
+            }
+            R.id.navigation_riwayat -> {
+                setNavItemSelected(navRiwayat, R.id.icon_riwayat, R.id.text_riwayat)
+                navRiwayat.isSelected = true
+            }
+            R.id.navigation_gamifikasi -> {
+                setNavItemSelected(navGamifikasi, R.id.icon_gamifikasi, R.id.text_gamifikasi)
+                navGamifikasi.isSelected = true
+            }
+            R.id.navigation_profil -> {
+                setNavItemSelected(navProfile, R.id.icon_profile, R.id.text_profile)
+                navProfile.isSelected = true
+            }
+        }
+    }
+
+    private fun resetAllNavItems() {
+        // Reset semua nav items dan state
+        setNavItemDefault(navHome, R.id.icon_home, R.id.text_home)
+        setNavItemDefault(navRiwayat, R.id.icon_riwayat, R.id.text_riwayat)
+        setNavItemDefault(navGamifikasi, R.id.icon_gamifikasi, R.id.text_gamifikasi)
+        setNavItemDefault(navProfile, R.id.icon_profile, R.id.text_profile)
+
+        navHome.isSelected = false
+        navRiwayat.isSelected = false
+        navGamifikasi.isSelected = false
+        navProfile.isSelected = false
+    }
+
+    private fun setNavItemSelected(container: LinearLayout, iconId: Int, textId: Int) {
+        val icon = container.findViewById<ImageView>(iconId)
+        val text = container.findViewById<TextView>(textId)
+
+        // Apply selected style
+        icon.imageTintList = ContextCompat.getColorStateList(this, R.color.blue)
+        text.setTextColor(ContextCompat.getColor(this, R.color.blue))
+        text.setTypeface(text.typeface, android.graphics.Typeface.BOLD)
+    }
+
+    private fun setNavItemDefault(container: LinearLayout, iconId: Int, textId: Int) {
+        val icon = container.findViewById<ImageView>(iconId)
+        val text = container.findViewById<TextView>(textId)
+
+        // Apply unselected style
+        icon.imageTintList = ContextCompat.getColorStateList(this, R.color.gray)
+        text.setTextColor(ContextCompat.getColor(this, R.color.gray))
+        text.setTypeface(text.typeface, android.graphics.Typeface.NORMAL)
     }
 
     private fun testApiAndUserConfiguration() {
@@ -104,17 +206,17 @@ class MainActivity : AppCompatActivity() {
                         Log.d("MainActivity", "🧪 Debug Results:\n$debugResults")
 
                         if (BuildConfig.DEBUG) {
-                            Toast.makeText(this@MainActivity,
-                                "API OK! Facilities: ${fasilitas.size}. Check logs for user data.",
-                                Toast.LENGTH_LONG).show()
+//                            Toast.makeText(this@MainActivity,
+//                                "API OK! Facilities: ${fasilitas.size}. Check logs for user data.",
+//                                Toast.LENGTH_LONG).show()
                         }
                     } else {
                         Log.e("MainActivity", "❌ User ID is -1! Login session may be corrupted.")
 
                         if (BuildConfig.DEBUG) {
-                            Toast.makeText(this@MainActivity,
-                                "⚠️ User ID is -1! Check login.",
-                                Toast.LENGTH_LONG).show()
+//                            Toast.makeText(this@MainActivity,
+//                                "⚠️ User ID is -1! Check login.",
+//                                Toast.LENGTH_LONG).show()
                         }
                     }
 
@@ -144,7 +246,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupDebugMenu() {
         if (BuildConfig.DEBUG) {
             // Add debug options - bisa dipanggil lewat gesture atau button
-            binding.navView.setOnLongClickListener {
+            fabPeminjaman.setOnLongClickListener {
                 showDebugOptions()
                 true
             }
@@ -185,29 +287,6 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun setupCustomNavigation(navView: BottomNavigationView) {
-        navView.setOnItemSelectedListener { menuItem ->
-            val navController = findNavController(R.id.nav_host_fragment_activity_main)
-
-            when (menuItem.itemId) {
-                R.id.navigation_peminjaman -> {
-                    // Navigate to PeminjamanActivity instead of using navigation
-                    startActivity(Intent(this, PeminjamanActivity::class.java))
-                    false // Don't change selection
-                }
-                else -> {
-                    // Handle other navigation items normally
-                    try {
-                        navController.navigate(menuItem.itemId)
-                        true
-                    } catch (e: Exception) {
-                        false
-                    }
-                }
-            }
-        }
-    }
-
     private fun handleNavigateToHome() {
         val navigateToHome = intent.getBooleanExtra("NAVIGATE_TO_HOME", false)
 
@@ -216,11 +295,7 @@ class MainActivity : AppCompatActivity() {
             intent.removeExtra("NAVIGATE_TO_HOME")
 
             // Navigate to home using NavController
-            val navController = findNavController(R.id.nav_host_fragment_activity_main)
-            navController.navigate(R.id.navigation_home)
-
-            // Set bottom navigation selection
-            binding.navView.selectedItemId = R.id.navigation_home
+            navigateToFragment(R.id.navigation_home)
         }
     }
 

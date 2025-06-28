@@ -103,8 +103,9 @@ class RowRiwayatPendingAdapter(
         holder.btnBayarSekarang.apply {
             isEnabled = true
             text = "Bayar Sekarang"
-//            setBackgroundColor(ContextCompat.getColor(context, R.color.dark_blue))
-            setBackgroundResource(R.color.dark_blue)            setTextColor(ContextCompat.getColor(context, R.color.white))
+            setBackgroundColor(ContextCompat.getColor(context, R.color.dark_blue))
+//            setBackgroundResource(R.color.dark_blue)
+            setTextColor(ContextCompat.getColor(context, R.color.white))
 
             setOnClickListener {
                 handlePaymentButtonClick(riwayat, context)
@@ -123,7 +124,7 @@ class RowRiwayatPendingAdapter(
 
         // Failed message instead of expiry
         holder.tvExp.apply {
-            text = "Pembayaran gagal - Tidak dapat diulang"
+            text = "Pembayaran gagal"
             setTextColor(Color.parseColor("#DC2626"))
         }
 
@@ -132,8 +133,8 @@ class RowRiwayatPendingAdapter(
             isEnabled = false
             text = "Tidak Dapat Diulang"
 
-            setBackgroundResource(R.color.dark_blue) // Will show disabled state
-//            setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+//            setBackgroundResource(R.color.dark_blue) // Will show disabled state
+            setBackgroundColor(ContextCompat.getColor(context, android.R.color.darker_gray))
             setTextColor(ContextCompat.getColor(context, android.R.color.white))
 
             setOnClickListener {

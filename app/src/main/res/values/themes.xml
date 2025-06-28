@@ -2,11 +2,26 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.BismillahSipfo" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/blue</item>
+        <item name="colorPrimaryVariant">@color/dark_blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/light_blue</item>
+        <item name="colorSecondaryVariant">@color/muda_blue</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor">@color/blue</item>
     </style>
 
     <style name="Theme.BismillahSipfo" parent="Base.Theme.BismillahSipfo" />
 
+    <!-- ===== FAB BLUE THEME - SOLUSI UNTUK FAB BIRU ===== -->
+    <style name="FABBlueTheme" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/blue</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+    </style>
+
+    <!-- Existing Styles -->
     <style name="ToggleButtonStyle" parent="Widget.AppCompat.Button.Borderless">
         <item name="android:stateListAnimator">@null</item>
         <item name="android:elevation">0dp</item>
@@ -23,4 +38,85 @@
         <item name="android:stateListAnimator">@null</item>
         <item name="android:elevation">2dp</item>
     </style>
+
+    <!-- ===== CUSTOM NAVIGATION STYLES ===== -->
+
+    <!-- Bottom Navigation Container Style dengan rounded corners -->
+    <style name="BottomNavigationContainer">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:background">@drawable/bottom_nav_background</item>
+<!--        <item name="android:elevation">8dp</item>-->
+        <item name="android:orientation">horizontal</item>
+<!--        <item name="android:paddingTop">8dp</item>-->
+<!--        <item name="android:paddingBottom">8dp</item>-->
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+    </style>
+
+    <!-- Bottom Navigation Item Style -->
+    <style name="BottomNavigationItem">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+<!--        <item name="android:paddingTop">4dp</item>-->
+<!--        <item name="android:paddingBottom">4dp</item>-->
+<!--        <item name="android:paddingLeft">4dp</item>-->
+<!--        <item name="android:paddingRight">4dp</item>-->
+        <item name="android:background">@drawable/nav_item_ripple</item>
+    </style>
+
+    <!-- Navigation Icon Style -->
+    <style name="NavigationIcon">
+        <item name="android:layout_width">26dp</item>
+        <item name="android:layout_height">26dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
+    </style>
+
+    <!-- Navigation Text Style -->
+    <style name="NavigationText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center</item>
+        <item name="android:fontFamily">@font/montserrat_medium</item>
+    </style>
+
+    <!-- FAB Text Style (untuk text "Pinjam") -->
+    <style name="FABText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/blue</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">@font/montserrat_medium</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- Selected Navigation Item (untuk state terpilih) -->
+    <style name="NavigationIcon.Selected" parent="NavigationIcon">
+        <item name="android:tint">@color/blue</item>
+    </style>
+
+    <style name="NavigationText.Selected" parent="NavigationText">
+        <item name="android:textColor">@color/blue</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Unselected Navigation Item (untuk state normal) -->
+    <style name="NavigationIcon.Unselected" parent="NavigationIcon">
+        <item name="android:tint">@color/gray</item>
+    </style>
+
+    <style name="NavigationText.Unselected" parent="NavigationText">
+        <item name="android:textColor">@color/gray</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
 </resources>

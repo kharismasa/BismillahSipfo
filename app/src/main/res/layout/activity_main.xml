@@ -3,45 +3,143 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="@color/white"
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
-
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
-
+    <!-- Fragment Container - Full Screen tanpa toolbar -->
     <fragment
         android:id="@+id/nav_host_fragment_activity_main"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         app:defaultNavHost="true"
-        app:layout_constraintBottom_toTopOf="@id/nav_view"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationContainer"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/mobile_navigation" />
+
+    <!-- Bottom Navigation Container dengan margin -->
+    <FrameLayout
+        android:id="@+id/bottomNavigationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <!-- Custom Bottom Navigation dengan style yang terorganisir -->
+        <LinearLayout
+            style="@style/BottomNavigationContainer"
+            android:layout_height="60dp">
+
+            <!-- Home -->
+            <LinearLayout
+                android:id="@+id/nav_home"
+                style="@style/BottomNavigationItem">
+
+                <ImageView
+                    android:id="@+id/icon_home"
+                    style="@style/NavigationIcon"
+                    android:src="@drawable/ic_home"
+                    app:tint="@color/nav_icon_color_state" />
+
+                <TextView
+                    android:id="@+id/text_home"
+                    style="@style/NavigationText"
+                    android:text="Home"
+                    android:textColor="@color/nav_text_color_state" />
+
+            </LinearLayout>
+
+            <!-- Riwayat -->
+            <LinearLayout
+                android:id="@+id/nav_riwayat"
+                style="@style/BottomNavigationItem">
+
+                <ImageView
+                    android:id="@+id/icon_riwayat"
+                    style="@style/NavigationIcon"
+                    android:src="@drawable/ic_riwayat"
+                    app:tint="@color/nav_icon_color_state" />
+
+                <TextView
+                    android:id="@+id/text_riwayat"
+                    style="@style/NavigationText"
+                    android:text="Riwayat"
+                    android:textColor="@color/nav_text_color_state" />
+
+            </LinearLayout>
+
+            <!-- Space untuk FAB di tengah -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <!-- Gamifikasi -->
+            <LinearLayout
+                android:id="@+id/nav_gamifikasi"
+                style="@style/BottomNavigationItem">
+
+                <ImageView
+                    android:id="@+id/icon_gamifikasi"
+                    style="@style/NavigationIcon"
+                    android:src="@drawable/ic_gamifikasi"
+                    app:tint="@color/nav_icon_color_state" />
+
+                <TextView
+                    android:id="@+id/text_gamifikasi"
+                    style="@style/NavigationText"
+                    android:text="Gamifikasi"
+                    android:textColor="@color/nav_text_color_state" />
+
+            </LinearLayout>
+
+            <!-- Profile -->
+            <LinearLayout
+                android:id="@+id/nav_profile"
+                style="@style/BottomNavigationItem">
+
+                <ImageView
+                    android:id="@+id/icon_profile"
+                    style="@style/NavigationIcon"
+                    android:src="@drawable/ic_profile"
+                    app:tint="@color/nav_icon_color_state" />
+
+                <TextView
+                    android:id="@+id/text_profile"
+                    style="@style/NavigationText"
+                    android:text="Profile"
+                    android:textColor="@color/nav_text_color_state" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_peminjaman"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_add_white"
+            app:backgroundTint="@color/blue"
+            app:backgroundTintMode="src_atop"
+            android:layout_marginBottom="18dp"
+            app:elevation="6dp"
+            app:fabSize="normal"
+            app:rippleColor="@color/light_blue"
+            app:tint="@color/white"
+            android:theme="@style/FABBlueTheme" />
+
+        <!-- Text "Pinjam" di bawah FAB dengan style -->
+        <TextView
+            style="@style/FABText"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="3dp"
+            android:text="Pinjam" />
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
