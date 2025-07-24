@@ -1,5 +1,10 @@
 package com.example.bismillahsipfo.ui.fragment.gamifikasi
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -24,6 +29,7 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
     private val viewModel: GamifikasiViewModel by viewModels {
         GamifikasiViewModelFactory(requireContext())
     }
+    private var isLevelInfoExpanded = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -32,6 +38,82 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
         setupRecyclerView()
         observeViewModel()
         viewModel.loadGamifikasiData()
+        setupExpandableLevel()
+    }
+
+    private fun setupExpandableLevel() {
+        binding.layoutLevelHeader.setOnClickListener {
+            toggleLevelInfo()
+        }
+    }
+
+    private fun toggleLevelInfo() {
+        if (isLevelInfoExpanded) {
+            // Collapse
+            collapseLevelInfo()
+        } else {
+            // Expand
+            expandLevelInfo()
+        }
+        isLevelInfoExpanded = !isLevelInfoExpanded
+    }
+
+    private fun expandLevelInfo() {
+        binding.layoutLevelContent.visibility = View.VISIBLE
+
+        // Animate arrow rotation
+        val rotateAnimator = ObjectAnimator.ofFloat(binding.ivExpandArrow, "rotation", 0f, 180f)
+        rotateAnimator.duration = 300
+
+        // Animate expand
+        val slideAnimator = slideDown(binding.layoutLevelContent)
+
+        val animatorSet = AnimatorSet()
+        animatorSet.playTogether(rotateAnimator, slideAnimator)
+        animatorSet.start()
+    }
+
+    private fun collapseLevelInfo() {
+        // Animate arrow rotation
+        val rotateAnimator = ObjectAnimator.ofFloat(binding.ivExpandArrow, "rotation", 180f, 0f)
+        rotateAnimator.duration = 300
+
+        // Animate collapse
+        val slideAnimator = slideUp(binding.layoutLevelContent)
+
+        val animatorSet = AnimatorSet()
+        animatorSet.playTogether(rotateAnimator, slideAnimator)
+        animatorSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                binding.layoutLevelContent.visibility = View.GONE
+            }
+        })
+        animatorSet.start()
+    }
+
+    private fun slideDown(view: View): ValueAnimator {
+        view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val targetHeight = view.measuredHeight
+
+        view.layoutParams.height = 0
+        val animator = ValueAnimator.ofInt(0, targetHeight)
+        animator.addUpdateListener { animation ->
+            view.layoutParams.height = animation.animatedValue as Int
+            view.requestLayout()
+        }
+        animator.duration = 300
+        return animator
+    }
+
+    private fun slideUp(view: View): ValueAnimator {
+        val initialHeight = view.measuredHeight
+        val animator = ValueAnimator.ofInt(initialHeight, 0)
+        animator.addUpdateListener { animation ->
+            view.layoutParams.height = animation.animatedValue as Int
+            view.requestLayout()
+        }
+        animator.duration = 300
+        return animator
     }
 
     private fun setupRecyclerView() {
