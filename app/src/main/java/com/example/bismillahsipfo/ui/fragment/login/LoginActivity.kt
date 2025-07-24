@@ -60,7 +60,6 @@ class LoginActivity : AppCompatActivity() {
                                 putString("nomor_induk", user.nomorInduk)
                                 putString("status", user.status)
                                 putString("no_telp", user.noTelp)
-                                putInt("id_gamifikasi", user.idGamifikasi)
                                 putString("kartu_identitas", user.kartuIdentitas)
                                 putString("foto_profil", user.fotoProfil)
                                 putBoolean("is_logged_in", true) // Tambahkan ini untuk menyimpan status login

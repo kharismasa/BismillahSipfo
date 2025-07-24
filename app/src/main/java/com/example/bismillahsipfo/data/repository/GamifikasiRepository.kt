@@ -30,25 +30,6 @@ class GamifikasiRepository(private val context: Context) {
         return userRepository.getCurrentUser()
     }
 
-    suspend fun getGamifikasiForUser(user: User?): Gamifikasi? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val response: PostgrestResult = supabase.from("gamifikasi")
-                    .select(Columns.ALL) {
-                        filter {
-                            eq("id_gamifikasi", user!!.idGamifikasi)
-                        }
-                    }
-                val gamifikasi = response.decodeSingle<Gamifikasi>()
-                Log.d("GamifikasiRepository", "Gamifikasi: $gamifikasi")
-                gamifikasi
-            } catch (e: Exception) {
-                Log.e("GamifikasiRepository", "Error getting gamifikasi: ${e.message}")
-                null
-            }
-        }
-    }
-
     suspend fun getTotalPembayaranForUser(user: User): Double {
         return withContext(Dispatchers.IO) {
             try {
@@ -91,6 +72,52 @@ class GamifikasiRepository(private val context: Context) {
         }
     }
 
+    suspend fun getGamifikasiForUser(user: User?): Gamifikasi? {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (user == null) return@withContext null
+
+                // 1. Hitung total pembayaran sukses user
+                val totalPembayaran = getTotalPembayaranForUser(user)
+
+                // 2. Ambil semua level gamifikasi (diurutkan dari level tertinggi ke terendah)
+                val allGamifikasi = supabase.from("gamifikasi")
+                    .select(Columns.ALL) {
+                        order("level", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                    }
+                    .decodeList<Gamifikasi>()
+
+                // 3. Cari level tertinggi yang dapat dicapai user
+                val currentGamifikasi = allGamifikasi.find { gamifikasi ->
+                    totalPembayaran >= gamifikasi.jumlahPeminjamanMinimal
+                } ?: allGamifikasi.lastOrNull() // Jika tidak ada yang memenuhi, ambil level terendah
+
+                Log.d("GamifikasiRepository", "User total pembayaran: $totalPembayaran")
+                Log.d("GamifikasiRepository", "Current level: ${currentGamifikasi?.level}")
+
+                currentGamifikasi
+            } catch (e: Exception) {
+                Log.e("GamifikasiRepository", "Error calculating user gamifikasi: ${e.message}")
+                null
+            }
+        }
+    }
+
+    suspend fun getAllGamifikasiLevels(): List<Gamifikasi> {
+        return withContext(Dispatchers.IO) {
+            try {
+                supabase.from("gamifikasi")
+                    .select(Columns.ALL) {
+                        order("level", io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+                    }
+                    .decodeList<Gamifikasi>()
+            } catch (e: Exception) {
+                Log.e("GamifikasiRepository", "Error getting all gamifikasi levels: ${e.message}")
+                emptyList()
+            }
+        }
+    }
+
     suspend fun getNextLevelGamifikasi(currentGamifikasi: Gamifikasi): Gamifikasi? {
         return withContext(Dispatchers.IO) {
             try {
@@ -121,12 +148,6 @@ class GamifikasiRepository(private val context: Context) {
                 emptyList()
             }
         }
-    }
-
-    // Tambahkan ke file GamifikasiRepository.kt
-    suspend fun getCurrentUserGamifikasi(): Gamifikasi? {
-        val user = getCurrentUser() ?: return null
-        return getGamifikasiForUser(user)
     }
 
 }

@@ -43,16 +43,16 @@ class UserRepository(private val context: Context) {
                 }
                 .decodeList<JsonObject>()
 
-            if (response.isNotEmpty() ) {
+            if (response.isNotEmpty()) {
                 val userData = response[0]
                 User(
                     idPengguna = userData["id_pengguna"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                     email = userData["email"]?.jsonPrimitive?.content ?: "",
+                    password = userData["password"]?.jsonPrimitive?.content?: "",
                     nama = userData["nama"]?.jsonPrimitive?.content ?: "",
                     nomorInduk = userData["nomor_induk"]?.jsonPrimitive?.content ?: "",
                     status = userData["status"]?.jsonPrimitive?.content ?: "",
                     noTelp = userData["no_telp"]?.jsonPrimitive?.content ?: "",
-                    idGamifikasi = userData["id_gamifikasi"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
                     kartuIdentitas = userData["kartu_identitas"]?.jsonPrimitive?.content ?: "",
                     fotoProfil = userData["foto_profil"]?.jsonPrimitive?.content ?: ""
                 )

@@ -465,7 +465,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Jadwal Peminjaman"
+                            android:text="Jadwal Ter-booking"
                             android:fontFamily="@font/poppins_bold"
                             android:textSize="18sp"
                             android:textColor="@color/dark_blue"
