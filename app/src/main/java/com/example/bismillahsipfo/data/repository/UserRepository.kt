@@ -89,6 +89,8 @@ class UserRepository(private val context: Context) {
         }
     }
 
+// Ganti fungsi updateKartuIdentitas yang lama di UserRepository.kt dengan yang ini:
+
     suspend fun updateKartuIdentitas(newUrl: String) {
         try {
             val response = supabase.from("pengguna")
@@ -99,9 +101,20 @@ class UserRepository(private val context: Context) {
                 }
 
             Log.d("UserRepository", "Kartu Identitas Update response: $response")
+
+            // ✅ TAMBAHKAN INI: Update SharedPreferences juga seperti di updateProfilePicture
+            val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
+            with(sharedPreferences.edit()) {
+                putString("kartu_identitas", newUrl) // Update kartu identitas di SharedPreferences
+                apply()
+            }
+
+            Log.d("UserRepository", "Kartu identitas updated successfully in database and SharedPreferences: $newUrl")
+
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e("UserRepository", "Error updating kartu identitas: ${e.message}")
+            throw e // Re-throw exception agar bisa ditangani di Activity
         }
     }
 

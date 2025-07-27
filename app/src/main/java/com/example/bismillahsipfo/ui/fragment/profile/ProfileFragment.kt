@@ -69,4 +69,38 @@ class ProfileFragment : Fragment() {
             requireActivity().finish()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+
+        // ✅ REFRESH data setiap kali user kembali ke fragment
+        refreshUserData()
+    }
+
+    private fun refreshUserData() {
+        val sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", AppCompatActivity.MODE_PRIVATE)
+        val userName = sharedPreferences.getString("nama", "Nama Pengguna")
+        val userProfileImage = sharedPreferences.getString("foto_profil", null)
+
+        // Update nama
+        view?.findViewById<TextView>(R.id.profile_name)?.text = userName
+
+        // Update profile picture
+        val profileImageView = view?.findViewById<ImageView>(R.id.profile_image)
+        if (userProfileImage != null && userProfileImage.isNotEmpty()) {
+            profileImageView?.let { imageView ->
+                Glide.with(this)
+                    .load(userProfileImage)
+                    .placeholder(R.drawable.ic_profile)
+                    .circleCrop()
+                    .into(imageView)
+            }
+        } else {
+            // Set default image jika tidak ada foto profil
+            profileImageView?.setImageResource(R.drawable.ic_profile)
+        }
+
+        Log.d("ProfileFragment", "Data refreshed - Profile image: $userProfileImage")
+    }
+
 }

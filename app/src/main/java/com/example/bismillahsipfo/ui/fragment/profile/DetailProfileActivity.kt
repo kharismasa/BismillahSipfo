@@ -139,6 +139,33 @@ class DetailProfileActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshUserImages() {
+        val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+        val userProfileImage = sharedPreferences.getString("foto_profil", null)
+        val userCardImage = sharedPreferences.getString("kartu_identitas", null)
+
+        // ✅ Refresh profile picture
+        if (userProfileImage != null && userProfileImage.isNotEmpty()) {
+            Log.d("DetailProfile", "Refreshing profile image: $userProfileImage")
+            Glide.with(this)
+                .load(userProfileImage)
+                .transform(CircleCrop())
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .into(binding.ivProfilePicture)
+        }
+
+        // ✅ Refresh kartu identitas
+        if (userCardImage != null && userCardImage.isNotEmpty()) {
+            Log.d("DetailProfile", "Refreshing kartu identitas: $userCardImage")
+            Glide.with(this)
+                .load(userCardImage)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .into(binding.ivKartuIdentitas)
+        }
+    }
+
     private fun setupListeners() {
         // Profile picture edit button
         binding.btnEditProfilePicture.setOnClickListener {
@@ -239,6 +266,12 @@ class DetailProfileActivity : AppCompatActivity() {
                     Toast.makeText(this@DetailProfileActivity, "Beberapa data gagal disimpan", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this@DetailProfileActivity, "Semua perubahan berhasil disimpan", Toast.LENGTH_SHORT).show()
+
+                    // ✅ REFRESH UI sebelum finish untuk memastikan gambar terupdate
+                    refreshUserImages()
+
+                    // Delay sedikit agar user bisa melihat perubahan
+                    kotlinx.coroutines.delay(1000)
                     finish()
                 }
 
@@ -258,11 +291,12 @@ class DetailProfileActivity : AppCompatActivity() {
         oldImageKey: String
     ): String? {
         return try {
-            Log.d("DetailProfile", "Starting upload with delete old to bucket: $bucketName")
+            Log.d("DetailProfile", "🚀 Starting upload with delete old to bucket: $bucketName")
 
             // Get old image URL from SharedPreferences
             val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
             val oldImageUrl = sharedPreferences.getString(oldImageKey, null)
+            Log.d("DetailProfile", "📷 Old image URL: $oldImageUrl")
 
             // Read new file as bytes
             val inputStream: InputStream? = contentResolver.openInputStream(uri)
@@ -270,15 +304,15 @@ class DetailProfileActivity : AppCompatActivity() {
             inputStream?.close()
 
             if (byteArray == null) {
-                Log.e("DetailProfile", "Failed to read file bytes")
+                Log.e("DetailProfile", "❌ Failed to read file bytes")
                 return null
             }
 
-            Log.d("DetailProfile", "New file size: ${byteArray.size} bytes")
+            Log.d("DetailProfile", "📁 New file size: ${byteArray.size} bytes")
 
             // Generate unique filename for new image
             val newFileName = "${filePrefix}${UUID.randomUUID()}.jpg"
-            Log.d("DetailProfile", "Generated new filename: $newFileName")
+            Log.d("DetailProfile", "🆕 Generated new filename: $newFileName")
 
             // Get storage bucket
             val bucket = userRepository.getSupabaseClient().storage.from(bucketName)
@@ -286,31 +320,31 @@ class DetailProfileActivity : AppCompatActivity() {
             // Upload new file first
             bucket.upload(newFileName, byteArray)
             val newPublicUrl = bucket.publicUrl(newFileName)
-            Log.d("DetailProfile", "New image uploaded successfully: $newPublicUrl")
+            Log.d("DetailProfile", "✅ New image uploaded successfully: $newPublicUrl")
 
-            // ✅ DELETE OLD IMAGE if exists
+            // ✅ DELETE OLD IMAGE if exists - GUNAKAN FUNGSI YANG LEBIH ROBUST
             if (!oldImageUrl.isNullOrEmpty()) {
                 try {
-                    val oldFileName = extractFileNameFromUrl(oldImageUrl)
+                    val oldFileName = extractFileNameFromSupabaseUrl(oldImageUrl) // Ganti ke fungsi yang lebih robust
                     if (oldFileName != null) {
-                        Log.d("DetailProfile", "Attempting to delete old image: $oldFileName")
+                        Log.d("DetailProfile", "🗑️ Attempting to delete old image: $oldFileName")
                         bucket.delete(oldFileName)
                         Log.d("DetailProfile", "✅ Old image deleted successfully: $oldFileName")
                     } else {
-                        Log.w("DetailProfile", "Could not extract filename from old URL: $oldImageUrl")
+                        Log.w("DetailProfile", "⚠️ Could not extract filename from old URL: $oldImageUrl")
                     }
                 } catch (deleteError: Exception) {
                     // Don't fail the entire operation if delete fails
                     Log.w("DetailProfile", "⚠️ Failed to delete old image: ${deleteError.message}")
                 }
             } else {
-                Log.d("DetailProfile", "No old image to delete (first upload)")
+                Log.d("DetailProfile", "ℹ️ No old image to delete (first upload)")
             }
 
             newPublicUrl
 
         } catch (e: Exception) {
-            Log.e("DetailProfile", "Upload error for $bucketName: ${e.message}", e)
+            Log.e("DetailProfile", "❌ Upload error for $bucketName: ${e.message}", e)
             Toast.makeText(this, "Gagal upload gambar: ${e.message}", Toast.LENGTH_SHORT).show()
             null
         }
