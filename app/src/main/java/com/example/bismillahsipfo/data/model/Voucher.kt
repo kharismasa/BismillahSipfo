@@ -3,7 +3,6 @@ package com.example.bismillahsipfo.data.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
-import com.example.bismillahsipfo.data.serializer.BigDecimalSerializer
 
 @Serializable
 data class Voucher(

@@ -141,4 +141,31 @@ class UserRepository(private val context: Context) {
         }
     }
 
+    suspend fun updateProfilePicture(newUrl: String) {
+        try {
+            val response = supabase.from("pengguna")
+                .update(mapOf("foto_profil" to newUrl)) {
+                    filter {
+                        eq("id_pengguna", getCurrentUserId()) // Menggunakan ID pengguna yang benar
+                    }
+                }
+
+            Log.d("UserRepository", "Profile Picture Update response: $response")
+
+            // Jika update berhasil, simpan perubahan di SharedPreferences
+            val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
+            with(sharedPreferences.edit()) {
+                putString("foto_profil", newUrl) // Update foto profil di SharedPreferences
+                apply()
+            }
+
+            Log.d("UserRepository", "Profile picture updated successfully in database and SharedPreferences: $newUrl")
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("UserRepository", "Error updating profile picture: ${e.message}")
+            throw e // Re-throw exception agar bisa ditangani di Activity
+        }
+    }
+
 }

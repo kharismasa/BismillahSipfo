@@ -133,7 +133,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Level dalam Gamifikasi Transaksi"
+                        android:text="Keterangan Level Gamifikasi"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/dark_blue" />
@@ -298,7 +298,7 @@
                         android:orientation="vertical"
                         android:background="@drawable/level_card_background"
                         android:padding="12dp"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="32dp">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -330,13 +330,4 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </androidx.cardview.widget.CardView>
-
-    <!-- Bottom Cover View -->
-    <View
-        android:layout_width="0dp"
-        android:layout_height="30dp"
-        android:background="@color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,7 +1,6 @@
 package com.example.bismillahsipfo.data.model
 
 import com.example.bismillahsipfo.data.serializer.InstantSerializer
-import com.example.bismillahsipfo.data.serializer.BigDecimalSerializer
 import com.example.bismillahsipfo.data.serializer.StatusPembayaranSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

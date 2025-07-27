@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -21,20 +22,46 @@ import com.example.bismillahsipfo.databinding.ActivityDetailProfileBinding
 import com.example.bismillahsipfo.ui.fragment.login.LoginActivity
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
-import java.io.File
+import java.io.InputStream
+import java.util.UUID
 
 class DetailProfileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDetailProfileBinding
     private lateinit var userRepository: UserRepository
-    private var selectedImageUri: Uri? = null
 
-    private val getContent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    // Separate URIs for different image types
+    private var selectedProfileImageUri: Uri? = null
+    private var selectedKartuIdentitasUri: Uri? = null
+
+    // Image selection type enum
+    private enum class ImageType {
+        PROFILE_PICTURE,
+        KARTU_IDENTITAS
+    }
+
+    private var currentImageType = ImageType.KARTU_IDENTITAS
+
+    // Activity result launcher for image selection
+    private val getImageContent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            selectedImageUri = result.data?.data
-            selectedImageUri?.let { uri ->
-                Glide.with(this)
-                    .load(uri)
-                    .into(binding.ivKartuIdentitas)
+            result.data?.data?.let { uri ->
+                when (currentImageType) {
+                    ImageType.PROFILE_PICTURE -> {
+                        selectedProfileImageUri = uri
+                        Glide.with(this)
+                            .load(uri)
+                            .transform(CircleCrop())
+                            .into(binding.ivProfilePicture)
+                        Log.d("DetailProfile", "Profile picture selected: $uri")
+                    }
+                    ImageType.KARTU_IDENTITAS -> {
+                        selectedKartuIdentitasUri = uri
+                        Glide.with(this)
+                            .load(uri)
+                            .into(binding.ivKartuIdentitas)
+                        Log.d("DetailProfile", "Kartu identitas selected: $uri")
+                    }
+                }
             }
         }
     }
@@ -45,9 +72,8 @@ class DetailProfileActivity : AppCompatActivity() {
         binding = ActivityDetailProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Cek apakah pengguna sudah login
+        // Check if user is logged in
         if (!isUserLoggedIn()) {
-            // Jika pengguna belum login, arahkan ke LoginActivity
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
             finish()
@@ -83,6 +109,7 @@ class DetailProfileActivity : AppCompatActivity() {
         val userEmail = sharedPreferences.getString("email", "")
         val userProfileImage = sharedPreferences.getString("foto_profil", null)
         val userPhone = sharedPreferences.getString("no_telp", "")
+        val userCardImage = sharedPreferences.getString("kartu_identitas", null)
 
         binding.tvNama.text = userName
         binding.tvEmail.text = userEmail
@@ -90,113 +117,257 @@ class DetailProfileActivity : AppCompatActivity() {
         binding.tvStatus.text = sharedPreferences.getString("status", "")
         binding.tfNoTelp.setText(userPhone)
 
-        if (userProfileImage != null) {
+        // Load profile picture
+        if (userProfileImage != null && userProfileImage.isNotEmpty()) {
+            Log.d("DetailProfile", "Loading profile image: $userProfileImage")
             Glide.with(this)
                 .load(userProfileImage)
                 .transform(CircleCrop())
                 .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
                 .into(binding.ivProfilePicture)
         }
 
-        // Jika data kartu identitas sudah ada di SharedPreferences
-        val userCardImage = sharedPreferences.getString("kartu_identitas", null)
-        if (userCardImage != null) {
+        // Load kartu identitas
+        if (userCardImage != null && userCardImage.isNotEmpty()) {
+            Log.d("DetailProfile", "Loading kartu identitas: $userCardImage")
             Glide.with(this)
                 .load(userCardImage)
                 .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
                 .into(binding.ivKartuIdentitas)
         }
     }
 
     private fun setupListeners() {
-        binding.ivKartuIdentitas.setOnClickListener {
-            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            getContent.launch(intent)
+        // Profile picture edit button
+        binding.btnEditProfilePicture.setOnClickListener {
+            showImageSelectionDialog(ImageType.PROFILE_PICTURE)
         }
 
+        // Kartu identitas click
+        binding.ivKartuIdentitas.setOnClickListener {
+            showImageSelectionDialog(ImageType.KARTU_IDENTITAS)
+        }
+
+        // Save changes button
         binding.btnSimpanPerubahan.setOnClickListener {
             saveChanges()
         }
     }
 
+    private fun showImageSelectionDialog(imageType: ImageType) {
+        val title = when (imageType) {
+            ImageType.PROFILE_PICTURE -> "Pilih Foto Profil"
+            ImageType.KARTU_IDENTITAS -> "Pilih Kartu Identitas"
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage("Pilih gambar dari galeri")
+            .setPositiveButton("Galeri") { _, _ ->
+                openImagePicker(imageType)
+            }
+            .setNegativeButton("Batal", null)
+            .show()
+    }
+
+    private fun openImagePicker(imageType: ImageType) {
+        currentImageType = imageType
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        intent.type = "image/*"
+        getImageContent.launch(intent)
+    }
+
     private fun saveChanges() {
         lifecycleScope.launch {
-            val newNoTelp = binding.tfNoTelp.text.toString()
+            var hasError = false
+            val loadingDialog = createLoadingDialog()
+            loadingDialog.show()
 
-            // Pastikan nomor telepon yang baru diambil dari input
-            if (newNoTelp.isNotEmpty()) {
-                // Mengupdate nomor telepon di Supabase
-                userRepository.updateNoTelp(newNoTelp)
-
-                // Setelah update berhasil, simpan di SharedPreferences
-                val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
-                with(sharedPreferences.edit()) {
-                    putString("no_telp", newNoTelp) // Update nomor telepon di SharedPreferences
-                    apply()
+            try {
+                // Update phone number
+                val newNoTelp = binding.tfNoTelp.text.toString().trim()
+                if (newNoTelp.isNotEmpty()) {
+                    userRepository.updateNoTelp(newNoTelp)
+                    Log.d("DetailProfile", "Phone number updated successfully")
+                } else {
+                    loadingDialog.dismiss()
+                    Toast.makeText(this@DetailProfileActivity, "Nomor telepon tidak boleh kosong", Toast.LENGTH_SHORT).show()
+                    return@launch
                 }
 
-                // Setelah update berhasil, beri feedback ke pengguna
-                Toast.makeText(this@DetailProfileActivity, "Nomor Telepon berhasil diperbarui", Toast.LENGTH_SHORT).show()
-                finish()
-            } else {
-                // Jika nomor telepon kosong, beri peringatan ke pengguna
-                Toast.makeText(this@DetailProfileActivity, "Nomor telepon tidak boleh kosong", Toast.LENGTH_SHORT).show()
-            }
-
-            // Cek jika ada perubahan gambar kartu identitas dan upload ke Supabase
-            selectedImageUri?.let { uri ->
-                val file = File(getRealPathFromURI(uri))
-
-                // Mengonversi file menjadi ByteArray
-                val byteArray = file.readBytes()
-                val fileName = "kartu_identitas_${System.currentTimeMillis()}.jpg" // Nama file unik berdasarkan waktu
-
-                // Upload ke bucket "Kartu Identitas"
-                val bucket = userRepository.getSupabaseClient().storage.from("Kartu Identitas")
-
-                try {
-                    // Ambil URL gambar lama dari SharedPreferences
-                    val oldImageUrl = getSharedPreferences("UserPrefs", MODE_PRIVATE)
-                        .getString("kartu_identitas", null)
-
-                    oldImageUrl?.let {
-                        val oldFileName = it.substringAfterLast("/")
-
-                        // Menggantikan file lama dengan yang baru menggunakan update()
-                        bucket.update(oldFileName, byteArray) {
-                            // Gambar yang baru akan menggantikan gambar yang lama
-                        }
-
-                        Log.d("DetailProfileActivity", "Gambar lama digantikan dengan: $oldFileName")
+                // ✅ UPLOAD PROFILE PICTURE WITH DELETE OLD
+                selectedProfileImageUri?.let { uri ->
+                    Log.d("DetailProfile", "Uploading profile picture...")
+                    val profileUploadResult = uploadImageWithDeleteOld(
+                        uri = uri,
+                        bucketName = "Foto Profil",
+                        filePrefix = "profile_",
+                        oldImageKey = "foto_profil"
+                    )
+                    if (profileUploadResult != null) {
+                        userRepository.updateProfilePicture(profileUploadResult)
+                        Log.d("DetailProfile", "Profile picture updated successfully: $profileUploadResult")
+                    } else {
+                        hasError = true
+                        Log.e("DetailProfile", "Failed to upload profile picture")
                     }
-
-                    // Setelah mengganti gambar, ambil URL publik file setelah di-upload
-                    val publicUrl = bucket.publicUrl(fileName)
-
-                    // Simpan URL gambar baru ke Supabase di kolom "kartu_identitas"
-                    userRepository.updateKartuIdentitas(publicUrl)
-
-                    Toast.makeText(this@DetailProfileActivity, "Kartu Identitas berhasil diupdate", Toast.LENGTH_SHORT).show()
-
                 }
-                catch (e: Exception) {
-                    // Tangani error
-                    Log.e("DetailProfileActivity", "Terjadi kesalahan saat mengupload: ${e.message}")
-                    Toast.makeText(this@DetailProfileActivity, "Terjadi kesalahan saat mengupload", Toast.LENGTH_SHORT).show()
+
+                // ✅ UPLOAD KARTU IDENTITAS WITH DELETE OLD
+                selectedKartuIdentitasUri?.let { uri ->
+                    Log.d("DetailProfile", "Uploading kartu identitas...")
+                    val kartuUploadResult = uploadImageWithDeleteOld(
+                        uri = uri,
+                        bucketName = "Kartu Identitas",
+                        filePrefix = "kartu_",
+                        oldImageKey = "kartu_identitas"
+                    )
+                    if (kartuUploadResult != null) {
+                        userRepository.updateKartuIdentitas(kartuUploadResult)
+                        Log.d("DetailProfile", "Kartu identitas updated successfully: $kartuUploadResult")
+                    } else {
+                        hasError = true
+                        Log.e("DetailProfile", "Failed to upload kartu identitas")
+                    }
                 }
+
+                loadingDialog.dismiss()
+
+                if (hasError) {
+                    Toast.makeText(this@DetailProfileActivity, "Beberapa data gagal disimpan", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@DetailProfileActivity, "Semua perubahan berhasil disimpan", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+
+            } catch (e: Exception) {
+                loadingDialog.dismiss()
+                Log.e("DetailProfile", "Error saving changes: ${e.message}", e)
+                Toast.makeText(this@DetailProfileActivity, "Terjadi kesalahan: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-
-            // Menutup activity setelah semua perubahan berhasil disimpan
-            finish()
         }
     }
 
-    private fun getRealPathFromURI(uri: Uri): String {
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.moveToFirst()
-        val idx = cursor?.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
-        val result = cursor?.getString(idx ?: 0)
-        cursor?.close()
-        return result ?: ""
+    // ✅ NEW FUNCTION: Upload image and delete old one
+    private suspend fun uploadImageWithDeleteOld(
+        uri: Uri,
+        bucketName: String,
+        filePrefix: String,
+        oldImageKey: String
+    ): String? {
+        return try {
+            Log.d("DetailProfile", "Starting upload with delete old to bucket: $bucketName")
+
+            // Get old image URL from SharedPreferences
+            val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+            val oldImageUrl = sharedPreferences.getString(oldImageKey, null)
+
+            // Read new file as bytes
+            val inputStream: InputStream? = contentResolver.openInputStream(uri)
+            val byteArray = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (byteArray == null) {
+                Log.e("DetailProfile", "Failed to read file bytes")
+                return null
+            }
+
+            Log.d("DetailProfile", "New file size: ${byteArray.size} bytes")
+
+            // Generate unique filename for new image
+            val newFileName = "${filePrefix}${UUID.randomUUID()}.jpg"
+            Log.d("DetailProfile", "Generated new filename: $newFileName")
+
+            // Get storage bucket
+            val bucket = userRepository.getSupabaseClient().storage.from(bucketName)
+
+            // Upload new file first
+            bucket.upload(newFileName, byteArray)
+            val newPublicUrl = bucket.publicUrl(newFileName)
+            Log.d("DetailProfile", "New image uploaded successfully: $newPublicUrl")
+
+            // ✅ DELETE OLD IMAGE if exists
+            if (!oldImageUrl.isNullOrEmpty()) {
+                try {
+                    val oldFileName = extractFileNameFromUrl(oldImageUrl)
+                    if (oldFileName != null) {
+                        Log.d("DetailProfile", "Attempting to delete old image: $oldFileName")
+                        bucket.delete(oldFileName)
+                        Log.d("DetailProfile", "✅ Old image deleted successfully: $oldFileName")
+                    } else {
+                        Log.w("DetailProfile", "Could not extract filename from old URL: $oldImageUrl")
+                    }
+                } catch (deleteError: Exception) {
+                    // Don't fail the entire operation if delete fails
+                    Log.w("DetailProfile", "⚠️ Failed to delete old image: ${deleteError.message}")
+                }
+            } else {
+                Log.d("DetailProfile", "No old image to delete (first upload)")
+            }
+
+            newPublicUrl
+
+        } catch (e: Exception) {
+            Log.e("DetailProfile", "Upload error for $bucketName: ${e.message}", e)
+            Toast.makeText(this, "Gagal upload gambar: ${e.message}", Toast.LENGTH_SHORT).show()
+            null
+        }
+    }
+
+    // ✅ HELPER FUNCTION: Extract filename from Supabase URL
+    private fun extractFileNameFromUrl(url: String): String? {
+        return try {
+            // Supabase storage URL format:
+            // https://project.supabase.co/storage/v1/object/public/bucket-name/filename.ext
+            val parts = url.split("/")
+            if (parts.isNotEmpty()) {
+                parts.last() // Get the last part which should be the filename
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("DetailProfile", "Error extracting filename from URL: $url", e)
+            null
+        }
+    }
+
+    // ✅ ALTERNATIVE HELPER: More robust filename extraction
+    private fun extractFileNameFromSupabaseUrl(url: String): String? {
+        return try {
+            // Handle various Supabase URL formats
+            when {
+                url.contains("/storage/v1/object/public/") -> {
+                    // Standard Supabase public URL
+                    val publicIndex = url.indexOf("/storage/v1/object/public/")
+                    val afterPublic = url.substring(publicIndex + "/storage/v1/object/public/".length)
+                    val bucketAndFile = afterPublic.substringAfter("/") // Remove bucket name
+                    bucketAndFile
+                }
+                url.contains("/object/public/") -> {
+                    // Alternative format
+                    val publicIndex = url.indexOf("/object/public/")
+                    val afterPublic = url.substring(publicIndex + "/object/public/".length)
+                    val bucketAndFile = afterPublic.substringAfter("/")
+                    bucketAndFile
+                }
+                else -> {
+                    // Fallback: just get the last part of URL
+                    url.substringAfterLast("/")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DetailProfile", "Error extracting filename from Supabase URL: $url", e)
+            null
+        }
+    }
+
+    private fun createLoadingDialog(): AlertDialog {
+        return AlertDialog.Builder(this)
+            .setTitle("Menyimpan Perubahan")
+            .setMessage("Sedang mengupload gambar dan menyimpan data...")
+            .setCancelable(false)
+            .create()
     }
 }
