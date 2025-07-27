@@ -152,6 +152,7 @@
                     android:id="@+id/layoutLevelContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:paddingBottom="20dp"
                     android:orientation="vertical"
                     android:visibility="gone">
 
@@ -298,7 +299,7 @@
                         android:orientation="vertical"
                         android:background="@drawable/level_card_background"
                         android:padding="12dp"
-                        android:layout_marginBottom="32dp">
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -319,10 +320,11 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Selamat! Kamu berada di level tertinggi. Pertahankan dominasimu!"
+                            android:text="Selamat! kamu berada di level tertinggi."
                             android:textSize="12sp"
                             android:textColor="#333333"
                             android:layout_marginTop="4dp" />
+
                     </LinearLayout>
 
                 </LinearLayout>

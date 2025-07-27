@@ -7,6 +7,9 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -14,7 +17,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.example.bismillahsipfo.R
 import com.example.bismillahsipfo.adapter.TabelJadwalRutinAdapter
 import com.example.bismillahsipfo.data.model.Fasilitas
@@ -23,6 +25,7 @@ import com.example.bismillahsipfo.data.repository.JadwalDipinjamViewModel
 import com.example.bismillahsipfo.data.repository.JadwalRutinViewModel
 import com.example.bismillahsipfo.databinding.ActivityHalamanInformasiBinding
 import com.example.bismillahsipfo.ui.adapter.TabelJadwalPeminjamanAdapter
+import com.example.bismillahsipfo.ui.fragment.peminjaman.PeminjamanActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +39,15 @@ class HalamanInformasiActivity : AppCompatActivity() {
     private lateinit var peminjamanAdapter: TabelJadwalPeminjamanAdapter
     private val jadwalDipinjamViewModel: JadwalDipinjamViewModel by viewModels()
 
+    // Variables to track expand/collapse state
+    private var isJadwalPeminjamanExpanded = true // Default expanded
+    private var isJadwalRutinExpanded = false
+    private var isDeskripsiExpanded = false
+    private var isAturanExpanded = false
+    private var isKontakExpanded = false
+
+    private var currentFasilitasId = -1
+
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +57,8 @@ class HalamanInformasiActivity : AppCompatActivity() {
         fasilitasRepository = FasilitasRepository()
 
         val fasilitasId = intent.getIntExtra("FASILITAS_ID", -1)
+        currentFasilitasId = fasilitasId
+
         if (fasilitasId != -1) {
             // Load dan tampilkan informasi fasilitas berdasarkan fasilitasId
             loadFasilitasInfo(fasilitasId)
@@ -56,10 +70,79 @@ class HalamanInformasiActivity : AppCompatActivity() {
         }
 
         setupClickListeners()
+        setupExpandableCards()
         setupJadwalRutinRecyclerView()
         observeJadwalRutin()
         setupJadwalPeminjamanRecyclerView()
         observeJadwalPeminjaman()
+    }
+
+    private fun setupExpandableCards() {
+        // Set initial states based on default expansion
+        updateCardState(binding.contentJadwalPeminjaman, binding.iconJadwalPeminjaman, isJadwalPeminjamanExpanded)
+        updateCardState(binding.contentJadwalRutin, binding.iconJadwalRutin, isJadwalRutinExpanded)
+        updateCardState(binding.contentDeskripsi, binding.iconDeskripsi, isDeskripsiExpanded)
+        updateCardState(binding.contentAturan, binding.iconAturan, isAturanExpanded)
+        updateCardState(binding.contentKontak, binding.iconKontak, isKontakExpanded)
+
+        // Setup click listeners for expandable headers
+        binding.headerJadwalPeminjaman.setOnClickListener {
+            isJadwalPeminjamanExpanded = !isJadwalPeminjamanExpanded
+            toggleCard(binding.contentJadwalPeminjaman, binding.iconJadwalPeminjaman, isJadwalPeminjamanExpanded)
+        }
+
+        binding.headerJadwalRutin.setOnClickListener {
+            isJadwalRutinExpanded = !isJadwalRutinExpanded
+            toggleCard(binding.contentJadwalRutin, binding.iconJadwalRutin, isJadwalRutinExpanded)
+        }
+
+        binding.headerDeskripsi.setOnClickListener {
+            isDeskripsiExpanded = !isDeskripsiExpanded
+            toggleCard(binding.contentDeskripsi, binding.iconDeskripsi, isDeskripsiExpanded)
+        }
+
+        binding.headerAturan.setOnClickListener {
+            isAturanExpanded = !isAturanExpanded
+            toggleCard(binding.contentAturan, binding.iconAturan, isAturanExpanded)
+        }
+
+        binding.headerKontak.setOnClickListener {
+            isKontakExpanded = !isKontakExpanded
+            toggleCard(binding.contentKontak, binding.iconKontak, isKontakExpanded)
+        }
+    }
+
+    private fun toggleCard(content: LinearLayout, icon: ImageView, isExpanded: Boolean) {
+        if (isExpanded) {
+            // Expand
+            content.visibility = View.VISIBLE
+            rotateIcon(icon, 0f, 180f)
+        } else {
+            // Collapse
+            content.visibility = View.GONE
+            rotateIcon(icon, 180f, 0f)
+        }
+    }
+
+    private fun updateCardState(content: LinearLayout, icon: ImageView, isExpanded: Boolean) {
+        if (isExpanded) {
+            content.visibility = View.VISIBLE
+            icon.rotation = 180f
+        } else {
+            content.visibility = View.GONE
+            icon.rotation = 0f
+        }
+    }
+
+    private fun rotateIcon(icon: ImageView, fromDegrees: Float, toDegrees: Float) {
+        val rotate = RotateAnimation(
+            fromDegrees, toDegrees,
+            Animation.RELATIVE_TO_SELF, 0.5f,
+            Animation.RELATIVE_TO_SELF, 0.5f
+        )
+        rotate.duration = 200
+        rotate.fillAfter = true
+        icon.startAnimation(rotate)
     }
 
     private fun loadFasilitasInfo(fasilitasId: Int) {
@@ -190,6 +273,24 @@ class HalamanInformasiActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { finish() }
-        // Remove the old click listener for tvNamaFasilitas since it's now in toolbar
+
+        // Setup booking button click listener
+        binding.btnBookingSekarang.setOnClickListener {
+            navigateToPeminjamanActivity()
+        }
+    }
+
+    private fun navigateToPeminjamanActivity() {
+        try {
+            val intent = Intent(this, PeminjamanActivity::class.java)
+            // Pass fasilitas ID if needed for pre-selection in booking form
+            if (currentFasilitasId != -1) {
+                intent.putExtra("FASILITAS_ID", currentFasilitasId)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("HalamanInformasiActivity", "Error navigating to PeminjamanActivity: ${e.message}")
+            showErrorMessage("Tidak dapat membuka halaman peminjaman")
+        }
     }
 }
