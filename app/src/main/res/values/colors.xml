@@ -8,6 +8,7 @@
     <color name="yellow">#b5b016</color>
 
     <!-- Primary Colors -->
+    <color name="lighter_blue">#EDF3FF</color>
     <color name="light_blue">#e3f0ff</color>
     <color name="muda_blue">#69A8FF</color>
     <color name="blue">#208bff</color>
@@ -34,5 +35,21 @@
     <!-- Card Colors -->
     <color name="card_background">#FFFFFF</color>
     <color name="card_stroke">#E0E0E0</color>
+
+    <!-- Additional colors for search and filter -->
+    <color name="search_background">#FFFFFF</color>
+    <color name="filter_chip_background">#E3F2FD</color>
+    <color name="filter_chip_selected">#2196F3</color>
+    <color name="filter_chip_text">#1976D2</color>
+    <color name="divider_color">#E0E0E0</color>
+    <color name="hint_text_color">#9E9E9E</color>
+
+    <!-- Search result highlight -->
+    <color name="search_highlight">#FFEB3B</color>
+    <color name="search_highlight_transparent">#44FFEB3B</color>
+
+    <!-- Empty state colors -->
+    <color name="empty_state_icon">#BDBDBD</color>
+    <color name="empty_state_text">#9E9E9E</color>
 
 </resources>

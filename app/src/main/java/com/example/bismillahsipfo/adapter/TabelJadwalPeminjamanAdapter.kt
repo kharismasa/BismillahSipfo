@@ -12,8 +12,10 @@ import com.example.bismillahsipfo.data.model.JadwalPeminjamanItem
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjamanItem>) :
-    RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
+class TabelJadwalPeminjamanAdapter(
+    private var originalJadwalList: List<JadwalPeminjamanItem>,
+    private var filteredJadwalList: List<JadwalPeminjamanItem> = originalJadwalList
+) : RecyclerView.Adapter<TabelJadwalPeminjamanAdapter.JadwalViewHolder>() {
 
     inner class JadwalViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTanggal: TextView = view.findViewById(R.id.tvTanggal)
@@ -31,7 +33,7 @@ class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjaman
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: JadwalViewHolder, position: Int) {
-        val item = jadwalList[position]
+        val item = filteredJadwalList[position]
         val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("id"))
         holder.tvTanggal.text = item.tanggal.format(dateFormatter)
         holder.tvHari.text = item.tanggal.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale("id"))
@@ -40,11 +42,37 @@ class TabelJadwalPeminjamanAdapter(private var jadwalList: List<JadwalPeminjaman
         holder.tvLapangan.text = item.namaLapangan.joinToString(", ")
     }
 
-    override fun getItemCount(): Int = jadwalList.size
+    override fun getItemCount(): Int = filteredJadwalList.size
 
+    /**
+     * Update data dengan list baru
+     */
     fun updateData(newData: List<JadwalPeminjamanItem>) {
-        jadwalList = newData
+        originalJadwalList = newData
+        filteredJadwalList = newData
+        notifyDataSetChanged()
+    }
+
+    /**
+     * Update filtered data (untuk hasil search/filter)
+     */
+    fun updateFilteredData(filteredList: List<JadwalPeminjamanItem>) {
+        filteredJadwalList = filteredList
+        notifyDataSetChanged()
+    }
+
+    /**
+     * Get original data (untuk filter operations)
+     */
+    fun getOriginalData(): List<JadwalPeminjamanItem> {
+        return originalJadwalList
+    }
+
+    /**
+     * Reset filter (show all data)
+     */
+    fun resetFilter() {
+        filteredJadwalList = originalJadwalList
         notifyDataSetChanged()
     }
 }
-

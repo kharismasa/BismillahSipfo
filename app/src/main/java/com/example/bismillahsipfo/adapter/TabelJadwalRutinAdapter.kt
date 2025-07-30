@@ -6,8 +6,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.bismillahsipfo.data.model.JadwalRutinWithOrganisasi
 import com.example.bismillahsipfo.databinding.TabelJadwalRutinBinding
 
-class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutinWithOrganisasi>) :
-    RecyclerView.Adapter<TabelJadwalRutinAdapter.ViewHolder>() {
+class TabelJadwalRutinAdapter(
+    private var originalJadwalRutinList: List<JadwalRutinWithOrganisasi>,
+    private var filteredJadwalRutinList: List<JadwalRutinWithOrganisasi> = originalJadwalRutinList
+) : RecyclerView.Adapter<TabelJadwalRutinAdapter.ViewHolder>() {
 
     class ViewHolder(private val binding: TabelJadwalRutinBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(jadwalRutinWithOrganisasi: JadwalRutinWithOrganisasi) {
@@ -25,13 +27,40 @@ class TabelJadwalRutinAdapter(private var jadwalRutinList: List<JadwalRutinWithO
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(jadwalRutinList[position])
+        holder.bind(filteredJadwalRutinList[position])
     }
 
-    override fun getItemCount() = jadwalRutinList.size
+    override fun getItemCount() = filteredJadwalRutinList.size
 
+    /**
+     * Update data dengan list baru
+     */
     fun updateData(newList: List<JadwalRutinWithOrganisasi>) {
-        jadwalRutinList = newList
+        originalJadwalRutinList = newList
+        filteredJadwalRutinList = newList
+        notifyDataSetChanged()
+    }
+
+    /**
+     * Update filtered data (untuk hasil search/filter)
+     */
+    fun updateFilteredData(filteredList: List<JadwalRutinWithOrganisasi>) {
+        filteredJadwalRutinList = filteredList
+        notifyDataSetChanged()
+    }
+
+    /**
+     * Get original data (untuk filter operations)
+     */
+    fun getOriginalData(): List<JadwalRutinWithOrganisasi> {
+        return originalJadwalRutinList
+    }
+
+    /**
+     * Reset filter (show all data)
+     */
+    fun resetFilter() {
+        filteredJadwalRutinList = originalJadwalRutinList
         notifyDataSetChanged()
     }
 }

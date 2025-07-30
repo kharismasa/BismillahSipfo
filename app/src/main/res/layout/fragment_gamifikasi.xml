@@ -90,15 +90,19 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- ✅ PERBAIKAN: Tambahkan fillViewport dan ubah struktur -->
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="30dp">
+                android:padding="30dp"
+                android:paddingBottom="40dp">
 
                 <!-- Voucher Diskon -->
                 <TextView
@@ -114,6 +118,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
+                    android:nestedScrollingEnabled="false"
                     tools:listitem="@layout/row_diskon" />
 
                 <!-- Keterangan Level - Expandable -->
@@ -147,7 +152,7 @@
                         app:tint="@color/dark_blue" />
                 </LinearLayout>
 
-                <!-- Expandable Content -->
+                <!-- ✅ PERBAIKAN: Expandable Content dengan struktur yang lebih baik -->
                 <LinearLayout
                     android:id="@+id/layoutLevelContent"
                     android:layout_width="match_parent"
@@ -157,175 +162,224 @@
                     android:visibility="gone">
 
                     <!-- Level 1 - Pemula -->
-                    <LinearLayout
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/level_card_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/lighter_blue">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Level 1 – Pemula 💸"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/dark_blue" />
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksi: Rp 0+"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
-                            android:layout_marginTop="2dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Level 1 – Pemula 💸"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/dark_blue" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🔓 Baru mulai? Semua perjalanan dimulai dari sini!"
-                            android:textSize="12sp"
-                            android:textColor="#333333"
-                            android:layout_marginTop="4dp" />
-                    </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksi: Rp 0+"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:layout_marginTop="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🔓 Baru mulai? Semua perjalanan dimulai dari sini!"
+                                android:textSize="12sp"
+                                android:textColor="#333333"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
 
                     <!-- Level 2 - Aktif -->
-                    <LinearLayout
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/level_card_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/lighter_blue">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Level 2 – Aktif 🚀"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/dark_blue" />
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksi: ≥ Rp 500.000"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
-                            android:layout_marginTop="2dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Level 2 – Aktif 🚀"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/dark_blue" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Kamu mulai bergerak! Terus tingkatkan transaksi untuk naik level."
-                            android:textSize="12sp"
-                            android:textColor="#333333"
-                            android:layout_marginTop="4dp" />
-                    </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksi: ≥ Rp 500.000"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:layout_marginTop="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Kamu mulai bergerak! Terus tingkatkan transaksi untuk naik level."
+                                android:textSize="12sp"
+                                android:textColor="#333333"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
 
                     <!-- Level 3 - Progresif -->
-                    <LinearLayout
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/level_card_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/lighter_blue">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Level 3 – Progresif 🔥"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/dark_blue" />
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksi: ≥ Rp 1.000.000"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
-                            android:layout_marginTop="2dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Level 3 – Progresif 🔥"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/dark_blue" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksimu makin stabil! Tinggal selangkah menuju elite."
-                            android:textSize="12sp"
-                            android:textColor="#333333"
-                            android:layout_marginTop="4dp" />
-                    </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksi: ≥ Rp 1.000.000"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:layout_marginTop="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksimu makin stabil! Tinggal selangkah menuju elite."
+                                android:textSize="12sp"
+                                android:textColor="#333333"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
 
                     <!-- Level 4 - Expert -->
-                    <LinearLayout
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/level_card_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/lighter_blue">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Level 4 – Expert ⚡"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/dark_blue" />
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksi: ≥ Rp 2.000.000"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
-                            android:layout_marginTop="2dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Level 4 – Expert ⚡"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/dark_blue" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hebat! Kamu hampir mencapai puncak. Terus konsisten!"
-                            android:textSize="12sp"
-                            android:textColor="#333333"
-                            android:layout_marginTop="4dp" />
-                    </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksi: ≥ Rp 2.000.000"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:layout_marginTop="2dp" />
 
-                    <!-- Level 5 - Master -->
-                    <LinearLayout
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Hebat! Kamu hampir mencapai puncak. Terus konsisten!"
+                                android:textSize="12sp"
+                                android:textColor="#333333"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- ✅ PERBAIKAN: Level 5 - Master dengan CardView dan proper spacing -->
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/level_card_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/lighter_blue">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Level 5 – Master 👑"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/dark_blue" />
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:minHeight="80dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transaksi: ≥ Rp 3.000.000"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
-                            android:layout_marginTop="2dp" />
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Level 5 – Master 👑"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/dark_blue"
+                                android:layout_marginBottom="4dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Selamat! kamu berada di level tertinggi."
-                            android:textSize="12sp"
-                            android:textColor="#333333"
-                            android:layout_marginTop="4dp" />
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Transaksi: ≥ Rp 3.000.000"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:layout_marginTop="2dp"
+                                android:layout_marginBottom="4dp" />
 
-                    </LinearLayout>
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Selamat! Kamu berada di level tertinggi."
+                                android:textSize="12sp"
+                                android:textColor="#333333"
+                                android:layout_marginTop="4dp"
+                                android:paddingBottom="8dp" />
+
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- ✅ TAMBAHAN: Spacer untuk memastikan tidak ada truncation -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="16dp" />
 
                 </LinearLayout>
 

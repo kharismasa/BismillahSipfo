@@ -112,7 +112,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="12dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingTop="12dp"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
@@ -146,6 +147,14 @@
                         android:paddingHorizontal="20dp"
                         android:paddingBottom="0dp"
                         android:visibility="visible">
+
+                        <!-- Search and Filter for Jadwal Peminjaman -->
+                        <include
+                            android:id="@+id/layoutSearchFilterPeminjaman"
+                            layout="@layout/layout_search_filter"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp" />
 
                         <TextView
                             android:id="@+id/tvTextKosongPeminjaman"
@@ -227,6 +236,14 @@
                         android:paddingHorizontal="20dp"
                         android:paddingBottom="0dp"
                         android:visibility="gone">
+
+                        <!-- Search and Filter for Jadwal Rutin -->
+                        <include
+                            android:id="@+id/layoutSearchFilterRutin"
+                            layout="@layout/layout_search_filter"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp" />
 
                         <TextView
                             android:id="@+id/tvTextKosong"
@@ -684,7 +701,7 @@
                 android:layout_height="50dp"
                 android:layout_marginBottom="10dp"
                 android:text="Booking Sekarang"
-                android:fontFamily="@font/poppins_bold"
+                android:fontFamily="@font/poppins_medium"
                 android:textSize="15sp"
                 android:textColor="@android:color/white"
                 android:background="@drawable/button_primary_background"

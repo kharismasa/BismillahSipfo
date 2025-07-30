@@ -8,6 +8,7 @@ import android.animation.ValueAnimator
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -59,61 +60,104 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
     }
 
     private fun expandLevelInfo() {
-        binding.layoutLevelContent.visibility = View.VISIBLE
+        val targetView = binding.layoutLevelContent
 
-        // Animate arrow rotation
-        val rotateAnimator = ObjectAnimator.ofFloat(binding.ivExpandArrow, "rotation", 0f, 180f)
-        rotateAnimator.duration = 300
+        // ✅ PERBAIKAN: Pastikan visibility terlebih dahulu
+        targetView.visibility = View.VISIBLE
 
-        // Animate expand
-        val slideAnimator = slideDown(binding.layoutLevelContent)
+        // ✅ PERBAIKAN: Gunakan post() untuk memastikan view sudah ter-render
+        targetView.post {
+            // Measure dengan parent constraint yang tepat
+            val widthSpec = View.MeasureSpec.makeMeasureSpec(
+                targetView.parent.let { (it as ViewGroup).width },
+                View.MeasureSpec.EXACTLY
+            )
+            val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            targetView.measure(widthSpec, heightSpec)
 
-        val animatorSet = AnimatorSet()
-        animatorSet.playTogether(rotateAnimator, slideAnimator)
-        animatorSet.start()
+            val targetHeight = targetView.measuredHeight
+            Log.d("GamifikasiFragment", "Target height for expand: $targetHeight")
+
+            // Set height to 0 untuk animasi
+            targetView.layoutParams.height = 0
+            targetView.requestLayout()
+
+            // Animate arrow rotation
+            val rotateAnimator = ObjectAnimator.ofFloat(binding.ivExpandArrow, "rotation", 0f, 180f)
+            rotateAnimator.duration = 300
+
+            // ✅ PERBAIKAN: Animate expand dengan ValueAnimator yang lebih reliable
+            val expandAnimator = ValueAnimator.ofInt(0, targetHeight)
+            expandAnimator.duration = 300
+            expandAnimator.addUpdateListener { animation ->
+                val animatedValue = animation.animatedValue as Int
+                targetView.layoutParams.height = animatedValue
+                targetView.requestLayout()
+            }
+
+            // ✅ PERBAIKAN: Tambahkan listener untuk cleanup
+            expandAnimator.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    // Reset to wrap_content setelah animasi selesai
+                    targetView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    targetView.requestLayout()
+                }
+            })
+
+            val animatorSet = AnimatorSet()
+            animatorSet.playTogether(rotateAnimator, expandAnimator)
+            animatorSet.start()
+        }
     }
 
     private fun collapseLevelInfo() {
+        val targetView = binding.layoutLevelContent
+        val initialHeight = targetView.height
+
+        Log.d("GamifikasiFragment", "Initial height for collapse: $initialHeight")
+
         // Animate arrow rotation
         val rotateAnimator = ObjectAnimator.ofFloat(binding.ivExpandArrow, "rotation", 180f, 0f)
         rotateAnimator.duration = 300
 
-        // Animate collapse
-        val slideAnimator = slideUp(binding.layoutLevelContent)
+        // ✅ PERBAIKAN: Animate collapse dengan handling yang lebih baik
+        val collapseAnimator = ValueAnimator.ofInt(initialHeight, 0)
+        collapseAnimator.duration = 300
+        collapseAnimator.addUpdateListener { animation ->
+            val animatedValue = animation.animatedValue as Int
+            targetView.layoutParams.height = animatedValue
+            targetView.requestLayout()
+        }
 
-        val animatorSet = AnimatorSet()
-        animatorSet.playTogether(rotateAnimator, slideAnimator)
-        animatorSet.addListener(object : AnimatorListenerAdapter() {
+        collapseAnimator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                binding.layoutLevelContent.visibility = View.GONE
+                targetView.visibility = View.GONE
+                // Reset height parameter
+                targetView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
             }
         })
+
+        val animatorSet = AnimatorSet()
+        animatorSet.playTogether(rotateAnimator, collapseAnimator)
         animatorSet.start()
     }
 
-    private fun slideDown(view: View): ValueAnimator {
-        view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        val targetHeight = view.measuredHeight
+    // ✅ ALTERNATIVE SOLUTION: Gunakan simple visibility toggle tanpa animasi tinggi
+    // Jika masalah masih persisting, gunakan method ini sebagai fallback
+    private fun toggleLevelInfoSimple() {
+        val targetView = binding.layoutLevelContent
 
-        view.layoutParams.height = 0
-        val animator = ValueAnimator.ofInt(0, targetHeight)
-        animator.addUpdateListener { animation ->
-            view.layoutParams.height = animation.animatedValue as Int
-            view.requestLayout()
+        if (isLevelInfoExpanded) {
+            // Collapse - simple
+            targetView.visibility = View.GONE
+            binding.ivExpandArrow.rotation = 0f
+        } else {
+            // Expand - simple
+            targetView.visibility = View.VISIBLE
+            binding.ivExpandArrow.rotation = 180f
         }
-        animator.duration = 300
-        return animator
-    }
 
-    private fun slideUp(view: View): ValueAnimator {
-        val initialHeight = view.measuredHeight
-        val animator = ValueAnimator.ofInt(initialHeight, 0)
-        animator.addUpdateListener { animation ->
-            view.layoutParams.height = animation.animatedValue as Int
-            view.requestLayout()
-        }
-        animator.duration = 300
-        return animator
+        isLevelInfoExpanded = !isLevelInfoExpanded
     }
 
     private fun setupRecyclerView() {
@@ -142,24 +186,23 @@ class GamifikasiFragment : Fragment(R.layout.fragment_gamifikasi) {
                 .load(gamifikasi.tropi)
                 .into(binding.trophy)
             Log.d("GamifikasiFragment", "Trophy URL: ${gamifikasi.tropi}")
-    
+
             // Update level
             binding.tvLevel.text = "Level ${gamifikasi.level}"
-    
+
             // Update jumlah peminjaman
             val remainingAmount = nextLevelGamifikasi.jumlahPeminjamanMinimal - totalPembayaran
             val formattedAmount = NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(remainingAmount)
             binding.tvJumlahPeminjaman.text = "$formattedAmount transaksi lagi"
             Log.d("GamifikasiFragment", "Remaining amount: $remainingAmount")
-    
+
             // Update progress indicator
             val progress = ((totalPembayaran / nextLevelGamifikasi.jumlahPeminjamanMinimal) * 100).toInt()
             binding.progressIndicator.progress = progress
             Log.d("GamifikasiFragment", "Progress: $progress, Total Pembayaran: $totalPembayaran, Jumlah Minimal: ${nextLevelGamifikasi.jumlahPeminjamanMinimal}")
-    
+
             // Update voucher list
             val activeVoucherId = gamifikasi.idVoucher
-//            rowDiskonAdapter.submitList(vouchers.map { it to true }) // Setiap voucher aktif, tampilkan semuanya
             rowDiskonAdapter.submitList(vouchers.map { it to (it.idVoucher == activeVoucherId) })
             Log.d("GamifikasiFragment", "Active voucher ID: $activeVoucherId")
             Log.d("GamifikasiFragment", "Vouchers: ${vouchers.map { "${it.idVoucher}: ${it.kodeVoucher}" }}")
