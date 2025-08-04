@@ -62,6 +62,7 @@ class FormPeminjamanFragment : Fragment() {
     private lateinit var tvTanggal: LinearLayout
     private lateinit var tvJam: LinearLayout
     private lateinit var tvLapangan: TextView
+    private lateinit var bintangLapangan: TextView
     private lateinit var tvJadwalTersedia: TextView
     private lateinit var containerJadwalTersedia: RecyclerView
     private lateinit var jadwalTersediaAdapter: JadwalTersediaAdapter
@@ -140,6 +141,55 @@ class FormPeminjamanFragment : Fragment() {
                 }
             }
         })
+    }
+
+    // untuk resetFormData method
+    private fun resetFormData() {
+        // Reset selected jadwal
+        selectedJadwalTersedia = null
+
+        // Clear adapters dengan reset selection
+        jadwalTersediaAdapter.clearSelection()
+        jadwalTersediaAdapter.updateJadwalList(emptyList())
+
+        // Hide jadwal elements
+        tvJadwalTidakTersedia.visibility = View.GONE
+        containerJadwalTersedia.visibility = View.GONE
+
+        // Reset spinner organisasi to empty state
+        val emptyAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf("Memuat organisasi..."))
+        emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerNamaOrganisasi.adapter = emptyAdapter
+        spinnerNamaOrganisasi.isEnabled = false
+    }
+
+    private fun initViews(view: View) {
+        spinnerFasilitas = view.findViewById(R.id.spinner_fasilitas)
+        editTextTanggalMulai = view.findViewById(R.id.edittext_tanggal_mulai)
+        editTextTanggalSelesai = view.findViewById(R.id.edittext_tanggal_selesai)
+        editTextJamMulai = view.findViewById(R.id.edittext_jam_mulai)
+        editTextJamSelesai = view.findViewById(R.id.edittext_jam_selesai)
+        editTextNamaAcara = view.findViewById(R.id.edittext_nama_acara)
+        editTextNamaOrganisasi = view.findViewById(R.id.edittext_nama_organisasi)
+        containerJenisLapangan = view.findViewById(R.id.container_jenis_lapangan)
+        containerPenggunaKhusus = view.findViewById(R.id.container_pengguna_khusus)
+        buttonNext = view.findViewById(R.id.button_next)
+        spinnerOpsiPinjam = view.findViewById(R.id.spinner_opsi_pinjam)
+        spinnerNamaOrganisasi = view.findViewById(R.id.spinner_nama_organisasi)
+        tvTanggal = view.findViewById(R.id.tvTanggal)
+        tvJam = view.findViewById(R.id.tvJam)
+        tvLapangan = view.findViewById(R.id.tvLapangan)
+        bintangLapangan = view.findViewById(R.id.bintangLapangan)
+        tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
+        containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
+        tvDateWarning = view.findViewById(R.id.tv_date_warning)
+        tvJadwalTidakTersedia = view.findViewById(R.id.tv_jadwal_tidak_tersedia)
+        tvJadwalTidakTersedia.visibility = View.GONE
+
+        // Initialize loading components
+        loadingOverlay = view.findViewById(R.id.loading_overlay)
+        progressBar = view.findViewById(R.id.progress_bar)
+        loadingText = view.findViewById(R.id.loading_text)
     }
 
     private fun setupSharedViewModelObserver() {
@@ -276,24 +326,6 @@ class FormPeminjamanFragment : Fragment() {
 
         // Enable form interactions
         setFormInteractionEnabled(true)
-    }
-
-    private fun resetFormData() {
-        // Reset selected jadwal
-        selectedJadwalTersedia = null
-
-        // Clear adapters
-        jadwalTersediaAdapter.updateJadwalList(emptyList())
-
-        // Hide jadwal elements
-        tvJadwalTidakTersedia.visibility = View.GONE
-        containerJadwalTersedia.visibility = View.GONE
-
-        // Reset spinner organisasi to empty state
-        val emptyAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf("Memuat organisasi..."))
-        emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerNamaOrganisasi.adapter = emptyAdapter
-        spinnerNamaOrganisasi.isEnabled = false
     }
 
     private fun setFormInteractionEnabled(enabled: Boolean) {
@@ -696,6 +728,10 @@ class FormPeminjamanFragment : Fragment() {
 
                 resetFormData()
 
+                // Clear selection when changing fasilitas
+                jadwalTersediaAdapter.clearSelection()
+                selectedJadwalTersedia = null
+
                 // Show loading when fasilitas is selected
                 if (selectedFasilitas.idFasilitas != -1) {
                     showLoading("Memuat data fasilitas...")
@@ -770,6 +806,10 @@ class FormPeminjamanFragment : Fragment() {
                 val selectedOption = parent.getItemAtPosition(position).toString()
                 val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
 
+                // Clear selection when changing option
+                jadwalTersediaAdapter.clearSelection()
+                selectedJadwalTersedia = null
+
                 Log.d("FormPeminjamanFragment", "Opsi peminjaman dipilih: $selectedOption")
                 Log.d("FormPeminjamanFragment", "Fasilitas terpilih: ${selectedFasilitas?.namaFasilitas}, ID: ${selectedFasilitas?.idFasilitas}")
 
@@ -812,34 +852,6 @@ class FormPeminjamanFragment : Fragment() {
         Log.d("FormPeminjamanFragment", "Selected jadwal tersedia updated: " +
                 "tanggal=${jadwal.tanggal}, waktuMulai=${jadwal.waktuMulai}, " +
                 "waktuSelesai=${jadwal.waktuSelesai}, listLapangan=${jadwal.listLapangan}")
-    }
-
-    private fun initViews(view: View) {
-        spinnerFasilitas = view.findViewById(R.id.spinner_fasilitas)
-        editTextTanggalMulai = view.findViewById(R.id.edittext_tanggal_mulai)
-        editTextTanggalSelesai = view.findViewById(R.id.edittext_tanggal_selesai)
-        editTextJamMulai = view.findViewById(R.id.edittext_jam_mulai)
-        editTextJamSelesai = view.findViewById(R.id.edittext_jam_selesai)
-        editTextNamaAcara = view.findViewById(R.id.edittext_nama_acara)
-        editTextNamaOrganisasi = view.findViewById(R.id.edittext_nama_organisasi)
-        containerJenisLapangan = view.findViewById(R.id.container_jenis_lapangan)
-        containerPenggunaKhusus = view.findViewById(R.id.container_pengguna_khusus)
-        buttonNext = view.findViewById(R.id.button_next)
-        spinnerOpsiPinjam = view.findViewById(R.id.spinner_opsi_pinjam)
-        spinnerNamaOrganisasi = view.findViewById(R.id.spinner_nama_organisasi)
-        tvTanggal = view.findViewById(R.id.tvTanggal)
-        tvJam = view.findViewById(R.id.tvJam)
-        tvLapangan = view.findViewById(R.id.tvLapangan)
-        tvJadwalTersedia = view.findViewById(R.id.tvJadwalTersedia)
-        containerJadwalTersedia = view.findViewById(R.id.container_jadwal_tersedia)
-        tvDateWarning = view.findViewById(R.id.tv_date_warning)
-        tvJadwalTidakTersedia = view.findViewById(R.id.tv_jadwal_tidak_tersedia)
-        tvJadwalTidakTersedia.visibility = View.GONE
-
-        // Initialize loading components
-        loadingOverlay = view.findViewById(R.id.loading_overlay)
-        progressBar = view.findViewById(R.id.progress_bar)
-        loadingText = view.findViewById(R.id.loading_text)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -914,6 +926,7 @@ class FormPeminjamanFragment : Fragment() {
                 tvTanggal.visibility = View.GONE
                 tvJam.visibility = View.GONE
                 tvLapangan.visibility = View.GONE
+                bintangLapangan.visibility = View.GONE
                 containerJenisLapangan.visibility = View.GONE
                 tvJadwalTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.VISIBLE
@@ -950,6 +963,7 @@ class FormPeminjamanFragment : Fragment() {
                 tvTanggal.visibility = View.GONE
                 tvJam.visibility = View.GONE
                 tvLapangan.visibility = View.GONE
+                bintangLapangan.visibility = View.GONE
                 containerJenisLapangan.visibility = View.GONE
                 tvJadwalTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.VISIBLE
@@ -965,6 +979,7 @@ class FormPeminjamanFragment : Fragment() {
                 containerJadwalTersedia.visibility = View.GONE
                 containerPenggunaKhusus.visibility = View.GONE
                 tvLapangan.visibility = View.VISIBLE
+                bintangLapangan.visibility = View.VISIBLE
                 containerJenisLapangan.visibility = View.VISIBLE
                 tvDateWarning.visibility = View.GONE
             }
@@ -996,6 +1011,7 @@ class FormPeminjamanFragment : Fragment() {
         tvTanggal.visibility = View.GONE
         tvJam.visibility = View.GONE
         tvLapangan.visibility = View.GONE
+        bintangLapangan.visibility = View.GONE
         containerJadwalTersedia.visibility = View.GONE
         tvJadwalTersedia.visibility = View.GONE
         tvJadwalTidakTersedia.visibility = View.GONE
@@ -1014,6 +1030,8 @@ class FormPeminjamanFragment : Fragment() {
                 if (jadwalList.isEmpty() && selectedFasilitas != null) {
                     tvJadwalTidakTersedia.visibility = View.VISIBLE
                     containerJadwalTersedia.visibility = View.GONE
+                    // Clear selection when no data
+                    jadwalTersediaAdapter.clearSelection()
                 }
             }
 
@@ -1027,6 +1045,8 @@ class FormPeminjamanFragment : Fragment() {
                 if (jadwalList.isEmpty()) {
                     tvJadwalTidakTersedia.visibility = View.VISIBLE
                     containerJadwalTersedia.visibility = View.GONE
+                    // Clear selection when no data
+                    jadwalTersediaAdapter.clearSelection()
                 }
             }
 
@@ -1034,12 +1054,15 @@ class FormPeminjamanFragment : Fragment() {
                 tvTanggal.visibility = View.VISIBLE
                 tvJam.visibility = View.VISIBLE
                 tvLapangan.visibility = View.VISIBLE
+                bintangLapangan.visibility = View.VISIBLE
                 containerJenisLapangan.visibility = View.VISIBLE
                 editTextNamaOrganisasi.visibility = View.VISIBLE
             }
         }
 
         selectedJadwalTersedia = null
+        // Clear selection when changing options
+        jadwalTersediaAdapter.clearSelection()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -1124,10 +1147,12 @@ class FormPeminjamanFragment : Fragment() {
             if (selectedOption == "Sesuai Jadwal Rutin" && jadwalList.isEmpty() && selectedFasilitas != null && selectedFasilitas.idFasilitas != -1) {
                 tvJadwalTidakTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.GONE
+                jadwalTersediaAdapter.clearSelection()
             } else {
                 tvJadwalTidakTersedia.visibility = View.GONE
                 containerJadwalTersedia.visibility = if (jadwalList.isNotEmpty()) View.VISIBLE else View.GONE
                 jadwalTersediaAdapter.updateJadwalList(jadwalList)
+
             }
 
             hideLoading() // Hide loading when jadwal tersedia data is loaded
@@ -1164,10 +1189,12 @@ class FormPeminjamanFragment : Fragment() {
             if (selectedOption == "Diluar Jadwal Rutin" && jadwalList.isEmpty() && selectedFasilitas?.idFasilitas == 30) {
                 tvJadwalTidakTersedia.visibility = View.VISIBLE
                 containerJadwalTersedia.visibility = View.GONE
+                jadwalTersediaAdapter.clearSelection()
             } else {
                 tvJadwalTidakTersedia.visibility = View.GONE
                 containerJadwalTersedia.visibility = if (jadwalList.isNotEmpty()) View.VISIBLE else View.GONE
                 jadwalTersediaAdapter.updateJadwalList(jadwalList)
+
             }
 
             hideLoading() // Hide loading when jadwal tersedia fasilitas 30 data is loaded
@@ -1316,6 +1343,10 @@ class FormPeminjamanFragment : Fragment() {
 
                 resetFormData()
 
+                // Clear selection when changing fasilitas
+                jadwalTersediaAdapter.clearSelection()
+                selectedJadwalTersedia = null
+
                 if (selectedFasilitas.idFasilitas != -1) {
                     showLoading("Memuat data fasilitas...")
                 }
@@ -1341,6 +1372,10 @@ class FormPeminjamanFragment : Fragment() {
                 val selectedFasilitas = spinnerFasilitas.selectedItem as? Fasilitas
 
                 Log.d("FormPeminjamanFragment", "Opsi peminjaman dipilih: $selectedOption")
+
+                // Clear selection when changing option
+                jadwalTersediaAdapter.clearSelection()
+                selectedJadwalTersedia = null
 
                 if (selectedFasilitas != null && selectedFasilitas.idFasilitas != -1) {
                     when (selectedOption) {

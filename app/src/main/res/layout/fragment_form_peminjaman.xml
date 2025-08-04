@@ -30,15 +30,29 @@
                 android:paddingBottom="16dp" />
 
             <!-- Spinner for Fasilitas -->
-            <TextView
-                android:layout_marginTop="8dp"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Fasilitas"
-                android:fontFamily="@font/poppins"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"/>
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fasilitas"
+                    android:fontFamily="@font/poppins"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <Spinner
                 android:id="@+id/spinner_fasilitas"
@@ -47,17 +61,33 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/spinner_background"
-                android:paddingHorizontal="12dp"/>
+                android:paddingHorizontal="12dp"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:drawablePadding="8dp"/>
 
             <!-- Spinner for Opsi Peminjaman -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Opsi Peminjaman"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"/>
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Opsi Peminjaman"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <Spinner
                 android:id="@+id/spinner_opsi_pinjam"
@@ -66,17 +96,25 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/spinner_background"
-                android:paddingHorizontal="12dp"/>
+                android:paddingHorizontal="12dp"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:drawablePadding="8dp"/>
 
             <!-- Spinner for Kalender (hanya untuk jadwal rutin) -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kalender"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"
-                android:visibility="gone"/>
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kalender"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+            </LinearLayout>
 
             <Spinner
                 android:id="@+id/spinner_kalender"
@@ -86,17 +124,33 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/spinner_background"
                 android:paddingHorizontal="12dp"
-                android:visibility="gone"/>
+                android:visibility="gone"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:drawablePadding="8dp"/>
 
             <!-- Nama Acara -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nama Acara"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"/>
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nama Acara"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/edittext_nama_acara"
@@ -110,24 +164,52 @@
                 android:textSize="14sp" />
 
             <!-- Nama Organisasi - Spinner (untuk jadwal rutin) -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nama Organisasi/UKM"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"
-                android:visibility="gone"/>
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-            <TextView
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nama Organisasi/UKM"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nama Organisasi/UKM"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins"
-                android:textColor="@android:color/black"
-                android:paddingBottom="4dp"
-                android:visibility="visible"/>
+                android:orientation="horizontal"
+                android:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nama Organisasi/UKM"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <Spinner
                 android:id="@+id/spinner_nama_organisasi"
@@ -136,7 +218,9 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/spinner_background"
                 android:paddingHorizontal="12dp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:drawablePadding="8dp" />
 
             <!-- Nama Organisasi - EditText (untuk diluar jadwal rutin) -->
             <EditText
@@ -168,14 +252,28 @@
                     android:orientation="vertical"
                     android:layout_marginEnd="8dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Tanggal Mulai"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins"
-                        android:textColor="@android:color/black"
-                        android:paddingBottom="4dp" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tanggal Mulai"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins"
+                            android:textColor="@android:color/black"
+                            android:paddingBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" *"
+                            android:textColor="#FF0000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/edittext_tanggal_mulai"
@@ -200,14 +298,28 @@
                     android:orientation="vertical"
                     android:layout_marginStart="8dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Tanggal Selesai"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins"
-                        android:textColor="@android:color/black"
-                        android:paddingBottom="4dp" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tanggal Selesai"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins"
+                            android:textColor="@android:color/black"
+                            android:paddingBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" *"
+                            android:textColor="#FF0000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/edittext_tanggal_selesai"
@@ -242,14 +354,28 @@
                     android:orientation="vertical"
                     android:layout_marginEnd="8dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Jam Mulai"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins"
-                        android:textColor="@android:color/black"
-                        android:paddingBottom="4dp" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Jam Mulai"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins"
+                            android:textColor="@android:color/black"
+                            android:paddingBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" *"
+                            android:textColor="#FF0000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/edittext_jam_mulai"
@@ -273,14 +399,28 @@
                     android:orientation="vertical"
                     android:layout_marginStart="8dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Jam Selesai"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins"
-                        android:textColor="@android:color/black"
-                        android:paddingBottom="4dp" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Jam Selesai"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins"
+                            android:textColor="@android:color/black"
+                            android:paddingBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" *"
+                            android:textColor="#FF0000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/edittext_jam_selesai"
@@ -326,15 +466,31 @@
             </LinearLayout>
 
             <!-- SECTION: JADWAL TERSEDIA (untuk jadwal rutin) -->
-            <TextView
-                android:id="@+id/tvJadwalTersedia"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Jadwal Tersedia"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:paddingBottom="8dp"
-                android:visibility="gone" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvJadwalTersedia"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jadwal Tersedia"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:id="@+id/jadwal_required_indicator" />
+            </LinearLayout>
 
             <!-- Grid Layout untuk Jadwal Cards -->
             <androidx.recyclerview.widget.RecyclerView
@@ -362,16 +518,31 @@
                 android:background="@drawable/info_background" />
 
             <!-- SECTION: LAPANGAN (untuk diluar jadwal rutin) -->
-            <TextView
-                android:id="@+id/tvLapangan"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nama Organisasi/UKM"
-                android:fontFamily="@font/poppins"
-                android:textSize="14sp"
-                android:textColor="@android:color/black"
-                android:paddingBottom="8dp"
-                android:visibility="visible" />
+                android:orientation="horizontal"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tvLapangan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lapangan"
+                    android:fontFamily="@font/poppins"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:paddingBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/bintangLapangan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" *"
+                    android:textColor="#FF0000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Container untuk checkbox lapangan -->
             <LinearLayout
@@ -393,13 +564,27 @@
                 android:visibility="gone"
                 android:layout_marginBottom="16dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Pengguna Khusus UII Training Ground"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/black"
-                    android:paddingBottom="8dp"/>
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Pengguna Khusus UII Training Ground"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:paddingBottom="8dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" *"
+                        android:textColor="#FF0000"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <RadioButton
                     android:id="@+id/radio_internal_uii"

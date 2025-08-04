@@ -52,4 +52,12 @@
     <color name="empty_state_icon">#BDBDBD</color>
     <color name="empty_state_text">#9E9E9E</color>
 
+    <!-- Selection State Colors -->
+    <color name="selected_card_background">#E3F2FD</color> <!-- Light blue background for selected card -->
+    <color name="selected_text_color">#1976D2</color> <!-- Darker blue for selected text -->
+    <color name="selected_date_color">#0D47A1</color> <!-- Very dark blue for selected date -->
+
+    <!-- Required Field Indicator -->
+    <color name="required_red">#FF0000</color>
+
 </resources>
