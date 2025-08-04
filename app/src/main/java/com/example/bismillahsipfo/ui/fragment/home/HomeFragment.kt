@@ -26,7 +26,6 @@ import com.example.bismillahsipfo.data.repository.DipinjamFasilitasRepository
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentHomeBinding
 import com.example.bismillahsipfo.ui.fragment.informasi.HalamanInformasiActivity
-import com.example.bismillahsipfo.ui.fragment.notification.NotificationActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,18 +61,11 @@ class HomeFragment : Fragment() {
         peminjamanFasilitasRepository = DipinjamFasilitasRepository()
         userRepository = UserRepository(requireContext())
 
-        setupUI()
         loadUserData()
         setupImageSlider()
         setupFasilitasRecyclerView()
         setupFilterButtons()
         setupJadwalDipinjamRecyclerView()
-    }
-
-    private fun setupUI() {
-        binding.icNotification.setOnClickListener {
-            startActivity(Intent(requireContext(), NotificationActivity::class.java))
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
