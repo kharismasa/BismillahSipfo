@@ -37,8 +37,11 @@ class RiwayatViewModel(
                 _isLoading.postValue(true)
                 val currentUserId = userRepository.getCurrentUserId()
 
+                Log.d("RiwayatViewModel", "Loading pending/failed riwayat for user: $currentUserId")
+
                 // Ambil pembayaran pending dan failed
                 val pendingAndFailedPembayaranList = fasilitasRepository.getPendingAndFailedPembayaran(currentUserId)
+                Log.d("RiwayatViewModel", "Found ${pendingAndFailedPembayaranList.size} pending/failed pembayaran")
 
                 val riwayatPendingList = pendingAndFailedPembayaranList.mapNotNull { pembayaran ->
                     val peminjaman = fasilitasRepository.getPeminjamanByIdPembayaran(pembayaran.idPembayaran)
@@ -60,12 +63,31 @@ class RiwayatViewModel(
                     }
                 }
 
-                _pendingRiwayat.postValue(riwayatPendingList)
+                Log.d("RiwayatViewModel", "Mapped ${riwayatPendingList.size} riwayat pending items")
+
+                // ✅ SORTING: Pending dulu (descending), lalu Failed (descending)
+                val sortedRiwayatPendingList = riwayatPendingList.sortedWith(
+                    compareBy<RiwayatPending> { riwayat ->
+                        // Urutkan berdasarkan status: PENDING dulu (0), FAILED kedua (1)
+                        when (riwayat.statusPembayaran) {
+                            StatusPembayaran.PENDING -> 0
+                            StatusPembayaran.FAILED -> 1
+                            else -> 2
+                        }
+                    }.thenByDescending { riwayat ->
+                        // Dalam grup yang sama, urutkan berdasarkan waktu kadaluwarsa (terbaru dulu)
+                        riwayat.waktuKadaluwarsa
+                    }
+                )
+
+                Log.d("RiwayatViewModel", "Sorted pending riwayat: ${sortedRiwayatPendingList.size}")
+
+                _pendingRiwayat.postValue(sortedRiwayatPendingList)
                 _isLoading.postValue(false)
 
             } catch (e: Exception) {
-                Log.e("RiwayatViewModel", "Error loading pending/failed riwayat: ${e.message}")
-                _errorMessage.postValue("Gagal memuat data riwayat")
+                Log.e("RiwayatViewModel", "Error loading pending/failed riwayat: ${e.message}", e)
+                _errorMessage.postValue("Gagal memuat data riwayat pending/failed: ${e.message}")
                 _isLoading.postValue(false)
             }
         }
@@ -75,10 +97,12 @@ class RiwayatViewModel(
     fun regenerateMidtransToken(paymentId: String, callback: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
+                Log.d("RiwayatViewModel", "Regenerating midtrans token for payment: $paymentId")
                 val result = fasilitasRepository.regenerateMidtransToken(paymentId)
+                Log.d("RiwayatViewModel", "Regenerate token result: success=${result.first}, url=${result.second}")
                 callback(result.first, result.second)
             } catch (e: Exception) {
-                Log.e("RiwayatViewModel", "Error regenerating token: ${e.message}")
+                Log.e("RiwayatViewModel", "Error regenerating token: ${e.message}", e)
                 callback(false, null)
             }
         }

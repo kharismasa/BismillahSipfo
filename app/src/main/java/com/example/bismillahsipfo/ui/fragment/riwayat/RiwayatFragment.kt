@@ -30,6 +30,7 @@ import com.example.bismillahsipfo.data.repository.RiwayatViewModelFactory
 import com.example.bismillahsipfo.data.repository.UserRepository
 import com.example.bismillahsipfo.databinding.FragmentRiwayatBinding
 import com.example.bismillahsipfo.utils.UserDebugHelper
+import com.example.bismillahsipfo.data.model.StatusPembayaran
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -45,7 +46,8 @@ class RiwayatFragment : Fragment() {
     private lateinit var pendingAdapter: RowRiwayatPendingAdapter
     private lateinit var selesaiAdapter: RowRiwayatSelesaiAdapter
 
-    private var isPendingActive = true
+    // ✅ PERUBAHAN: Default ke Selesai (false = tidak pending active)
+    private var isPendingActive = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -76,9 +78,9 @@ class RiwayatFragment : Fragment() {
         // Debug user session di fragment ini
         debugRiwayatData()
 
-        // Menampilkan riwayat pending/failed secara default
-        showPendingRiwayat()
-        setModernButtonStyles(isPendingActive = true)
+        // ✅ PERUBAHAN: Default menampilkan riwayat SELESAI
+        showSelesaiRiwayat()
+        setModernButtonStyles(isPendingActive = false)
     }
 
     // Method untuk debug riwayat data
@@ -298,7 +300,7 @@ class RiwayatFragment : Fragment() {
             }
         }
 
-        // Observe selesai riwayat
+        // Observe selesai riwayat - TIDAK DIPERLUKAN KARENA TIDAK MENGGUNAKAN VIEWMODEL
         viewModel.selesaiRiwayat.observe(viewLifecycleOwner) { selesaiList ->
             Log.d("RiwayatFragment", "📱 Selesai riwayat observed: ${selesaiList?.size ?: "null"} items")
 
@@ -327,54 +329,62 @@ class RiwayatFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val currentUserId = userRepository.getCurrentUserId()
-                val peminjamanList = fasilitasRepository.getRiwayatPeminjamanSelesai(currentUserId)
-                val pembayaranList = fasilitasRepository.getPembayaranListForPending()
+
+                // ✅ KEMBALI KE PENDEKATAN ASLI: Ambil semua peminjaman user
+                val allPeminjamanUser = fasilitasRepository.getAllPeminjamanForUser(currentUserId)
+                // ✅ PERBAIKAN: Ambil SEMUA pembayaran, bukan hanya pending
+                val allPembayaran = fasilitasRepository.getAllPembayaran()
                 val fasilitasList = fasilitasRepository.getFasilitasListForSelesai()
 
-                Log.d("RiwayatFragment", "Data peminjaman: ${peminjamanList.size}")
-                Log.d("RiwayatFragment", "Data pembayaran: ${pembayaranList.size}")
+                Log.d("RiwayatFragment", "Data peminjaman: ${allPeminjamanUser.size}")
+                Log.d("RiwayatFragment", "Data pembayaran: ${allPembayaran.size}")
                 Log.d("RiwayatFragment", "Data fasilitas: ${fasilitasList.size}")
 
-                val peminjamanFasilitasList = peminjamanList.mapNotNull { riwayat ->
-                    val fasilitas = fasilitasList.find { it.namaFasilitas == riwayat.namaFasilitas }
-                    val pembayaran = pembayaranList.find { it.idPembayaran == riwayat.namaFasilitas }
+                // Filter yang status pembayarannya SUCCESS
+                val successPeminjaman = allPeminjamanUser.filter { peminjaman ->
+                    val pembayaran = allPembayaran.find { it.idPembayaran == peminjaman.idPembayaran }
+                    val isSuccess = pembayaran?.statusPembayaran == StatusPembayaran.SUCCESS
 
-                    if (fasilitas != null) {
-                        PeminjamanFasilitas(
-                            idPeminjaman = 0,
-                            idFasilitas = fasilitas.idFasilitas,
-                            tanggalMulai = riwayat.tanggalMulai,
-                            tanggalSelesai = riwayat.tanggalSelesai,
-                            jamMulai = riwayat.jamMulai,
-                            jamSelesai = riwayat.jamSelesai,
-                            namaOrganisasi = "",
-                            namaAcara = riwayat.namaAcara,
-                            idPembayaran = pembayaran?.idPembayaran ?: "",
-                            penggunaKhusus = null,
-                            idPengguna = 0,
-                            createdAtPeminjaman = Instant.now(),
-                            suratPeminjamanUrl = null
-                        )
+                    if (isSuccess) {
+                        Log.d("RiwayatFragment", "SUCCESS: ${peminjaman.idPembayaran}")
                     } else {
-                        null
+                        Log.d("RiwayatFragment", "NOT SUCCESS: ${peminjaman.idPembayaran}, Status: ${pembayaran?.statusPembayaran}")
                     }
+
+                    isSuccess
+                }.filter { peminjaman ->
+                    // Pastikan fasilitas ada
+                    fasilitasList.any { it.idFasilitas == peminjaman.idFasilitas }
                 }
+
+                Log.d("RiwayatFragment", "Filtered SUCCESS peminjaman: ${successPeminjaman.size}")
+
+                // ✅ SORTING FIX: Gunakan idPeminjaman untuk sorting (descending = terbaru dulu)
+                val sortedPeminjamanFasilitasList = successPeminjaman.sortedByDescending { peminjaman ->
+                    val sortValue = peminjaman.idPeminjaman ?: 0
+                    Log.d("RiwayatFragment", "Sort by ID: ${peminjaman.idPembayaran} -> $sortValue")
+                    sortValue
+                }
+
+                Log.d("RiwayatFragment", "Sorted peminjaman by idPeminjaman: ${sortedPeminjamanFasilitasList.size}")
 
                 hideLoadingState()
 
-                if (peminjamanFasilitasList.isEmpty()) {
+                if (sortedPeminjamanFasilitasList.isEmpty()) {
                     showEmptyState("Belum ada riwayat selesai")
                 } else {
                     hideEmptyState()
-                    selesaiAdapter = RowRiwayatSelesaiAdapter(peminjamanFasilitasList, fasilitasList)
+                    selesaiAdapter = RowRiwayatSelesaiAdapter(sortedPeminjamanFasilitasList, fasilitasList)
                     binding.rvRiwayat.adapter = selesaiAdapter
                     selesaiAdapter.notifyDataSetChanged()
+
+                    Log.d("RiwayatFragment", "✅ Successfully loaded ${sortedPeminjamanFasilitasList.size} completed items")
                 }
 
             } catch (e: Exception) {
-                Log.e("RiwayatFragment", "Terjadi kesalahan saat mengambil data selesai: ${e.message}")
+                Log.e("RiwayatFragment", "❌ Error loading selesai data: ${e.message}", e)
                 hideLoadingState()
-                showEmptyState("Gagal memuat data")
+                showEmptyState("Gagal memuat data: ${e.message}")
             }
         }
     }
@@ -417,11 +427,14 @@ class RiwayatFragment : Fragment() {
         _binding = null
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
-        // Refresh data when fragment resumes (in case payment status changed)
+        // ✅ PERUBAHAN: Refresh data berdasarkan state aktif (default selesai)
         if (isPendingActive) {
             showPendingRiwayat()
+        } else {
+            showSelesaiRiwayat()
         }
     }
 }
